@@ -5,10 +5,17 @@ export type Grade = {
   label?: string; // optional description
 };
 
-export type Subject = {
+export type PromotionEntity = {
   id: string;
   name: string;
+}
+
+export interface Subject extends PromotionEntity {
   grades: Grade[];
+};
+
+export interface CombinedSubject extends PromotionEntity {
+  subjects: Subject[];
 };
 
 export type Year = 1 | 2 | 3;

@@ -1,4 +1,4 @@
-import type { Year, Direction, Subject } from '../types';
+import type { Year, Direction, Subject, PromotionEntity, CombinedSubject } from '../types';
 
 // Default subjects for years 1 and 2
 const createDefaultSubject = (name: string): Subject => ({
@@ -7,17 +7,27 @@ const createDefaultSubject = (name: string): Subject => ({
   grades: [],
 });
 
-export const defaultSubjects: Record<Year, Subject[]> = {
+const createCombinedSubject = (name: string, subject_names: string[]): CombinedSubject => {
+  let id = name.toLowerCase().replace(/\s+/g, '-');
+  let subjects = subject_names.map(createDefaultSubject);
+  return {
+    id,
+    name,
+    subjects,
+  };
+}
+
+export const defaultSubjects: Record<Year, PromotionEntity[]> = {
   1: [
-    createDefaultSubject('French'),
-    createDefaultSubject('English'),
-    createDefaultSubject('Biology'),
-    createDefaultSubject('Math'),
-    createDefaultSubject('Physics'),
-    createDefaultSubject('Chemistry'),
-    createDefaultSubject('History'),
-    createDefaultSubject('Geography'),
-    // Add more subjects as needed
+    createDefaultSubject('Deutsch'),
+    createDefaultSubject('Französisch'),
+    createDefaultSubject('Englisch'),
+    createDefaultSubject('Mathematik'),
+    createDefaultSubject('Psychologie'),
+    createDefaultSubject('Sport'),
+    createCombinedSubject('Naturwissenschaften', ['Chemie', 'Biologie', 'Physik']),
+    createCombinedSubject('Geisteswissenschaften', ['Geschichte und Politik', 'Geografie', 'Wirtschaft und Recht']),
+    createCombinedSubject('Musische Fächer', ['Musik', 'Bildnerisches Gestalten']),
   ],
   2: [
     createDefaultSubject('French'),

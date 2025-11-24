@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import type { StudentData, Year, Grade, StudentInfo } from './types';
+import type { StudentData, Year, Grade, StudentInfo, Subject, CombinedSubject, PromotionEntity } from './types';
 import { storageService } from './utils/storage';
 import { initializeStudentData, getSubjectsForYear } from './utils/initializeData';
-import { checkPromotionCriteria } from './utils/promotion';
+import { checkPromotionCriteria, calculateFinalGrade } from './utils/promotion';
 import { getCriteriaForYear } from './config/criteria';
 import { year3Directions } from './config/subjects';
 import { PromotionStatus } from './components/PromotionStatus';
@@ -13,6 +13,7 @@ import { DirectionSelector } from './components/DirectionSelector';
 import { Onboarding } from './components/Onboarding';
 import { Menu } from './components/Menu';
 import { useI18n } from './i18n/context';
+import { CombinedSubjectCard } from './components/CombinedSubjectCard';
 
 function App() {
   const { t } = useI18n();
@@ -111,10 +112,21 @@ function App() {
 
     const updatedData = { ...data };
     const yearData = updatedData.years[currentYear];
-    const subject = yearData.subjects.find((s) => s.id === selectedSubjectId);
-
-    if (!subject) return;
-
+    console.log(yearData)
+    let subject = yearData.subjects.find((s) => s.id === selectedSubjectId);
+    if (!subject) {
+      const combinedSubjects = yearData.subjects.filter((s) => {return "subjects" in s})
+      console.log(combinedSubjects)
+      const flattenedList = combinedSubjects.map((s) => s.subjects).flat()
+      console.log(flattenedList)
+      subject = flattenedList.find((s) => s.id === selectedSubjectId);
+      console.log(subject)
+    };
+    
+    if (!subject) {
+      return undefined;
+    }
+    console.log("TEST")
     if (editingGradeId) {
       // Edit existing grade
       const gradeIndex = subject.grades.findIndex(
@@ -158,6 +170,26 @@ function App() {
         ?.grades.find((g) => g.id === editingGradeId)
     : undefined;
 
+    const finalGradeCombinedSubject = (subject: PromotionEntity) => {
+      return calculateFinalGrade(subject);
+    }
+
+    const isPassing = (subject: PromotionEntity) => {
+      const grade = calculateFinalGrade(subject);
+      return grade >= 4;
+    }
+    
+    const hasGrades = (subject: PromotionEntity) => {
+      let hasGradesFinal = false;
+      subject.subjects.forEach((sub) => {
+        console.log(sub)
+        if (sub.grades.length > 0) {
+          hasGradesFinal = true;
+        }
+      })
+      return hasGradesFinal;
+    }
+
   return (
     <div className="min-h-screen bg-gray-50 pb-8">
       <div className="bg-white shadow-sm sticky top-0 z-10">
@@ -200,7 +232,7 @@ function App() {
                 {t('subjectsTitle')}
               </h2>
               <div>
-                {subjects.map((subject) => (
+                {subjects.filter((sub) => {return 'grades' in sub}).map((subject) => (
                   <SubjectCard
                     key={subject.id}
                     subject={subject}
@@ -212,6 +244,46 @@ function App() {
                       handleDeleteGrade(subject.id, gradeId)
                     }
                   />
+                ))}
+                {subjects.filter((sub) => {return 'subjects' in sub}).map((subject) => (
+                  <div key={subject.id} className="bg-white rounded-lg shadow-sm p-4 mb-3">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-base font-semibold text-gray-800">
+                      {subject.name}
+                    </h3>
+                    {hasGrades(subject) ? (
+                      <>
+                        <div className="mb-3">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-sm text-gray-600">{t('finalGrade')}</span>
+                            <span
+                              className={`text-lg font-bold ${
+                                isPassing(subject) ? 'text-green-600' : 'text-red-600'
+                              }`}
+                            >
+                              {finalGradeCombinedSubject(subject) === 0 ? '-' : finalGradeCombinedSubject(subject).toFixed(1)}
+                            </span>
+                          </div>
+                        </div>
+                      </>
+                    ): (<></>)}
+                    
+                  </div>
+                  {subject.subjects.map((sub) => (
+                    <CombinedSubjectCard
+                    key={sub.id}
+                    subject={sub}
+                    onAddGrade={() => handleAddGrade(sub.id)}
+                    onEditGrade={(gradeId) =>
+                      handleEditGrade(sub.id, gradeId)
+                    }
+                    onDeleteGrade={(gradeId) =>
+                      handleDeleteGrade(sub.id, gradeId)
+                    }
+                  />
+                  ))}
+                  
+                  </div>
                 ))}
               </div>
             </div>

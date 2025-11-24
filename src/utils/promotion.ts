@@ -1,4 +1,4 @@
-import type { Subject, PromotionCriteria, PromotionStatus } from '../types';
+import type { Subject, PromotionCriteria, PromotionStatus, CombinedSubject, PromotionEntity } from '../types';
 
 /**
  * Rounds a number to the nearest multiple of 0.5
@@ -14,7 +14,12 @@ export const roundToTwoDecimals = (value: number): number => {
   return Math.round(value * 100) / 100;
 };
 
-export const calculateFinalGrade = (subject: Subject): number => {
+export const calculateFinalGrade = (subject: PromotionEntity): number => {
+  if ( 'subjects' in subject) {
+    return calculateFinalGradeCombined(subject);
+  }
+
+
   if (subject.grades.length === 0) return 0;
 
   let totalWeightedSum = 0;
@@ -29,6 +34,29 @@ export const calculateFinalGrade = (subject: Subject): number => {
   // Round to nearest 0.5
   return roundToHalf(average);
 };
+
+export const calculateFinalGradeCombined = (subject: CombinedSubject): number => {
+  let sum = 0;
+  let numGrades = 0;
+  subject.subjects.forEach((sub) => {
+    if (sub.grades.length > 0) {
+      let grade = calculateFinalGrade(sub);
+      sum += grade;
+      numGrades += 1;
+    }
+  });
+  const average = sum / numGrades;
+  return roundToHalf(average);
+};
+
+export const combinedSubjectHasGrades = (subject: Subject): boolean => {
+  subject.subjects.forEach((sub) => {
+    if (sub.grades.length > 0) {
+      return true;
+    }
+  })
+  return false;
+}
 
 export const checkPromotionCriteria = (
   subjects: Subject[],
