@@ -1,0 +1,19 @@
+{
+  "name": "Grade Tracker",
+  "short_name": "Grades",
+  "description": "Track your grades and promotion status",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2563eb",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/vite.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
+
