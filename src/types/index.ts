@@ -18,6 +18,15 @@ export interface CombinedSubject extends PromotionEntity {
   subjects: Subject[];
 };
 
+// Type guard functions
+export function isSubject(entity: PromotionEntity): entity is Subject {
+  return 'grades' in entity;
+}
+
+export function isCombinedSubject(entity: PromotionEntity): entity is CombinedSubject {
+  return 'subjects' in entity;
+}
+
 export type Year = 1 | 2 | 3;
 
 export type Direction = {
@@ -39,7 +48,7 @@ export type StudentData = {
   year3Direction?: string; // direction ID for year 3
   years: {
     [key in Year]: {
-      subjects: Subject[];
+      subjects: (Subject | CombinedSubject)[];
     };
   };
 };
@@ -52,6 +61,7 @@ export type PromotionCriteria = {
 
 export type PromotionStatus = {
   isPassing: boolean;
+  hasGrades: boolean; // Whether there are any grades entered yet
   criteria: {
     failures: {
       passed: boolean;

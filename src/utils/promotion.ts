@@ -1,4 +1,5 @@
-import type { Subject, PromotionCriteria, PromotionStatus, CombinedSubject, PromotionEntity } from '../types';
+import type { PromotionCriteria, PromotionStatus, CombinedSubject, PromotionEntity } from '../types';
+import { isCombinedSubject, isSubject } from '../types';
 
 /**
  * Rounds a number to the nearest multiple of 0.5
@@ -15,24 +16,27 @@ export const roundToTwoDecimals = (value: number): number => {
 };
 
 export const calculateFinalGrade = (subject: PromotionEntity): number => {
-  if ( 'subjects' in subject) {
+  if (isCombinedSubject(subject)) {
     return calculateFinalGradeCombined(subject);
   }
 
+  if (isSubject(subject)) {
+    if (subject.grades.length === 0) return 0;
 
-  if (subject.grades.length === 0) return 0;
+    let totalWeightedSum = 0;
+    let totalWeight = 0;
 
-  let totalWeightedSum = 0;
-  let totalWeight = 0;
+    subject.grades.forEach((grade) => {
+      totalWeightedSum += grade.value * grade.weight;
+      totalWeight += grade.weight;
+    });
 
-  subject.grades.forEach((grade) => {
-    totalWeightedSum += grade.value * grade.weight;
-    totalWeight += grade.weight;
-  });
+    const average = totalWeight > 0 ? totalWeightedSum / totalWeight : 0;
+    // Round to nearest 0.5
+    return roundToHalf(average);
+  }
 
-  const average = totalWeight > 0 ? totalWeightedSum / totalWeight : 0;
-  // Round to nearest 0.5
-  return roundToHalf(average);
+  return 0;
 };
 
 export const calculateFinalGradeCombined = (subject: CombinedSubject): number => {
@@ -49,21 +53,17 @@ export const calculateFinalGradeCombined = (subject: CombinedSubject): number =>
   return roundToHalf(average);
 };
 
-export const combinedSubjectHasGrades = (subject: Subject): boolean => {
-  subject.subjects.forEach((sub) => {
-    if (sub.grades.length > 0) {
-      return true;
-    }
-  })
-  return false;
+export const combinedSubjectHasGrades = (subject: CombinedSubject): boolean => {
+  return subject.subjects.some((sub) => sub.grades.length > 0);
 }
 
 export const checkPromotionCriteria = (
-  subjects: Subject[],
+  subjects: PromotionEntity[],
   criteria: PromotionCriteria
 ): PromotionStatus => {
   const finalGrades = subjects.map((subject) => calculateFinalGrade(subject));
   const validGrades = finalGrades.filter((grade) => grade > 0);
+  const hasGrades = validGrades.length > 0;
 
   // Calculate failures (grades below 4)
   const failures = validGrades.filter((grade) => grade < 4);
@@ -89,6 +89,7 @@ export const checkPromotionCriteria = (
 
   return {
     isPassing: failuresPassed && averagePassed && deficitPassed,
+    hasGrades,
     criteria: {
       failures: {
         passed: failuresPassed,

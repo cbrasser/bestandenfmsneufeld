@@ -65,6 +65,10 @@ export interface Translations {
   menu: string;
   settings: string;
   language: string;
+  data: string;
+  import: string;
+  export: string;
+  reset: string;
   
   // Languages
   german: string;
@@ -74,6 +78,33 @@ export interface Translations {
   
   // Actions
   swipeHint: string;
+  
+  // Theme
+  themeLight: string;
+  themeDark: string;
+  themeSystem: string;
+  theme: string;
+  
+  // Data management
+  exportSuccess: string;
+  exportError: string;
+  importSuccess: string;
+  importError: string;
+  importInvalidFile: string;
+  resetConfirm: string;
+  resetSuccess: string;
+  resetError: string;
+  noDataToExport: string;
+  
+  // Footer & Disclaimer
+  disclaimer: string;
+  disclaimerFull: string;
+  copyright: string;
+  contactEmail: string;
+  underConstruction: string;
+  
+  // Status
+  noGradesYetStatus: string;
 }
 
 export const translations: Record<Language, Translations> = {
@@ -142,6 +173,10 @@ export const translations: Record<Language, Translations> = {
     menu: 'Menü',
     settings: 'Einstellungen',
     language: 'Sprache',
+    data: 'Daten',
+    import: 'Importieren',
+    export: 'Exportieren',
+    reset: 'Zurücksetzen',
     
     // Languages
     german: 'Deutsch',
@@ -151,6 +186,33 @@ export const translations: Record<Language, Translations> = {
     
     // Actions
     swipeHint: '',
+    
+    // Theme
+    theme: 'Design',
+    themeLight: 'Hell',
+    themeDark: 'Dunkel',
+    themeSystem: 'System',
+    
+    // Data management
+    exportSuccess: 'Daten erfolgreich exportiert',
+    exportError: 'Fehler beim Exportieren der Daten',
+    importSuccess: 'Daten erfolgreich importiert',
+    importError: 'Fehler beim Importieren der Daten',
+    importInvalidFile: 'Ungültige Datei. Bitte wählen Sie eine gültige JSON-Datei.',
+    resetConfirm: 'Möchten Sie wirklich alle Daten zurücksetzen? Diese Aktion kann nicht rückgängig gemacht werden.',
+    resetSuccess: 'Daten erfolgreich zurückgesetzt',
+    resetError: 'Fehler beim Zurücksetzen der Daten',
+    noDataToExport: 'Keine Daten zum Exportieren vorhanden',
+    
+    // Footer & Disclaimer
+    disclaimer: 'Haftungsausschluss',
+    disclaimerFull: 'Achtung: Diese Anwendung ist ein inoffizielles Tool. Die angezeigten Informationen sollten immer überprüft werden. Die Nutzung erfolgt auf eigene Verantwortung. Dies ist KEIN offizieller Status über das Bestehen/Nichtbestehen von Seiten der Schule!',
+    copyright: '© 2025 Bestanden FMS',
+    contactEmail: 'Kontakt',
+    underConstruction: 'In Arbeit',
+    
+    // Status
+    noGradesYetStatus: 'Noch keine Noten',
   },
   fr: {
     // General
@@ -217,6 +279,10 @@ export const translations: Record<Language, Translations> = {
     menu: 'Menu',
     settings: 'Paramètres',
     language: 'Langue',
+    data: 'Données',
+    import: 'Importer',
+    export: 'Exporter',
+    reset: 'Réinitialiser',
     
     // Languages
     german: 'Allemand',
@@ -226,6 +292,33 @@ export const translations: Record<Language, Translations> = {
     
     // Actions
     swipeHint: '',
+    
+    // Theme
+    theme: 'Thème',
+    themeLight: 'Clair',
+    themeDark: 'Sombre',
+    themeSystem: 'Système',
+    
+    // Data management
+    exportSuccess: 'Données exportées avec succès',
+    exportError: 'Erreur lors de l\'exportation des données',
+    importSuccess: 'Données importées avec succès',
+    importError: 'Erreur lors de l\'importation des données',
+    importInvalidFile: 'Fichier invalide. Veuillez sélectionner un fichier JSON valide.',
+    resetConfirm: 'Êtes-vous sûr de vouloir réinitialiser toutes les données? Cette action ne peut pas être annulée.',
+    resetSuccess: 'Données réinitialisées avec succès',
+    resetError: 'Erreur lors de la réinitialisation des données',
+    noDataToExport: 'Aucune donnée à exporter',
+    
+    // Footer & Disclaimer
+    disclaimer: 'Avertissement',
+    disclaimerFull: 'Veuillez noter: Cette application est un outil non officiel. Les informations affichées doivent toujours être vérifiées sur le site Web officiel. L\'utilisation se fait à vos propres risques. Ce n\'est PAS un statut officiel de réussite/échec de l\'école!',
+    copyright: '© 2025 Bestanden FMS',
+    contactEmail: 'Contact',
+    underConstruction: 'En construction',
+    
+    // Status
+    noGradesYetStatus: 'Pas encore de notes',
   },
   en: {
     // General
@@ -292,6 +385,10 @@ export const translations: Record<Language, Translations> = {
     menu: 'Menu',
     settings: 'Settings',
     language: 'Language',
+    data: 'Data',
+    import: 'Import',
+    export: 'Export',
+    reset: 'Reset',
     
     // Languages
     german: 'German',
@@ -301,6 +398,33 @@ export const translations: Record<Language, Translations> = {
     
     // Actions
     swipeHint: '',
+    
+    // Theme
+    theme: 'Theme',
+    themeLight: 'Light',
+    themeDark: 'Dark',
+    themeSystem: 'System',
+    
+    // Data management
+    exportSuccess: 'Data exported successfully',
+    exportError: 'Error exporting data',
+    importSuccess: 'Data imported successfully',
+    importError: 'Error importing data',
+    importInvalidFile: 'Invalid file. Please select a valid JSON file.',
+    resetConfirm: 'Are you sure you want to reset all data? This action cannot be undone.',
+    resetSuccess: 'Data reset successfully',
+    resetError: 'Error resetting data',
+    noDataToExport: 'No data to export',
+    
+    // Footer & Disclaimer
+    disclaimer: 'Disclaimer',
+    disclaimerFull: 'Please note: This application is an unofficial tool. The displayed information should always be verified on the official website. Use at your own responsibility. This is NOT an official status of passing/failing from the school!',
+    copyright: '© 2025 Bestanden FMS',
+    contactEmail: 'Contact',
+    underConstruction: 'Under Construction',
+    
+    // Status
+    noGradesYetStatus: 'No grades yet',
   },
   it: {
     // General
@@ -367,6 +491,10 @@ export const translations: Record<Language, Translations> = {
     menu: 'Menu',
     settings: 'Impostazioni',
     language: 'Lingua',
+    data: 'Dati',
+    import: 'Importa',
+    export: 'Esporta',
+    reset: 'Reimposta',
     
     // Languages
     german: 'Tedesco',
@@ -376,6 +504,33 @@ export const translations: Record<Language, Translations> = {
     
     // Actions
     swipeHint: '',
+    
+    // Theme
+    theme: 'Tema',
+    themeLight: 'Chiaro',
+    themeDark: 'Scuro',
+    themeSystem: 'Sistema',
+    
+    // Data management
+    exportSuccess: 'Dati esportati con successo',
+    exportError: 'Errore durante l\'esportazione dei dati',
+    importSuccess: 'Dati importati con successo',
+    importError: 'Errore durante l\'importazione dei dati',
+    importInvalidFile: 'File non valido. Seleziona un file JSON valido.',
+    resetConfirm: 'Sei sicuro di voler reimpostare tutti i dati? Questa azione non può essere annullata.',
+    resetSuccess: 'Dati reimpostati con successo',
+    resetError: 'Errore durante la reimpostazione dei dati',
+    noDataToExport: 'Nessun dato da esportare',
+    
+    // Footer & Disclaimer
+    disclaimer: 'Disclaimer',
+    disclaimerFull: 'Nota: Questa applicazione è uno strumento non ufficiale. Le informazioni visualizzate dovrebbero sempre essere verificate sul sito Web ufficiale. L\'uso è a proprio rischio. Questo NON è uno status ufficiale di promozione/bocciatura dalla scuola!',
+    copyright: '© 2025 Bestanden FMS',
+    contactEmail: 'Contatto',
+    underConstruction: 'In costruzione',
+    
+    // Status
+    noGradesYetStatus: 'Nessun voto ancora',
   },
 };
 

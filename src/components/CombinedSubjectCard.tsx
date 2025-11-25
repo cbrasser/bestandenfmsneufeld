@@ -23,15 +23,24 @@ export const CombinedSubjectCard = ({
   const isPassing = finalGrade >= 4 || !hasGrades;
 
   return (
-    <div className="bg-white rounded-lg shadow-sm p-4 mb-3">
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="text-base font-semibold text-gray-800">
+    <div className="bg-gray-50 dark:bg-gray-800/30 rounded-lg border border-gray-200 dark:border-gray-700 p-3 shadow-sm">
+      <div className="flex items-center justify-between mb-2">
+        <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">
           {subject.name}
-        </h3>
+        </h4>
         <div className="flex items-center gap-2">
+          {hasGrades && (
+            <span
+              className={`text-sm font-semibold ${
+                isPassing ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
+              }`}
+            >
+              {finalGrade === 0 ? '-' : finalGrade.toFixed(1)}
+            </span>
+          )}
           <button
             onClick={onAddGrade}
-            className="p-1.5 text-blue-600 hover:bg-blue-50 rounded transition-colors"
+            className="p-1 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/20 rounded transition-colors"
             aria-label="Add grade"
           >
             <Plus className="w-4 h-4" />
@@ -40,33 +49,22 @@ export const CombinedSubjectCard = ({
       </div>
 
       {hasGrades ? (
-        <>
-          <div className="mb-3">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-gray-600">{t('finalGrade')}</span>
-              <span
-                className={`text-lg font-bold ${
-                  isPassing ? 'text-green-600' : 'text-red-600'
-                }`}
-              >
-                {finalGrade === 0 ? '-' : finalGrade.toFixed(1)}
-              </span>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            {subject.grades.map((grade) => (
+        <div className="mt-2 space-y-0">
+          {subject.grades.map((grade, index) => (
+            <div key={grade.id}>
+              {index > 0 && (
+                <div className="border-t border-gray-200 dark:border-gray-700 my-1.5"></div>
+              )}
               <SwipeableGradeItem
-                key={grade.id}
                 grade={grade}
                 onEdit={() => onEditGrade(grade.id)}
                 onDelete={() => onDeleteGrade(grade.id)}
               />
-            ))}
-          </div>
-        </>
+            </div>
+          ))}
+        </div>
       ) : (
-        <p className="text-sm text-gray-400 text-center py-2">
+        <p className="text-xs text-gray-400 dark:text-gray-500 text-center py-1.5">
           {t('noGradesYet')}
         </p>
       )}

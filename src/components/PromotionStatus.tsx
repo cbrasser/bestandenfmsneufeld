@@ -1,5 +1,5 @@
 import type { PromotionStatus as PromotionStatusType } from '../types';
-import { CheckCircle, XCircle } from 'lucide-react';
+import { CheckCircle, XCircle, Minus } from 'lucide-react';
 import { useI18n } from '../i18n/context';
 
 interface PromotionStatusProps {
@@ -8,24 +8,28 @@ interface PromotionStatusProps {
 
 export const PromotionStatus = ({ status }: PromotionStatusProps) => {
   const { t } = useI18n();
-  const { criteria } = status;
+  const { criteria, hasGrades } = status;
 
   return (
-    <div className="bg-white rounded-lg shadow-sm p-4 mb-4">
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 mb-4">
       <div
         className={`flex items-center gap-2 mb-4 pb-4 border-b ${
-          status.isPassing
-            ? 'text-green-600 border-green-200'
-            : 'text-red-600 border-red-200'
+          !hasGrades
+            ? 'text-gray-500 dark:text-gray-400 border-gray-200 dark:border-gray-700'
+            : status.isPassing
+            ? 'text-green-600 dark:text-green-400 border-green-200 dark:border-green-800'
+            : 'text-red-600 dark:text-red-400 border-red-200 dark:border-red-800'
         }`}
       >
-        {status.isPassing ? (
+        {!hasGrades ? (
+          <Minus className="w-5 h-5" />
+        ) : status.isPassing ? (
           <CheckCircle className="w-5 h-5" />
         ) : (
           <XCircle className="w-5 h-5" />
         )}
         <h2 className="text-lg font-semibold">
-          {status.isPassing ? t('passing') : t('notPassing')}
+          {!hasGrades ? t('noGradesYetStatus') : status.isPassing ? t('passing') : t('notPassing')}
         </h2>
       </div>
 
@@ -39,7 +43,7 @@ export const PromotionStatus = ({ status }: PromotionStatusProps) => {
         <CriterionItem
           label={t('averageGrade')}
           passed={criteria.average.passed}
-          value={criteria.average.value.toFixed(1)}
+          value={hasGrades ? criteria.average.value.toFixed(1) : null}
           description={`${t('minimum')}: ${criteria.average.min}`}
         />
         <CriterionItem
@@ -56,7 +60,7 @@ export const PromotionStatus = ({ status }: PromotionStatusProps) => {
 interface CriterionItemProps {
   label: string;
   passed: boolean;
-  value: string;
+  value: string | null; // null means show icon instead
   description: string;
 }
 
@@ -66,26 +70,34 @@ const CriterionItem = ({
   value,
   description,
 }: CriterionItemProps) => {
+  const showIcon = value === null;
+  
   return (
     <div className="flex items-start justify-between">
       <div className="flex-1">
         <div className="flex items-center gap-2">
-          {passed ? (
-            <CheckCircle className="w-4 h-4 text-green-600" />
+          {showIcon ? (
+            <Minus className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+          ) : passed ? (
+            <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400" />
           ) : (
-            <XCircle className="w-4 h-4 text-red-600" />
+            <XCircle className="w-4 h-4 text-red-600 dark:text-red-400" />
           )}
-          <span className="text-sm font-medium text-gray-700">{label}</span>
+          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{label}</span>
         </div>
-        <p className="text-xs text-gray-500 ml-6">{description}</p>
+        <p className="text-xs text-gray-500 dark:text-gray-400 ml-6">{description}</p>
       </div>
-      <span
-        className={`text-sm font-semibold ${
-          passed ? 'text-green-600' : 'text-red-600'
-        }`}
-      >
-        {value}
-      </span>
+      {showIcon ? (
+        <Minus className="w-5 h-5 text-gray-400 dark:text-gray-500" />
+      ) : (
+        <span
+          className={`text-sm font-semibold ${
+            passed ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
+          }`}
+        >
+          {value}
+        </span>
+      )}
     </div>
   );
 };

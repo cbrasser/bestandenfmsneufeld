@@ -23,15 +23,15 @@ export const SubjectCard = ({
   const isPassing = finalGrade >= 4 || !hasGrades;
 
   return (
-    <div className="bg-white rounded-lg shadow-sm p-4 mb-3">
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 mb-3">
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-base font-semibold text-gray-800">
+        <h3 className="text-base font-semibold text-gray-800 dark:text-gray-200">
           {subject.name}
         </h3>
         <div className="flex items-center gap-2">
           <button
             onClick={onAddGrade}
-            className="p-1.5 text-blue-600 hover:bg-blue-50 rounded transition-colors"
+            className="p-1.5 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors"
             aria-label="Add grade"
           >
             <Plus className="w-4 h-4" />
@@ -43,10 +43,10 @@ export const SubjectCard = ({
         <>
           <div className="mb-3">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-gray-600">{t('finalGrade')}</span>
+              <span className="text-sm text-gray-600 dark:text-gray-400">{t('finalGrade')}</span>
               <span
                 className={`text-lg font-bold ${
-                  isPassing ? 'text-green-600' : 'text-red-600'
+                  isPassing ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
                 }`}
               >
                 {finalGrade === 0 ? '-' : finalGrade.toFixed(1)}
@@ -66,7 +66,7 @@ export const SubjectCard = ({
           </div>
         </>
       ) : (
-        <p className="text-sm text-gray-400 text-center py-2">
+        <p className="text-sm text-gray-400 dark:text-gray-500 text-center py-2">
           {t('noGradesYet')}
         </p>
       )}
