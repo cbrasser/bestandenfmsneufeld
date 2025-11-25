@@ -1,4 +1,4 @@
-import type { Year, Direction, Subject, PromotionEntity, CombinedSubject } from '../types';
+import type { Year, Direction, Subject, CombinedSubject } from '../types';
 
 // Default subjects for years 1 and 2
 const createDefaultSubject = (name: string): Subject => ({
@@ -17,7 +17,7 @@ const createCombinedSubject = (name: string, subject_names: string[]): CombinedS
   };
 }
 
-export const defaultSubjects: Record<Year, PromotionEntity[]> = {
+export const defaultSubjects: Record<Year, (Subject | CombinedSubject)[]> = {
   1: [
     createDefaultSubject('Deutsch'),
     createDefaultSubject('Französisch'),
