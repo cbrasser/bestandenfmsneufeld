@@ -4,16 +4,14 @@ import './index.css'
 import App from './App.tsx'
 import { I18nProvider } from './i18n/context.tsx'
 import { ThemeProvider } from './contexts/ThemeContext.tsx'
-import { initHeap } from './utils/analytics.ts'
-
-// Initialize Heap Analytics
-initHeap();
+import { Analytics } from '@vercel/analytics/react'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ThemeProvider>
       <I18nProvider>
         <App />
+        <Analytics />
       </I18nProvider>
     </ThemeProvider>
   </StrictMode>,

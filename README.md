@@ -66,50 +66,16 @@ Edit `src/config/criteria.ts` to customize promotion criteria for each year.
 - **Tailwind CSS** - Styling
 - **Vite PWA Plugin** - PWA support
 - **Lucide React** - Icons
-- **Heap Analytics** - User analytics (optional)
+- **Vercel Analytics** - User analytics
 
-## Analytics Setup (Heap)
+## Analytics (Vercel)
 
-The app includes basic Heap Analytics for tracking site usage. Heap automatically tracks:
-- Number of users and sessions
+The app uses Vercel Analytics for basic tracking. It automatically tracks:
+- Number of visitors and page views
 - Geographic location (country/region level)
 - Device type and browser
-- Screen size
 
-To enable it:
-
-1. Get your Heap App ID from [Heap.io](https://heap.io)
-2. Create a `.env` file in the root directory:
-   ```
-   VITE_HEAP_APP_ID=your-heap-app-id-here
-   ```
-3. The app will automatically initialize Heap when it loads
-
-If no Heap App ID is provided, the app will run normally without analytics.
-
-### Deployment
-
-**Important:** Environment variables are embedded at build time. You need to set them before running `npm run build`.
-
-#### On Your Server/Build Environment:
-
-1. **Create `.env` file on the server:**
-   ```bash
-   echo "VITE_HEAP_APP_ID=your-heap-app-id-here" > .env
-   ```
-
-2. **Or set as environment variable before build:**
-   ```bash
-   export VITE_HEAP_APP_ID=your-heap-app-id-here
-   npm run build
-   ```
-
-3. **Common hosting platforms:**
-   - **Vercel/Netlify**: Set in their dashboard under Environment Variables
-   - **GitHub Actions**: Add as repository secret
-   - **Docker**: Set via `ENV` in Dockerfile or docker-compose.yml
-
-See `DEPLOYMENT.md` for detailed platform-specific instructions.
+No configuration needed - it works automatically when deployed to Vercel. If deployed elsewhere, it will still track but you'll need a Vercel account to view the analytics dashboard.
 
 ## Data Storage
 
