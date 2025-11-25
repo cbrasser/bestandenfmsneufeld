@@ -66,10 +66,30 @@ Edit `src/config/criteria.ts` to customize promotion criteria for each year.
 - **Tailwind CSS** - Styling
 - **Vite PWA Plugin** - PWA support
 - **Lucide React** - Icons
+- **Heap Analytics** - User analytics (optional)
+
+## Analytics Setup (Heap)
+
+The app includes basic Heap Analytics for tracking site usage. Heap automatically tracks:
+- Number of users and sessions
+- Geographic location (country/region level)
+- Device type and browser
+- Screen size
+
+To enable it:
+
+1. Get your Heap App ID from [Heap.io](https://heap.io)
+2. Create a `.env` file in the root directory:
+   ```
+   VITE_HEAP_APP_ID=your-heap-app-id-here
+   ```
+3. The app will automatically initialize Heap when it loads
+
+If no Heap App ID is provided, the app will run normally without analytics.
 
 ## Data Storage
 
-All student data is stored locally in the browser's `localStorage`. No data is sent to any server, ensuring complete privacy.
+All student data is stored locally in the browser's `localStorage`. No data is sent to any server, ensuring complete privacy. Analytics events (if enabled) are sent separately and do not include any grade data.
 
 ## License
 
