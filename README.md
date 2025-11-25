@@ -87,6 +87,30 @@ To enable it:
 
 If no Heap App ID is provided, the app will run normally without analytics.
 
+### Deployment
+
+**Important:** Environment variables are embedded at build time. You need to set them before running `npm run build`.
+
+#### On Your Server/Build Environment:
+
+1. **Create `.env` file on the server:**
+   ```bash
+   echo "VITE_HEAP_APP_ID=your-heap-app-id-here" > .env
+   ```
+
+2. **Or set as environment variable before build:**
+   ```bash
+   export VITE_HEAP_APP_ID=your-heap-app-id-here
+   npm run build
+   ```
+
+3. **Common hosting platforms:**
+   - **Vercel/Netlify**: Set in their dashboard under Environment Variables
+   - **GitHub Actions**: Add as repository secret
+   - **Docker**: Set via `ENV` in Dockerfile or docker-compose.yml
+
+See `DEPLOYMENT.md` for detailed platform-specific instructions.
+
 ## Data Storage
 
 All student data is stored locally in the browser's `localStorage`. No data is sent to any server, ensuring complete privacy. Analytics events (if enabled) are sent separately and do not include any grade data.
