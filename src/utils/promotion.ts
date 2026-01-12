@@ -66,7 +66,26 @@ export const checkPromotionCriteria = (
   const hasGrades = validGrades.length > 0;
 
   // Calculate failures (grades below 4)
-  const failures = validGrades.filter((grade) => grade < 4);
+  // For combined subjects, count each sub-subject individually
+  const individualGrades: number[] = [];
+  subjects.forEach((subject) => {
+    if (isCombinedSubject(subject)) {
+      // For combined subjects, add each sub-subject's grade individually
+      subject.subjects.forEach((sub) => {
+        const grade = calculateFinalGrade(sub);
+        if (grade > 0) {
+          individualGrades.push(grade);
+        }
+      });
+    } else {
+      // For regular subjects, just add the final grade
+      const grade = calculateFinalGrade(subject);
+      if (grade > 0) {
+        individualGrades.push(grade);
+      }
+    }
+  });
+  const failures = individualGrades.filter((grade) => grade < 4);
 
   // Calculate average (use rounded grades)
   const average =
