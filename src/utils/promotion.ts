@@ -32,8 +32,10 @@ export const calculateFinalGrade = (subject: PromotionEntity): number => {
     });
 
     const average = totalWeight > 0 ? totalWeightedSum / totalWeight : 0;
+    // Apply oral grade adjustment before rounding
+    const adjustedAverage = average + (subject.oralGrade ?? 0);
     // Round to nearest 0.5
-    return roundToHalf(average);
+    return roundToHalf(adjustedAverage);
   }
 
   return 0;
@@ -92,7 +94,7 @@ export const checkPromotionCriteria = (
     validGrades.length > 0
       ? validGrades.reduce((sum, grade) => sum + grade, 0) / validGrades.length
       : 0;
-  const roundedAverage = roundToHalf(average);
+  const roundedAverage = roundToTwoDecimals(average);
 
   // Calculate total deficit (sum of how much each grade is below 4)
   // Use rounded values for deficit calculation

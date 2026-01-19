@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import type { Grade } from '../types';
+import type { Grade, Semester } from '../types';
 import { X } from 'lucide-react';
 import { useI18n } from '../i18n/context';
 
@@ -20,16 +20,19 @@ export const GradeModal = ({
   const [value, setValue] = useState('');
   const [weight, setWeight] = useState('1');
   const [label, setLabel] = useState('');
+  const [semester, setSemester] = useState<Semester | undefined>(undefined);
 
   useEffect(() => {
     if (existingGrade) {
       setValue(existingGrade.value.toString());
       setWeight(existingGrade.weight.toString());
       setLabel(existingGrade.label || '');
+      setSemester(existingGrade.semester);
     } else {
       setValue('');
       setWeight('1');
       setLabel('');
+      setSemester(undefined);
     }
   }, [existingGrade, isOpen]);
 
@@ -59,6 +62,7 @@ export const GradeModal = ({
       value: roundedValue,
       weight: roundedWeight,
       label: label.trim() || undefined,
+      semester: semester,
     });
 
     onClose();
@@ -125,6 +129,21 @@ export const GradeModal = ({
             <p className="text-xs text-gray-500 mt-1">
               {t('weightDescription')}
             </p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              {t('semester')}
+            </label>
+            <select
+              value={semester || ''}
+              onChange={(e) => setSemester(e.target.value as Semester || undefined)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value="">{t('noSemester')}</option>
+              <option value="Herbstsemester">{t('fallSemester')}</option>
+              <option value="Frühlingssemester">{t('springSemester')}</option>
+            </select>
           </div>
 
           <div>

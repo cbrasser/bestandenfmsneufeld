@@ -2,6 +2,11 @@
 
 A mobile-first Progressive Web App (PWA) for students to track their grades and monitor their promotion status at school.
 
+## TODO
+
+- [ ] Semsters -> Add a hint to a grade that displays the semester
+- [ ] Oral grades -> Add the option to add oral grades (e.g. 0.1 bonus)
+
 ## Features
 
 - 📱 **Mobile-first design** - Optimized for mobile devices
@@ -51,6 +56,7 @@ npm run preview
 ### Subjects
 
 Edit `src/config/subjects.ts` to customize:
+
 - Subjects for Years 1 and 2
 - Year 3 directions and their associated subjects
 
@@ -71,6 +77,7 @@ Edit `src/config/criteria.ts` to customize promotion criteria for each year.
 ## Analytics (Vercel)
 
 The app uses Vercel Analytics for basic tracking. It automatically tracks:
+
 - Number of visitors and page views
 - Geographic location (country/region level)
 - Device type and browser

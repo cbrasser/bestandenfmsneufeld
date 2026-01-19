@@ -9,6 +9,7 @@ interface SubjectCardProps {
   onAddGrade: () => void;
   onEditGrade: (gradeId: string) => void;
   onDeleteGrade: (gradeId: string) => void;
+  onOralGradeChange: (oralGrade: number | undefined) => void;
 }
 
 export const SubjectCard = ({
@@ -16,6 +17,7 @@ export const SubjectCard = ({
   onAddGrade,
   onEditGrade,
   onDeleteGrade,
+  onOralGradeChange,
 }: SubjectCardProps) => {
   const { t } = useI18n();
   const finalGrade = calculateFinalGrade(subject);
@@ -52,6 +54,28 @@ export const SubjectCard = ({
                 {finalGrade === 0 ? '-' : finalGrade.toFixed(1)}
               </span>
             </div>
+          </div>
+
+          <div className="mt-2 pt-2 mb-3 border-t border-gray-200 dark:border-gray-700">
+            <div className="flex items-center justify-between">
+              <label className="text-xs text-gray-600 dark:text-gray-400">
+                {t('oralGrade')}
+              </label>
+              <input
+                type="number"
+                step="0.01"
+                value={subject.oralGrade ?? ''}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  onOralGradeChange(value === '' ? undefined : parseFloat(value));
+                }}
+                placeholder="±0.00"
+                className="w-20 px-2 py-1 text-sm text-right border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              {t('oralGradeDescription')}
+            </p>
           </div>
 
           <div className="space-y-2">

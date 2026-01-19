@@ -1,8 +1,11 @@
+export type Semester = 'Herbstsemester' | 'Frühlingssemester';
+
 export type Grade = {
   id: string;
   value: number; // 1-6
   weight: number; // e.g., 1, 2, 0.5
   label?: string; // optional description
+  semester?: Semester; // optional semester
 };
 
 export type PromotionEntity = {
@@ -12,6 +15,7 @@ export type PromotionEntity = {
 
 export interface Subject extends PromotionEntity {
   grades: Grade[];
+  oralGrade?: number; // optional oral grade adjustment (e.g., +0.03, -0.25)
 };
 
 export interface CombinedSubject extends PromotionEntity {

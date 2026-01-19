@@ -157,10 +157,10 @@ function App() {
   const handleDeleteGrade = (subjectId: string, gradeId: string) => {
     const updatedData = { ...data };
     const yearData = updatedData.years[currentYear];
-    
+
     // First try to find as a direct Subject
     let subject = yearData.subjects.find((s) => isSubject(s) && s.id === subjectId) as Subject | undefined;
-    
+
     // If not found, search in CombinedSubject nested subjects
     if (!subject) {
       const combinedSubjects = yearData.subjects.filter(isCombinedSubject);
@@ -171,6 +171,26 @@ function App() {
     if (!subject) return;
 
     subject.grades = subject.grades.filter((g) => g.id !== gradeId);
+    setData({ ...updatedData });
+  };
+
+  const handleOralGradeUpdate = (subjectId: string, oralGrade: number | undefined) => {
+    const updatedData = { ...data };
+    const yearData = updatedData.years[currentYear];
+
+    // First try to find as a direct Subject
+    let subject = yearData.subjects.find((s) => isSubject(s) && s.id === subjectId) as Subject | undefined;
+
+    // If not found, search in CombinedSubject nested subjects
+    if (!subject) {
+      const combinedSubjects = yearData.subjects.filter(isCombinedSubject);
+      const flattenedList = combinedSubjects.flatMap((s) => s.subjects);
+      subject = flattenedList.find((s) => s.id === subjectId);
+    }
+
+    if (!subject) return;
+
+    subject.oralGrade = oralGrade;
     setData({ ...updatedData });
   };
 
@@ -314,6 +334,9 @@ function App() {
                     onDeleteGrade={(gradeId) =>
                       handleDeleteGrade(subject.id, gradeId)
                     }
+                    onOralGradeChange={(oralGrade) =>
+                      handleOralGradeUpdate(subject.id, oralGrade)
+                    }
                   />
                 ))}
                 {subjects.filter(isCombinedSubject).map((subject) => {
@@ -358,6 +381,9 @@ function App() {
                             }
                             onDeleteGrade={(gradeId) =>
                               handleDeleteGrade(sub.id, gradeId)
+                            }
+                            onOralGradeChange={(oralGrade) =>
+                              handleOralGradeUpdate(sub.id, oralGrade)
                             }
                           />
                         ))}

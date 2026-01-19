@@ -105,6 +105,16 @@ export interface Translations {
   
   // Status
   noGradesYetStatus: string;
+
+  // Semester
+  semester: string;
+  noSemester: string;
+  fallSemester: string;
+  springSemester: string;
+
+  // Oral Grade
+  oralGrade: string;
+  oralGradeDescription: string;
 }
 
 export const translations: Record<Language, Translations> = {
@@ -213,6 +223,16 @@ export const translations: Record<Language, Translations> = {
     
     // Status
     noGradesYetStatus: 'Noch keine Noten',
+
+    // Semester
+    semester: 'Semester',
+    noSemester: 'Kein Semester',
+    fallSemester: 'Herbstsemester',
+    springSemester: 'Frühlingssemester',
+
+    // Oral Grade
+    oralGrade: 'Mündliche Note',
+    oralGradeDescription: 'Anpassung vor der Rundung (z.B. +0.03 oder -0.25)',
   },
   fr: {
     // General
@@ -319,6 +339,16 @@ export const translations: Record<Language, Translations> = {
     
     // Status
     noGradesYetStatus: 'Pas encore de notes',
+
+    // Semester
+    semester: 'Semestre',
+    noSemester: 'Pas de semestre',
+    fallSemester: 'Semestre d\'automne',
+    springSemester: 'Semestre de printemps',
+
+    // Oral Grade
+    oralGrade: 'Note orale',
+    oralGradeDescription: 'Ajustement avant l\'arrondi (par ex. +0.03 ou -0.25)',
   },
   en: {
     // General
@@ -425,6 +455,16 @@ export const translations: Record<Language, Translations> = {
     
     // Status
     noGradesYetStatus: 'No grades yet',
+
+    // Semester
+    semester: 'Semester',
+    noSemester: 'No Semester',
+    fallSemester: 'Fall Semester',
+    springSemester: 'Spring Semester',
+
+    // Oral Grade
+    oralGrade: 'Oral Grade',
+    oralGradeDescription: 'Adjustment before rounding (e.g., +0.03 or -0.25)',
   },
   it: {
     // General
@@ -531,6 +571,16 @@ export const translations: Record<Language, Translations> = {
     
     // Status
     noGradesYetStatus: 'Nessun voto ancora',
+
+    // Semester
+    semester: 'Semestre',
+    noSemester: 'Nessun semestre',
+    fallSemester: 'Semestre autunnale',
+    springSemester: 'Semestre primaverile',
+
+    // Oral Grade
+    oralGrade: 'Voto orale',
+    oralGradeDescription: 'Aggiustamento prima dell\'arrotondamento (es. +0.03 o -0.25)',
   },
 };
 

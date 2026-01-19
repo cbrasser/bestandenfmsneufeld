@@ -185,6 +185,11 @@ export const SwipeableGradeItem = ({
             <span className="font-medium text-gray-700 dark:text-gray-200">
               {roundToTwoDecimals(grade.value).toFixed(2)}
             </span>
+            {grade.semester && (
+              <span className="text-xs font-medium px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">
+                {grade.semester === 'Herbstsemester' ? 'HS' : 'FS'}
+              </span>
+            )}
             {grade.weight !== 1 && (
               <span className="text-xs text-gray-500 dark:text-gray-400">(×{grade.weight})</span>
             )}
