@@ -2,11 +2,13 @@ import { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import type { Language } from './locales';
 import { translations } from './locales';
+import { getTranslatedSubjectName } from './subjectNames';
 
 interface I18nContextType {
   language: Language;
   setLanguage: (lang: Language) => void;
   t: (key: keyof typeof translations.de) => string;
+  tSubject: (name: string) => string;
 }
 
 const I18nContext = createContext<I18nContextType | undefined>(undefined);
@@ -44,8 +46,12 @@ export const I18nProvider = ({ children }: { children: ReactNode }) => {
     return translations[language][key];
   };
 
+  const tSubject = (name: string): string => {
+    return getTranslatedSubjectName(name, language);
+  };
+
   return (
-    <I18nContext.Provider value={{ language, setLanguage, t }}>
+    <I18nContext.Provider value={{ language, setLanguage, t, tSubject }}>
       {children}
     </I18nContext.Provider>
   );

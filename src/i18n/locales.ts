@@ -99,6 +99,8 @@ export interface Translations {
   // Footer & Disclaimer
   disclaimer: string;
   disclaimerFull: string;
+  dataStorageNotice: string;
+  exportData: string;
   copyright: string;
   contactEmail: string;
   underConstruction: string;
@@ -115,6 +117,27 @@ export interface Translations {
   // Oral Grade
   oralGrade: string;
   oralGradeDescription: string;
+
+  // Date
+  date: string;
+  datePlaceholder: string;
+
+  // Stats page
+  stats: string;
+  statsAvgPerSubject: string;
+  statsGradeDevelopment: string;
+  statsAllSubjects: string;
+  statsNoDates: string;
+  statsPerformanceProfile: string;
+  statsGradeDistribution: string;
+  statsCount: string;
+  statsSummary: string;
+  statsTotalGrades: string;
+  statsOverallAvg: string;
+  statsBestGrade: string;
+  statsWorstGrade: string;
+  statsPassing: string;
+  statsFailing: string;
 }
 
 export const translations: Record<Language, Translations> = {
@@ -217,6 +240,8 @@ export const translations: Record<Language, Translations> = {
     // Footer & Disclaimer
     disclaimer: 'Haftungsausschluss',
     disclaimerFull: 'Achtung: Diese Anwendung ist ein inoffizielles Tool. Die angezeigten Informationen sollten immer überprüft werden. Die Nutzung erfolgt auf eigene Verantwortung. Dies ist KEIN offizieller Status über das Bestehen/Nichtbestehen von Seiten der Schule!',
+    dataStorageNotice: 'Daten werden ausschliesslich in deinem Browser gespeichert. Verlierst du dein Gerät, sind die Daten weg. Exportiere und sichere deine Daten regelmässig.',
+    exportData: 'Daten exportieren',
     copyright: '© 2025 Bestanden FMS',
     contactEmail: 'Kontakt',
     underConstruction: 'In Arbeit',
@@ -233,6 +258,23 @@ export const translations: Record<Language, Translations> = {
     // Oral Grade
     oralGrade: 'Mündliche Note',
     oralGradeDescription: 'Anpassung vor der Rundung (z.B. +0.03 oder -0.25)',
+    date: 'Datum',
+    datePlaceholder: 'Datum wählen (optional)',
+    stats: 'Statistiken',
+    statsAvgPerSubject: 'Durchschnittsnote pro Fach',
+    statsGradeDevelopment: 'Notenentwicklung über die Zeit',
+    statsAllSubjects: 'Alle Fächer',
+    statsNoDates: 'Füge Daten zu deinen Noten hinzu, um die Entwicklung zu sehen.',
+    statsPerformanceProfile: 'Leistungsprofil',
+    statsGradeDistribution: 'Notenverteilung',
+    statsCount: 'Anzahl',
+    statsSummary: 'Zusammenfassung',
+    statsTotalGrades: 'Noten total',
+    statsOverallAvg: 'Gesamtdurchschnitt',
+    statsBestGrade: 'Beste Note',
+    statsWorstGrade: 'Schlechteste Note',
+    statsPassing: 'Bestanden',
+    statsFailing: 'Nicht bestanden',
   },
   fr: {
     // General
@@ -333,6 +375,8 @@ export const translations: Record<Language, Translations> = {
     // Footer & Disclaimer
     disclaimer: 'Avertissement',
     disclaimerFull: 'Veuillez noter: Cette application est un outil non officiel. Les informations affichées doivent toujours être vérifiées sur le site Web officiel. L\'utilisation se fait à vos propres risques. Ce n\'est PAS un statut officiel de réussite/échec de l\'école!',
+    dataStorageNotice: 'Les données sont stockées uniquement dans votre navigateur. Si vous perdez votre appareil, les données seront perdues. Exportez et sauvegardez vos données régulièrement.',
+    exportData: 'Exporter les données',
     copyright: '© 2025 Bestanden FMS',
     contactEmail: 'Contact',
     underConstruction: 'En construction',
@@ -349,6 +393,23 @@ export const translations: Record<Language, Translations> = {
     // Oral Grade
     oralGrade: 'Note orale',
     oralGradeDescription: 'Ajustement avant l\'arrondi (par ex. +0.03 ou -0.25)',
+    date: 'Date',
+    datePlaceholder: 'Choisir une date (optionnel)',
+    stats: 'Statistiques',
+    statsAvgPerSubject: 'Note moyenne par matière',
+    statsGradeDevelopment: 'Évolution des notes dans le temps',
+    statsAllSubjects: 'Toutes les matières',
+    statsNoDates: 'Ajoutez des dates à vos notes pour voir l\'évolution.',
+    statsPerformanceProfile: 'Profil de performance',
+    statsGradeDistribution: 'Distribution des notes',
+    statsCount: 'Nombre',
+    statsSummary: 'Résumé',
+    statsTotalGrades: 'Notes au total',
+    statsOverallAvg: 'Moyenne générale',
+    statsBestGrade: 'Meilleure note',
+    statsWorstGrade: 'Note la plus basse',
+    statsPassing: 'Réussi',
+    statsFailing: 'Échoué',
   },
   en: {
     // General
@@ -449,6 +510,8 @@ export const translations: Record<Language, Translations> = {
     // Footer & Disclaimer
     disclaimer: 'Disclaimer',
     disclaimerFull: 'Please note: This application is an unofficial tool. The displayed information should always be verified on the official website. Use at your own responsibility. This is NOT an official status of passing/failing from the school!',
+    dataStorageNotice: 'Data is only stored in your browser. If you lose your device, the data is gone. Export and backup your data regularly.',
+    exportData: 'Export data',
     copyright: '© 2025 Bestanden FMS',
     contactEmail: 'Contact',
     underConstruction: 'Under Construction',
@@ -465,6 +528,23 @@ export const translations: Record<Language, Translations> = {
     // Oral Grade
     oralGrade: 'Oral Grade',
     oralGradeDescription: 'Adjustment before rounding (e.g., +0.03 or -0.25)',
+    date: 'Date',
+    datePlaceholder: 'Pick a date (optional)',
+    stats: 'Statistics',
+    statsAvgPerSubject: 'Average grade per subject',
+    statsGradeDevelopment: 'Grade development over time',
+    statsAllSubjects: 'All subjects',
+    statsNoDates: 'Add dates to your grades to see development over time.',
+    statsPerformanceProfile: 'Performance profile',
+    statsGradeDistribution: 'Grade distribution',
+    statsCount: 'Count',
+    statsSummary: 'Summary',
+    statsTotalGrades: 'Total grades',
+    statsOverallAvg: 'Overall average',
+    statsBestGrade: 'Best grade',
+    statsWorstGrade: 'Worst grade',
+    statsPassing: 'Passing',
+    statsFailing: 'Failing',
   },
   it: {
     // General
@@ -565,6 +645,8 @@ export const translations: Record<Language, Translations> = {
     // Footer & Disclaimer
     disclaimer: 'Disclaimer',
     disclaimerFull: 'Nota: Questa applicazione è uno strumento non ufficiale. Le informazioni visualizzate dovrebbero sempre essere verificate sul sito Web ufficiale. L\'uso è a proprio rischio. Questo NON è uno status ufficiale di promozione/bocciatura dalla scuola!',
+    dataStorageNotice: 'I dati sono memorizzati solo nel tuo browser. Se perdi il dispositivo, i dati andranno persi. Esporta e salva regolarmente i tuoi dati.',
+    exportData: 'Esporta dati',
     copyright: '© 2025 Bestanden FMS',
     contactEmail: 'Contatto',
     underConstruction: 'In costruzione',
@@ -581,6 +663,23 @@ export const translations: Record<Language, Translations> = {
     // Oral Grade
     oralGrade: 'Voto orale',
     oralGradeDescription: 'Aggiustamento prima dell\'arrotondamento (es. +0.03 o -0.25)',
+    date: 'Data',
+    datePlaceholder: 'Scegli una data (opzionale)',
+    stats: 'Statistiche',
+    statsAvgPerSubject: 'Voto medio per materia',
+    statsGradeDevelopment: 'Sviluppo dei voti nel tempo',
+    statsAllSubjects: 'Tutte le materie',
+    statsNoDates: 'Aggiungi date ai tuoi voti per vedere lo sviluppo.',
+    statsPerformanceProfile: 'Profilo di prestazione',
+    statsGradeDistribution: 'Distribuzione dei voti',
+    statsCount: 'Conteggio',
+    statsSummary: 'Riepilogo',
+    statsTotalGrades: 'Voti totali',
+    statsOverallAvg: 'Media complessiva',
+    statsBestGrade: 'Voto migliore',
+    statsWorstGrade: 'Voto peggiore',
+    statsPassing: 'Promosso',
+    statsFailing: 'Bocciato',
   },
 };
 

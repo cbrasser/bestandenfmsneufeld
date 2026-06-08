@@ -6,6 +6,7 @@ export type Grade = {
   weight: number; // e.g., 1, 2, 0.5
   label?: string; // optional description
   semester?: Semester; // optional semester
+  date?: string; // ISO date string, e.g. "2025-03-14" (optional)
 };
 
 export type PromotionEntity = {

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import type { StudentData, Year, Grade, StudentInfo, Subject, CombinedSubject, PromotionEntity } from './types';
 import { isSubject, isCombinedSubject } from './types';
 import { storageService } from './utils/storage';
-import { initializeStudentData, getSubjectsForYear } from './utils/initializeData';
+import { initializeStudentData, getSubjectsForYear, reconcileAllYears } from './utils/initializeData';
 import { checkPromotionCriteria, calculateFinalGrade } from './utils/promotion';
 import { getCriteriaForYear } from './config/criteria';
 import { year3Directions } from './config/subjects';
@@ -15,9 +15,14 @@ import { Menu } from './components/Menu';
 import { useI18n } from './i18n/context';
 import { CombinedSubjectCard } from './components/CombinedSubjectCard';
 import { Footer } from './components/Footer';
+import { StatsPage } from './components/StatsPage';
+import { BarChart2, BookOpen } from 'lucide-react';
+
+type View = 'grades' | 'stats';
 
 function App() {
-  const { t } = useI18n();
+  const { t, tSubject } = useI18n();
+  const [view, setView] = useState<View>('grades');
   const [data, setData] = useState<StudentData | null>(null);
   const [currentYear, setCurrentYear] = useState<Year>(1);
   const [selectedSubjectId, setSelectedSubjectId] = useState<string | null>(
@@ -30,12 +35,12 @@ function App() {
   useEffect(() => {
     const savedData = storageService.getData();
     if (savedData) {
-      setData(savedData);
-      setCurrentYear(savedData.currentYear);
+      const reconciled = reconcileAllYears(savedData);
+      setData(reconciled);
+      setCurrentYear(reconciled.currentYear);
     } else {
       const newData = initializeStudentData();
       setData(newData);
-      // Don't save until onboarding is complete
     }
   }, []);
 
@@ -275,7 +280,8 @@ function App() {
     };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-8">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-20">
+      {/* Sticky header */}
       <div className="bg-white dark:bg-gray-800 shadow-sm sticky top-0 z-10">
         <div className="max-w-2xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex-1">
@@ -296,108 +302,92 @@ function App() {
         </div>
       </div>
 
+      {/* Main content */}
       <div className="max-w-2xl mx-auto px-4 pt-6">
-
-        {currentYear === 3 && (
-          <DirectionSelector
-            directions={year3Directions}
-            selectedDirectionId={data.year3Direction}
-            onSelect={handleDirectionSelect}
-          />
-        )}
-
-        {currentYear === 3 && !data.year3Direction && (
-          <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 mb-4">
-            <p className="text-sm text-yellow-800 dark:text-yellow-200">
-              {t('selectDirectionYear3')}
-            </p>
-          </div>
-        )}
-
-        {subjects.length > 0 ? (
+        {view === 'grades' ? (
           <>
-            <PromotionStatus status={promotionStatus} />
+            {currentYear === 3 && (
+              <DirectionSelector
+                directions={year3Directions}
+                selectedDirectionId={data.year3Direction}
+                onSelect={handleDirectionSelect}
+              />
+            )}
 
-            <div className="mb-4">
-              <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-3">
-                {t('subjectsTitle')}
-              </h2>
-              <div>
-                {subjects.filter(isSubject).map((subject) => (
-                  <SubjectCard
-                    key={subject.id}
-                    subject={subject}
-                    onAddGrade={() => handleAddGrade(subject.id)}
-                    onEditGrade={(gradeId) =>
-                      handleEditGrade(subject.id, gradeId)
-                    }
-                    onDeleteGrade={(gradeId) =>
-                      handleDeleteGrade(subject.id, gradeId)
-                    }
-                    onOralGradeChange={(oralGrade) =>
-                      handleOralGradeUpdate(subject.id, oralGrade)
-                    }
-                  />
-                ))}
-                {subjects.filter(isCombinedSubject).map((subject) => {
-                  const combinedFinalGrade = finalGradeCombinedSubject(subject);
-                  const combinedHasGrades = hasGrades(subject);
-                  const combinedIsPassing = isPassing(subject);
-                  
-                  return (
-                    <div key={subject.id} className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 mb-4 overflow-hidden">
-                      {/* Combined Subject Header */}
-                      <div className="bg-gray-50 dark:bg-gray-700/50 px-4 py-3 border-b border-gray-200 dark:border-gray-700">
-                        <div className="flex items-center justify-between">
-                          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                            {subject.name}
-                          </h3>
-                          {combinedHasGrades && (
-                            <div className="flex items-center gap-3">
-                              <div className="text-right">
-                                <div className="text-xs text-gray-500 dark:text-gray-400">{t('finalGrade')}</div>
-                                <span
-                                  className={`text-xl font-bold ${
-                                    combinedIsPassing ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
-                                  }`}
-                                >
-                                  {combinedFinalGrade === 0 ? '-' : combinedFinalGrade.toFixed(1)}
-                                </span>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                      
-                      {/* Nested Subjects */}
-                      <div className="p-3 space-y-2">
-                        {subject.subjects.map((sub) => (
-                          <CombinedSubjectCard
-                            key={sub.id}
-                            subject={sub}
-                            onAddGrade={() => handleAddGrade(sub.id)}
-                            onEditGrade={(gradeId) =>
-                              handleEditGrade(sub.id, gradeId)
-                            }
-                            onDeleteGrade={(gradeId) =>
-                              handleDeleteGrade(sub.id, gradeId)
-                            }
-                            onOralGradeChange={(oralGrade) =>
-                              handleOralGradeUpdate(sub.id, oralGrade)
-                            }
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  );
-                })}
+            {currentYear === 3 && !data.year3Direction && (
+              <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 mb-4">
+                <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                  {t('selectDirectionYear3')}
+                </p>
               </div>
-            </div>
+            )}
+
+            {subjects.length > 0 ? (
+              <>
+                <PromotionStatus status={promotionStatus} />
+
+                <div className="mb-4">
+                  <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-3">
+                    {t('subjectsTitle')}
+                  </h2>
+                  <div>
+                    {subjects.filter(isSubject).map((subject) => (
+                      <SubjectCard
+                        key={subject.id}
+                        subject={subject}
+                        onAddGrade={() => handleAddGrade(subject.id)}
+                        onEditGrade={(gradeId) => handleEditGrade(subject.id, gradeId)}
+                        onDeleteGrade={(gradeId) => handleDeleteGrade(subject.id, gradeId)}
+                        onOralGradeChange={(oralGrade) => handleOralGradeUpdate(subject.id, oralGrade)}
+                      />
+                    ))}
+                    {subjects.filter(isCombinedSubject).map((subject) => {
+                      const combinedFinalGrade = finalGradeCombinedSubject(subject);
+                      const combinedHasGrades = hasGrades(subject);
+                      const combinedIsPassing = isPassing(subject);
+                      return (
+                        <div key={subject.id} className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 mb-4 overflow-hidden">
+                          <div className="bg-gray-50 dark:bg-gray-700/50 px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+                            <div className="flex items-center justify-between">
+                              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                                {tSubject(subject.name)}
+                              </h3>
+                              {combinedHasGrades && (
+                                <div className="text-right">
+                                  <div className="text-xs text-gray-500 dark:text-gray-400">{t('finalGrade')}</div>
+                                  <span className={`text-xl font-bold ${combinedIsPassing ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                                    {combinedFinalGrade === 0 ? '-' : combinedFinalGrade.toFixed(1)}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          <div className="p-3 space-y-2">
+                            {subject.subjects.map((sub) => (
+                              <CombinedSubjectCard
+                                key={sub.id}
+                                subject={sub}
+                                onAddGrade={() => handleAddGrade(sub.id)}
+                                onEditGrade={(gradeId) => handleEditGrade(sub.id, gradeId)}
+                                onDeleteGrade={(gradeId) => handleDeleteGrade(sub.id, gradeId)}
+                                onOralGradeChange={(oralGrade) => handleOralGradeUpdate(sub.id, oralGrade)}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </>
+            ) : currentYear === 3 && !data.year3Direction ? null : (
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-8 text-center">
+                <p className="text-gray-500 dark:text-gray-400">{t('noSubjectsAvailable')}</p>
+              </div>
+            )}
           </>
-        ) : currentYear === 3 && !data.year3Direction ? null : (
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-8 text-center">
-            <p className="text-gray-500 dark:text-gray-400">{t('noSubjectsAvailable')}</p>
-          </div>
+        ) : (
+          <StatsPage data={data} currentYear={currentYear} />
         )}
 
         <GradeModal
@@ -412,7 +402,36 @@ function App() {
         />
       </div>
 
-      <Footer />
+      {/* Footer only on grades view */}
+      {view === 'grades' && <Footer onExport={handleExport} />}
+
+      {/* Bottom tab bar */}
+      <nav className="fixed bottom-0 left-0 right-0 z-20 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
+        <div className="max-w-2xl mx-auto flex">
+          <button
+            onClick={() => setView('grades')}
+            className={`flex-1 flex flex-col items-center gap-1 py-3 text-xs font-medium transition-colors ${
+              view === 'grades'
+                ? 'text-blue-600 dark:text-blue-400'
+                : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+            }`}
+          >
+            <BookOpen className="w-5 h-5" />
+            {t('subjectsTitle')}
+          </button>
+          <button
+            onClick={() => setView('stats')}
+            className={`flex-1 flex flex-col items-center gap-1 py-3 text-xs font-medium transition-colors ${
+              view === 'stats'
+                ? 'text-blue-600 dark:text-blue-400'
+                : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+            }`}
+          >
+            <BarChart2 className="w-5 h-5" />
+            {t('stats')}
+          </button>
+        </div>
+      </nav>
     </div>
   );
 }

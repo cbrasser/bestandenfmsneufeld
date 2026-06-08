@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import type { Grade, Semester } from '../types';
 import { X } from 'lucide-react';
 import { useI18n } from '../i18n/context';
+import { DatePicker } from '@/components/ui/date-picker';
 
 interface GradeModalProps {
   isOpen: boolean;
@@ -16,11 +17,12 @@ export const GradeModal = ({
   onSave,
   existingGrade,
 }: GradeModalProps) => {
-  const { t } = useI18n();
+  const { t, language } = useI18n();
   const [value, setValue] = useState('');
   const [weight, setWeight] = useState('1');
   const [label, setLabel] = useState('');
   const [semester, setSemester] = useState<Semester | undefined>(undefined);
+  const [date, setDate] = useState<Date | undefined>(new Date());
 
   useEffect(() => {
     if (existingGrade) {
@@ -28,11 +30,13 @@ export const GradeModal = ({
       setWeight(existingGrade.weight.toString());
       setLabel(existingGrade.label || '');
       setSemester(existingGrade.semester);
+      setDate(existingGrade.date ? new Date(existingGrade.date) : undefined);
     } else {
       setValue('');
       setWeight('1');
       setLabel('');
       setSemester(undefined);
+      setDate(new Date());
     }
   }, [existingGrade, isOpen]);
 
@@ -54,7 +58,6 @@ export const GradeModal = ({
       return;
     }
 
-    // Round to 2 decimal places
     const roundedValue = Math.round(numValue * 100) / 100;
     const roundedWeight = Math.round(numWeight * 100) / 100;
 
@@ -63,6 +66,7 @@ export const GradeModal = ({
       weight: roundedWeight,
       label: label.trim() || undefined,
       semester: semester,
+      date: date ? date.toISOString().split('T')[0] : undefined,
     });
 
     onClose();
@@ -70,7 +74,6 @@ export const GradeModal = ({
 
   const handleValueChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const input = e.target.value;
-    // Allow empty, numbers, and one decimal point
     if (input === '' || /^\d*\.?\d{0,2}$/.test(input)) {
       setValue(input);
     }
@@ -78,14 +81,14 @@ export const GradeModal = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-semibold text-gray-800">
+          <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-100">
             {existingGrade ? t('editGrade') : t('addGrade')}
           </h2>
           <button
             onClick={onClose}
-            className="p-1 text-gray-400 hover:text-gray-600 rounded"
+            className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded"
             aria-label="Close"
           >
             <X className="w-5 h-5" />
@@ -94,7 +97,7 @@ export const GradeModal = ({
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               {t('grade')}
             </label>
             <input
@@ -105,16 +108,16 @@ export const GradeModal = ({
               value={value}
               onChange={handleValueChange}
               placeholder="e.g., 4.5"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               required
             />
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
               {t('gradeRange')}
             </p>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               {t('weight')}
             </label>
             <input
@@ -123,22 +126,34 @@ export const GradeModal = ({
               min="0.1"
               value={weight}
               onChange={(e) => setWeight(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               required
             />
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
               {t('weightDescription')}
             </p>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              {t('date')}
+            </label>
+            <DatePicker
+              date={date}
+              onDateChange={setDate}
+              placeholder={t('datePlaceholder')}
+              language={language}
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               {t('semester')}
             </label>
             <select
               value={semester || ''}
-              onChange={(e) => setSemester(e.target.value as Semester || undefined)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              onChange={(e) => setSemester((e.target.value as Semester) || undefined)}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="">{t('noSemester')}</option>
               <option value="Herbstsemester">{t('fallSemester')}</option>
@@ -147,7 +162,7 @@ export const GradeModal = ({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               {t('label')}
             </label>
             <input
@@ -155,7 +170,7 @@ export const GradeModal = ({
               value={label}
               onChange={(e) => setLabel(e.target.value)}
               placeholder={t('labelPlaceholder')}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
 
@@ -163,7 +178,7 @@ export const GradeModal = ({
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+              className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
             >
               {t('cancel')}
             </button>
@@ -179,4 +194,3 @@ export const GradeModal = ({
     </div>
   );
 };
-

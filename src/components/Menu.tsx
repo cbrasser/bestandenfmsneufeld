@@ -122,7 +122,7 @@ export const Menu = ({ isOpen, onToggle, onExport, onImport, onReset, currentYea
             </div>
             <div className="flex gap-2">
               {([1, 2, 3] as Year[]).map((year) => {
-                const isDisabled = year !== 1;
+                const isDisabled = year === 3;
                 return (
                   <button
                     key={year}

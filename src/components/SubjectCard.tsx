@@ -19,7 +19,7 @@ export const SubjectCard = ({
   onDeleteGrade,
   onOralGradeChange,
 }: SubjectCardProps) => {
-  const { t } = useI18n();
+  const { t, tSubject } = useI18n();
   const finalGrade = calculateFinalGrade(subject);
   const hasGrades = subject.grades.length > 0;
   const isPassing = finalGrade >= 4 || !hasGrades;
@@ -28,7 +28,7 @@ export const SubjectCard = ({
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 mb-3">
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-base font-semibold text-gray-800 dark:text-gray-200">
-          {subject.name}
+          {tSubject(subject.name)}
         </h3>
         <div className="flex items-center gap-2">
           <button

@@ -181,20 +181,27 @@ export const SwipeableGradeItem = ({
         }}
       >
         <div className="flex items-center justify-between p-2">
-          <div className="flex items-center gap-2">
-            <span className="font-medium text-gray-700 dark:text-gray-200">
-              {roundToTwoDecimals(grade.value).toFixed(2)}
-            </span>
-            {grade.semester && (
-              <span className="text-xs font-medium px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">
-                {grade.semester === 'Herbstsemester' ? 'HS' : 'FS'}
+          <div className="flex flex-col gap-0.5">
+            <div className="flex items-center gap-2">
+              <span className="font-medium text-gray-700 dark:text-gray-200">
+                {roundToTwoDecimals(grade.value).toFixed(2)}
               </span>
-            )}
-            {grade.weight !== 1 && (
-              <span className="text-xs text-gray-500 dark:text-gray-400">(×{grade.weight})</span>
-            )}
-            {grade.label && (
-              <span className="text-xs text-gray-500 dark:text-gray-400">{grade.label}</span>
+              {grade.semester && (
+                <span className="text-xs font-medium px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">
+                  {grade.semester === 'Herbstsemester' ? 'HS' : 'FS'}
+                </span>
+              )}
+              {grade.weight !== 1 && (
+                <span className="text-xs text-gray-500 dark:text-gray-400">(×{grade.weight})</span>
+              )}
+              {grade.label && (
+                <span className="text-xs text-gray-500 dark:text-gray-400">{grade.label}</span>
+              )}
+            </div>
+            {grade.date && (
+              <span className="text-xs text-gray-400 dark:text-gray-500">
+                {new Date(grade.date).toLocaleDateString('de-CH', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+              </span>
             )}
           </div>
           {/* Show buttons on large screens */}

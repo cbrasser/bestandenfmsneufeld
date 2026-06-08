@@ -8,8 +8,8 @@ const createDefaultSubject = (name: string): Subject => ({
 });
 
 const createCombinedSubject = (name: string, subject_names: string[]): CombinedSubject => {
-  let id = name.toLowerCase().replace(/\s+/g, '-');
-  let subjects = subject_names.map(createDefaultSubject);
+  const id = name.toLowerCase().replace(/\s+/g, '-');
+  const subjects = subject_names.map(createDefaultSubject);
   return {
     id,
     name,
@@ -30,15 +30,14 @@ export const defaultSubjects: Record<Year, (Subject | CombinedSubject)[]> = {
     createCombinedSubject('Musische Fächer', ['Musik', 'Bildnerisches Gestalten']),
   ],
   2: [
-    createDefaultSubject('French'),
-    createDefaultSubject('English'),
-    createDefaultSubject('Biology'),
-    createDefaultSubject('Math'),
-    createDefaultSubject('Physics'),
-    createDefaultSubject('Chemistry'),
-    createDefaultSubject('History'),
-    createDefaultSubject('Geography'),
-    // Subjects may vary - adjust as needed
+    createDefaultSubject('Deutsch'),
+    createDefaultSubject('Französisch'),
+    createDefaultSubject('Englisch'),
+    createDefaultSubject('Maths'),
+    createDefaultSubject('Sport'),
+    createDefaultSubject('Berufseinblicke'),
+    createCombinedSubject('Naturwissenschaften', ['Chemie', 'Biologie', 'Physik']),
+    createCombinedSubject('Geistes- und Sozialwissenschaften', ['Geschichte & Politik', 'Philosophie']),
   ],
   3: [], // Year 3 subjects depend on direction
 };

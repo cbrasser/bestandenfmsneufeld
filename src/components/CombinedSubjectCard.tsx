@@ -19,7 +19,7 @@ export const CombinedSubjectCard = ({
   onDeleteGrade,
   onOralGradeChange,
 }: SubjectCardProps) => {
-  const { t } = useI18n();
+  const { t, tSubject } = useI18n();
   const finalGrade = calculateFinalGrade(subject);
   const hasGrades = subject.grades.length > 0;
   const isPassing = finalGrade >= 4 || !hasGrades;
@@ -28,7 +28,7 @@ export const CombinedSubjectCard = ({
     <div className="bg-gray-50 dark:bg-gray-800/30 rounded-lg border border-gray-200 dark:border-gray-700 p-3 shadow-sm">
       <div className="flex items-center justify-between mb-2">
         <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">
-          {subject.name}
+          {tSubject(subject.name)}
         </h4>
         <div className="flex items-center gap-2">
           {hasGrades && (
