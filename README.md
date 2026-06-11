@@ -86,7 +86,37 @@ No configuration needed - it works automatically when deployed to Vercel. If dep
 
 ## Data Storage
 
-All student data is stored locally in the browser's `localStorage`. No data is sent to any server, ensuring complete privacy. Analytics events (if enabled) are sent separately and do not include any grade data.
+All student data is stored locally in the browser's `localStorage` by default. No data is sent to any server unless the user opts in to Cloud Sync (see below). Analytics events (if enabled) are sent separately and do not include any grade data.
+
+## Cloud Sync (optional, privacy-first)
+
+Students can optionally create an **anonymous access code** to sync their data across
+devices. No email and no name are used for the login — the data is fully pseudonymous.
+
+How it works:
+
+- The client generates a random 16-character code (~79 bits of entropy).
+- Only the **SHA-256 hash** of the code is stored in the database, never the code itself.
+- The code acts as both the identifier and the secret (capability/bearer-token pattern):
+  whoever has the code can read the data, so students are told to keep it safe.
+- The `students` table is locked down with Row Level Security and **no policies** — all
+  access goes through three `SECURITY DEFINER` RPC functions (`create_account`,
+  `load_data`, `save_data`) that validate the hashed code. The table itself is never
+  directly readable with the public anon key.
+- If the code is lost, the cloud data cannot be recovered (use Export as a backup).
+
+### Setup
+
+1. Create a Supabase project — choose region **EU (Frankfurt)** for data residency.
+2. Open the SQL Editor and run [`supabase/schema.sql`](./supabase/schema.sql).
+3. Copy `.env.example` to `.env` and fill in:
+   - `VITE_SUPABASE_URL` — Project Settings → API → Project URL
+   - `VITE_SUPABASE_ANON_KEY` — Project Settings → API → anon public key
+4. Restart `npm run dev`. The "Cloud-Sync" section appears in the menu automatically.
+   Without these env vars the app stays fully local — the UI hides itself.
+
+> GDPR: even though no direct PII is stored, Supabase is a data processor — sign a DPA
+> and keep the EU region. Consider adding simple rate limiting if abuse is a concern.
 
 ## License
 

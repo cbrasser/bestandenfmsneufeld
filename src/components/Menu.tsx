@@ -1,4 +1,4 @@
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, type ReactNode } from 'react';
 import { Menu as MenuIcon, X, Globe, HardDrive, Sun, Moon, Monitor, Calendar } from 'lucide-react';
 import { useI18n } from '../i18n/context';
 import { useTheme } from '../contexts/ThemeContext';
@@ -13,9 +13,10 @@ interface MenuProps {
   onReset: () => void;
   currentYear: Year;
   onYearChange: (year: Year) => void;
+  cloudSlot?: ReactNode;
 }
 
-export const Menu = ({ isOpen, onToggle, onExport, onImport, onReset, currentYear, onYearChange }: MenuProps) => {
+export const Menu = ({ isOpen, onToggle, onExport, onImport, onReset, currentYear, onYearChange, cloudSlot }: MenuProps) => {
   const { language, setLanguage, t } = useI18n();
   const { theme, setTheme } = useTheme();
   const menuRef = useRef<HTMLDivElement>(null);
@@ -204,6 +205,9 @@ export const Menu = ({ isOpen, onToggle, onExport, onImport, onReset, currentYea
               ))}
             </div>
           </div>
+
+          {/* Cloud Sync */}
+          {cloudSlot}
 
           {/* Data Management */}
           <div>

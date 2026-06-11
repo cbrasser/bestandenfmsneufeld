@@ -138,6 +138,34 @@ export interface Translations {
   statsWorstGrade: string;
   statsPassing: string;
   statsFailing: string;
+
+  // Cloud Sync
+  cloudSync: string;
+  cloudSyncDescription: string;
+  cloudCreateCode: string;
+  cloudLoginWithCode: string;
+  cloudConnected: string;
+  cloudSaving: string;
+  cloudSynced: string;
+  cloudSyncFailed: string;
+  cloudCopyCode: string;
+  cloudCopied: string;
+  cloudDisconnect: string;
+  cloudYourCode: string;
+  cloudCodeNotice: string;
+  cloudCodeWarning: string;
+  cloudCopy: string;
+  cloudUnderstood: string;
+  cloudEnterCodeDescription: string;
+  cloudLogin: string;
+  cloudConfirmReplace: string;
+  cloudConfirmDisconnect: string;
+  cloudInvalidCode: string;
+  cloudUnknownCode: string;
+  cloudCreateError: string;
+  cloudLoadError: string;
+  cloudHaveCode: string;
+  cloudOr: string;
 }
 
 export const translations: Record<Language, Translations> = {
@@ -275,6 +303,34 @@ export const translations: Record<Language, Translations> = {
     statsWorstGrade: 'Schlechteste Note',
     statsPassing: 'Bestanden',
     statsFailing: 'Nicht bestanden',
+
+    // Cloud Sync
+    cloudSync: 'Cloud-Sync',
+    cloudSyncDescription: 'Optional: Erstelle einen anonymen Zugangscode, um deine Daten auf mehreren Geräten zu nutzen. Es werden keine Namen oder E-Mails gespeichert.',
+    cloudCreateCode: 'Zugangscode erstellen',
+    cloudLoginWithCode: 'Mit Code anmelden',
+    cloudConnected: 'Angemeldet',
+    cloudSaving: 'Speichern…',
+    cloudSynced: 'Synchronisiert',
+    cloudSyncFailed: 'Sync-Fehler',
+    cloudCopyCode: 'Code kopieren',
+    cloudCopied: 'Kopiert',
+    cloudDisconnect: 'Abmelden',
+    cloudYourCode: 'Dein Zugangscode',
+    cloudCodeNotice: 'Notiere dir diesen Code. Mit ihm rufst du deine Daten auf anderen Geräten ab.',
+    cloudCodeWarning: 'Geht er verloren, sind die Cloud-Daten nicht wiederherstellbar.',
+    cloudCopy: 'Kopieren',
+    cloudUnderstood: 'Verstanden',
+    cloudEnterCodeDescription: 'Gib deinen Zugangscode ein. Deine lokalen Daten werden dann durch die Cloud-Daten ersetzt.',
+    cloudLogin: 'Anmelden',
+    cloudConfirmReplace: 'Achtung: Deine aktuellen lokalen Daten werden durch die Cloud-Daten dieses Codes ersetzt. Fortfahren?',
+    cloudConfirmDisconnect: 'Vom Cloud-Sync abmelden? Deine Daten bleiben lokal erhalten, werden aber nicht mehr synchronisiert.',
+    cloudInvalidCode: 'Bitte gib einen gültigen Code ein.',
+    cloudUnknownCode: 'Dieser Code ist unbekannt.',
+    cloudCreateError: 'Fehler beim Anlegen.',
+    cloudLoadError: 'Fehler beim Laden.',
+    cloudHaveCode: 'Schon einen Zugangscode? Hier anmelden',
+    cloudOr: 'oder',
   },
   fr: {
     // General
@@ -410,6 +466,34 @@ export const translations: Record<Language, Translations> = {
     statsWorstGrade: 'Note la plus basse',
     statsPassing: 'Réussi',
     statsFailing: 'Échoué',
+
+    // Cloud Sync
+    cloudSync: 'Synchronisation Cloud',
+    cloudSyncDescription: 'Optionnel : crée un code d\'accès anonyme pour utiliser tes données sur plusieurs appareils. Aucun nom ni e-mail n\'est enregistré.',
+    cloudCreateCode: 'Créer un code d\'accès',
+    cloudLoginWithCode: 'Se connecter avec un code',
+    cloudConnected: 'Connecté',
+    cloudSaving: 'Enregistrement…',
+    cloudSynced: 'Synchronisé',
+    cloudSyncFailed: 'Erreur de synchro',
+    cloudCopyCode: 'Copier le code',
+    cloudCopied: 'Copié',
+    cloudDisconnect: 'Se déconnecter',
+    cloudYourCode: 'Ton code d\'accès',
+    cloudCodeNotice: 'Note bien ce code. Il te permet de récupérer tes données sur d\'autres appareils.',
+    cloudCodeWarning: 'En cas de perte, les données du cloud sont irrécupérables.',
+    cloudCopy: 'Copier',
+    cloudUnderstood: 'Compris',
+    cloudEnterCodeDescription: 'Saisis ton code d\'accès. Tes données locales seront alors remplacées par celles du cloud.',
+    cloudLogin: 'Se connecter',
+    cloudConfirmReplace: 'Attention : tes données locales actuelles seront remplacées par les données cloud de ce code. Continuer ?',
+    cloudConfirmDisconnect: 'Se déconnecter de la synchronisation cloud ? Tes données restent en local mais ne seront plus synchronisées.',
+    cloudInvalidCode: 'Merci de saisir un code valide.',
+    cloudUnknownCode: 'Ce code est inconnu.',
+    cloudCreateError: 'Erreur lors de la création.',
+    cloudLoadError: 'Erreur lors du chargement.',
+    cloudHaveCode: 'Tu as déjà un code d\'accès ? Connecte-toi ici',
+    cloudOr: 'ou',
   },
   en: {
     // General
@@ -545,6 +629,34 @@ export const translations: Record<Language, Translations> = {
     statsWorstGrade: 'Worst grade',
     statsPassing: 'Passing',
     statsFailing: 'Failing',
+
+    // Cloud Sync
+    cloudSync: 'Cloud Sync',
+    cloudSyncDescription: 'Optional: create an anonymous access code to use your data across multiple devices. No names or emails are stored.',
+    cloudCreateCode: 'Create access code',
+    cloudLoginWithCode: 'Log in with code',
+    cloudConnected: 'Connected',
+    cloudSaving: 'Saving…',
+    cloudSynced: 'Synced',
+    cloudSyncFailed: 'Sync error',
+    cloudCopyCode: 'Copy code',
+    cloudCopied: 'Copied',
+    cloudDisconnect: 'Log out',
+    cloudYourCode: 'Your access code',
+    cloudCodeNotice: 'Write down this code. With it you can access your data on other devices.',
+    cloudCodeWarning: 'If you lose it, the cloud data cannot be recovered.',
+    cloudCopy: 'Copy',
+    cloudUnderstood: 'Got it',
+    cloudEnterCodeDescription: 'Enter your access code. Your local data will then be replaced by the cloud data.',
+    cloudLogin: 'Log in',
+    cloudConfirmReplace: 'Warning: your current local data will be replaced by the cloud data for this code. Continue?',
+    cloudConfirmDisconnect: 'Log out of cloud sync? Your data stays local but will no longer be synced.',
+    cloudInvalidCode: 'Please enter a valid code.',
+    cloudUnknownCode: 'This code is unknown.',
+    cloudCreateError: 'Error creating account.',
+    cloudLoadError: 'Error loading data.',
+    cloudHaveCode: 'Already have an access code? Log in here',
+    cloudOr: 'or',
   },
   it: {
     // General
@@ -680,6 +792,34 @@ export const translations: Record<Language, Translations> = {
     statsWorstGrade: 'Voto peggiore',
     statsPassing: 'Promosso',
     statsFailing: 'Bocciato',
+
+    // Cloud Sync
+    cloudSync: 'Sincronizzazione Cloud',
+    cloudSyncDescription: 'Opzionale: crea un codice di accesso anonimo per usare i tuoi dati su più dispositivi. Non vengono memorizzati nomi o e-mail.',
+    cloudCreateCode: 'Crea codice di accesso',
+    cloudLoginWithCode: 'Accedi con codice',
+    cloudConnected: 'Connesso',
+    cloudSaving: 'Salvataggio…',
+    cloudSynced: 'Sincronizzato',
+    cloudSyncFailed: 'Errore di sincronizzazione',
+    cloudCopyCode: 'Copia codice',
+    cloudCopied: 'Copiato',
+    cloudDisconnect: 'Disconnetti',
+    cloudYourCode: 'Il tuo codice di accesso',
+    cloudCodeNotice: 'Annota questo codice. Con esso puoi accedere ai tuoi dati su altri dispositivi.',
+    cloudCodeWarning: 'Se lo perdi, i dati nel cloud non sono recuperabili.',
+    cloudCopy: 'Copia',
+    cloudUnderstood: 'Capito',
+    cloudEnterCodeDescription: 'Inserisci il tuo codice di accesso. I tuoi dati locali verranno sostituiti da quelli del cloud.',
+    cloudLogin: 'Accedi',
+    cloudConfirmReplace: 'Attenzione: i tuoi dati locali attuali verranno sostituiti dai dati cloud di questo codice. Continuare?',
+    cloudConfirmDisconnect: 'Disconnettersi dalla sincronizzazione cloud? I tuoi dati restano in locale ma non verranno più sincronizzati.',
+    cloudInvalidCode: 'Inserisci un codice valido.',
+    cloudUnknownCode: 'Questo codice è sconosciuto.',
+    cloudCreateError: 'Errore durante la creazione.',
+    cloudLoadError: 'Errore durante il caricamento.',
+    cloudHaveCode: 'Hai già un codice di accesso? Accedi qui',
+    cloudOr: 'oppure',
   },
 };
 

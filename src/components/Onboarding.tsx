@@ -1,17 +1,48 @@
 import { useState } from 'react';
-import type { Division, StudentInfo } from '../types';
+import type { Division, StudentData, StudentInfo } from '../types';
 import { useI18n } from '../i18n/context';
-import { Construction } from 'lucide-react';
+import { Construction, KeyRound, Loader2 } from 'lucide-react';
+import { cloudSync, normalizeCode, setStoredCode } from '../utils/cloudSync';
 
 interface OnboardingProps {
   onComplete: (info: StudentInfo) => void;
+  onLoadFromCode: (data: StudentData) => void;
 }
 
-export const Onboarding = ({ onComplete }: OnboardingProps) => {
+export const Onboarding = ({ onComplete, onLoadFromCode }: OnboardingProps) => {
   const { t } = useI18n();
   const [name, setName] = useState('');
   const [division, setDivision] = useState<Division | ''>('');
   const [errors, setErrors] = useState({ name: false, division: false });
+
+  // Code-Login
+  const [showCode, setShowCode] = useState(false);
+  const [codeInput, setCodeInput] = useState('');
+  const [codeBusy, setCodeBusy] = useState(false);
+  const [codeError, setCodeError] = useState<string | null>(null);
+
+  const handleCodeLogin = async () => {
+    const canonical = normalizeCode(codeInput);
+    if (canonical.length < 12) {
+      setCodeError(t('cloudInvalidCode'));
+      return;
+    }
+    setCodeBusy(true);
+    setCodeError(null);
+    try {
+      const remote = await cloudSync.load(canonical);
+      if (!remote) {
+        setCodeError(t('cloudUnknownCode'));
+        return;
+      }
+      setStoredCode(canonical);
+      onLoadFromCode(remote);
+    } catch {
+      setCodeError(t('cloudLoadError'));
+    } finally {
+      setCodeBusy(false);
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -141,6 +172,54 @@ export const Onboarding = ({ onComplete }: OnboardingProps) => {
             {t('continue')}
           </button>
         </form>
+
+        {/* Code-Login */}
+        {cloudSync.isConfigured && (
+          <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+            {!showCode ? (
+              <button
+                type="button"
+                onClick={() => setShowCode(true)}
+                className="w-full flex items-center justify-center gap-2 text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
+              >
+                <KeyRound className="w-4 h-4" />
+                {t('cloudHaveCode')}
+              </button>
+            ) : (
+              <div className="space-y-3">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  {t('cloudLoginWithCode')}
+                </label>
+                <input
+                  type="text"
+                  value={codeInput}
+                  onChange={(e) => {
+                    setCodeInput(e.target.value);
+                    setCodeError(null);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleCodeLogin();
+                  }}
+                  placeholder="XXXX-XXXX-XXXX-XXXX"
+                  autoCapitalize="characters"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 font-mono tracking-wider placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+                {codeError && <p className="text-xs text-red-600 dark:text-red-400">{codeError}</p>}
+                <button
+                  type="button"
+                  onClick={handleCodeLogin}
+                  disabled={codeBusy}
+                  className="w-full px-4 py-3 bg-blue-600 dark:bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+                >
+                  {codeBusy && <Loader2 className="w-4 h-4 animate-spin" />}
+                  {t('cloudLogin')}
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

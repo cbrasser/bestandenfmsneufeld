@@ -12,6 +12,7 @@ import { GradeModal } from './components/GradeModal';
 import { DirectionSelector } from './components/DirectionSelector';
 import { Onboarding } from './components/Onboarding';
 import { Menu } from './components/Menu';
+import { CloudSync } from './components/CloudSync';
 import { useI18n } from './i18n/context';
 import { CombinedSubjectCard } from './components/CombinedSubjectCard';
 import { Footer } from './components/Footer';
@@ -66,6 +67,11 @@ function App() {
           const updatedData = { ...data, studentInfo: info };
           setData(updatedData);
           storageService.saveData(updatedData);
+        }}
+        onLoadFromCode={(loaded) => {
+          const reconciled = reconcileAllYears(loaded);
+          setData(reconciled);
+          setCurrentYear(reconciled.currentYear);
         }}
       />
     );
@@ -290,14 +296,25 @@ function App() {
               {data.studentInfo.name} • {data.studentInfo.division} • {yearLabels[currentYear]}
             </p>
           </div>
-          <Menu 
-            isOpen={isMenuOpen} 
+          <Menu
+            isOpen={isMenuOpen}
             onToggle={() => setIsMenuOpen(!isMenuOpen)}
             onExport={handleExport}
             onImport={handleImport}
             onReset={handleReset}
             currentYear={currentYear}
             onYearChange={handleYearChange}
+            cloudSlot={
+              <CloudSync
+                data={data}
+                onLoaded={(loaded) => {
+                  const reconciled = reconcileAllYears(loaded);
+                  setData(reconciled);
+                  setCurrentYear(reconciled.currentYear);
+                  setIsMenuOpen(false);
+                }}
+              />
+            }
           />
         </div>
       </div>
