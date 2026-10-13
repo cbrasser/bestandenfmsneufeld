@@ -28,3 +28,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Design tooling: screenshots for review are not kept
+.impeccable/review

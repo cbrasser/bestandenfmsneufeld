@@ -166,6 +166,17 @@ export interface Translations {
   cloudLoadError: string;
   cloudHaveCode: string;
   cloudOr: string;
+
+  // Assigning grades of a subject that was split into Teilfächer
+  assignGrades: string;
+  assignGradesNotice: string;
+  assignGradesDescription: string;
+  assignGradeLater: string;
+  assignGradeDiscard: string;
+
+  // Icon buttons
+  deleteGrade: string;
+  close: string;
 }
 
 export const translations: Record<Language, Translations> = {
@@ -331,6 +342,17 @@ export const translations: Record<Language, Translations> = {
     cloudLoadError: 'Fehler beim Laden.',
     cloudHaveCode: 'Schon einen Zugangscode? Hier anmelden',
     cloudOr: 'oder',
+
+    // Assigning grades of a subject that was split into Teilfächer
+    assignGrades: 'Noten zuordnen',
+    assignGradesNotice: 'wurde in Teilfächer aufgeteilt. Ordne deine bisherigen Noten zu, damit sie wieder zählen.',
+    assignGradesDescription: 'Wähle für jede Note das Teilfach. Noten ohne Auswahl bleiben offen und zählen vorerst nicht.',
+    assignGradeLater: 'Später entscheiden',
+    assignGradeDiscard: 'Note löschen',
+
+    // Icon buttons
+    deleteGrade: 'Note löschen',
+    close: 'Schliessen',
   },
   fr: {
     // General
@@ -494,6 +516,17 @@ export const translations: Record<Language, Translations> = {
     cloudLoadError: 'Erreur lors du chargement.',
     cloudHaveCode: 'Tu as déjà un code d\'accès ? Connecte-toi ici',
     cloudOr: 'ou',
+
+    // Assigning grades of a subject that was split into Teilfächer
+    assignGrades: 'Attribuer les notes',
+    assignGradesNotice: "a été divisée en sous-branches. Attribue tes notes existantes pour qu'elles comptent à nouveau.",
+    assignGradesDescription: "Choisis la sous-branche pour chaque note. Les notes sans choix restent en attente et ne comptent pas pour l'instant.",
+    assignGradeLater: 'Décider plus tard',
+    assignGradeDiscard: 'Supprimer la note',
+
+    // Icon buttons
+    deleteGrade: 'Supprimer la note',
+    close: 'Fermer',
   },
   en: {
     // General
@@ -657,6 +690,17 @@ export const translations: Record<Language, Translations> = {
     cloudLoadError: 'Error loading data.',
     cloudHaveCode: 'Already have an access code? Log in here',
     cloudOr: 'or',
+
+    // Assigning grades of a subject that was split into Teilfächer
+    assignGrades: 'Assign grades',
+    assignGradesNotice: 'has been split into sub-subjects. Assign your existing grades so they count again.',
+    assignGradesDescription: "Choose the sub-subject for each grade. Grades without a choice stay pending and don't count for now.",
+    assignGradeLater: 'Decide later',
+    assignGradeDiscard: 'Delete grade',
+
+    // Icon buttons
+    deleteGrade: 'Delete grade',
+    close: 'Close',
   },
   it: {
     // General
@@ -820,6 +864,17 @@ export const translations: Record<Language, Translations> = {
     cloudLoadError: 'Errore durante il caricamento.',
     cloudHaveCode: 'Hai già un codice di accesso? Accedi qui',
     cloudOr: 'oppure',
+
+    // Assigning grades of a subject that was split into Teilfächer
+    assignGrades: 'Assegna i voti',
+    assignGradesNotice: 'è stata suddivisa in sottomaterie. Assegna i tuoi voti esistenti affinché contino di nuovo.',
+    assignGradesDescription: 'Scegli la sottomateria per ogni voto. I voti senza scelta restano in sospeso e per ora non contano.',
+    assignGradeLater: 'Decidi più tardi',
+    assignGradeDiscard: 'Elimina voto',
+
+    // Icon buttons
+    deleteGrade: 'Elimina voto',
+    close: 'Chiudi',
   },
 };
 

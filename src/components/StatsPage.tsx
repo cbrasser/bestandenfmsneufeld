@@ -14,6 +14,7 @@ import {
   Tooltip,
   ReferenceLine,
   ResponsiveContainer,
+  Cell,
 } from 'recharts';
 import type { StudentData, Year } from '../types';
 import { isSubject, isCombinedSubject } from '../types';
@@ -27,21 +28,34 @@ interface StatsPageProps {
   currentYear: Year;
 }
 
-const PASSING_COLOR = '#16a34a';
-const FAILING_COLOR = '#dc2626';
+// Chart paint comes from the design tokens, so both themes follow.
+// Passing is ink; red is kept for grades under 4.
+const INK = 'var(--ink)';
+const INK_2 = 'var(--ink-2)';
+const HAIRLINE = 'var(--hairline)';
+const DANGER = 'var(--danger)';
 
 function gradeColor(grade: number): string {
-  return grade >= 4 ? PASSING_COLOR : FAILING_COLOR;
+  return grade >= 4 ? INK : DANGER;
 }
 
+const axisTick = { fontSize: 12, fontWeight: 700, fill: INK_2 };
+
+// Axis labels have a fixed width; the tooltip gives the full name
+const shortName = (name: string, max = 18) => {
+  const plain = name.replaceAll('\u200B', '');
+  return plain.length > max ? `${plain.slice(0, max - 1)}…` : plain;
+};
+const axisLine = { stroke: INK, strokeWidth: 2 };
+
 // Custom tooltip that safely formats numbers
-const GradeTooltip = ({ active, payload, label }: { active?: boolean; payload?: { name: string; value: number; payload?: { subjects?: string } }[]; label?: string }) => {
+const GradeTooltip = ({ active, payload, label, decimals = 2 }: { active?: boolean; payload?: { name: string; value: number; payload?: { subjects?: string } }[]; label?: string; decimals?: number }) => {
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-xs shadow-lg">
-      {label && <p className="font-medium text-gray-700 dark:text-gray-300 mb-1">{label}{payload[0]?.payload?.subjects ? ` — ${payload[0].payload.subjects}` : ''}</p>}
+    <div className="chart-tooltip">
+      {label && <p className="font-extrabold">{label}{payload[0]?.payload?.subjects ? ` — ${payload[0].payload.subjects}` : ''}</p>}
       {payload.map((p) => (
-        <p key={p.name} className="text-gray-600 dark:text-gray-400">{p.name}: <span className="font-semibold">{typeof p.value === 'number' ? p.value.toFixed(2) : p.value}</span></p>
+        <p key={p.name} className="text-ink-2">{p.name}: <span className="font-extrabold text-ink">{typeof p.value === 'number' ? p.value.toFixed(decimals) : p.value}</span></p>
       ))}
     </div>
   );
@@ -152,57 +166,57 @@ export const StatsPage = ({ data, currentYear }: StatsPageProps) => {
 
   if (!hasAnyGrades) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 text-gray-400 dark:text-gray-500">
-        <p className="text-base">{t('noGradesYetStatus')}</p>
+      <div className="leaf state-card">
+        <h2>{t('noGradesYetStatus')}</h2>
+        <p>{t('addFirstGrade')}</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="stats">
 
       {/* ── Bar Chart: Average per subject ────────────────────────────── */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4">
-        <h3 className="text-base font-semibold text-gray-800 dark:text-gray-200 mb-4">
-          {t('statsAvgPerSubject')}
-        </h3>
-        <ResponsiveContainer width="100%" height={220}>
-          <BarChart data={averageBarData} margin={{ top: 4, right: 8, left: -16, bottom: 40 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-            <XAxis
+      <section className="leaf subject">
+        <h3 className="leaf-title">{t('statsAvgPerSubject')}</h3>
+        <ResponsiveContainer width="100%" height={averageBarData.length * 34 + 36} className="chart">
+          <BarChart data={averageBarData} layout="vertical" margin={{ top: 0, right: 12, left: 0, bottom: 0 }}>
+            <CartesianGrid horizontal={false} stroke={HAIRLINE} />
+            <XAxis type="number" domain={[0, 6]} ticks={[1, 2, 3, 4, 5, 6]} tick={axisTick} tickLine={false} axisLine={false} />
+            <YAxis
+              type="category"
               dataKey="name"
-              tick={{ fontSize: 11 }}
-              angle={-35}
-              textAnchor="end"
+              width={132}
+              tick={axisTick}
+              tickFormatter={(name: string) => shortName(name)}
+              tickLine={false}
+              axisLine={axisLine}
               interval={0}
             />
-            <YAxis domain={[0, 6]} ticks={[1, 2, 3, 4, 5, 6]} tick={{ fontSize: 11 }} />
-            <Tooltip content={<GradeTooltip />} />
-            <ReferenceLine y={4} stroke="#f59e0b" strokeDasharray="4 4" label={{ value: '4.0', position: 'right', fontSize: 10 }} />
-            <Bar dataKey="grade" name={t('finalGrade')} radius={[3, 3, 0, 0]}>
-              {averageBarData.map((entry, i) => (
-                <rect key={i} fill={gradeColor(entry.grade)} />
+            <Tooltip content={<GradeTooltip />} cursor={{ fill: 'var(--hue-wash)' }} />
+            <ReferenceLine x={4} stroke={INK} strokeWidth={2} strokeDasharray="5 4" />
+            <Bar dataKey="grade" name={t('finalGrade')} radius={[0, 4, 4, 0]} stroke={INK} strokeWidth={2} barSize={18} isAnimationActive={false}>
+              {averageBarData.map((entry) => (
+                <Cell key={entry.name} fill={gradeColor(entry.grade)} />
               ))}
             </Bar>
           </BarChart>
         </ResponsiveContainer>
-        {/* manual color legend for bars (recharts Cell approach) */}
-        <div className="mt-1 flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
-          <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm inline-block bg-green-600" />{t('passing')}</span>
-          <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm inline-block bg-red-600" />{t('notPassing')}</span>
+        <div className="legend">
+          <span><i />{t('passing')}</span>
+          <span><i className="is-below" />{t('notPassing')}</span>
         </div>
-      </div>
+      </section>
 
       {/* ── Line Chart: Grade development over time ────────────────────── */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4">
-        <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
-          <h3 className="text-base font-semibold text-gray-800 dark:text-gray-200">
-            {t('statsGradeDevelopment')}
-          </h3>
+      <section className="leaf subject">
+        <div className="chart-head">
+          <h3 className="leaf-title">{t('statsGradeDevelopment')}</h3>
           <select
             value={selectedSubjectId}
             onChange={(e) => setSelectedSubjectId(e.target.value)}
-            className="text-xs px-2 py-1 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300"
+            aria-label={t('subjectsTitle')}
+            className="select"
           >
             <option value="all">{t('statsAllSubjects')}</option>
             {leafSubjects.map((s) => (
@@ -211,81 +225,76 @@ export const StatsPage = ({ data, currentYear }: StatsPageProps) => {
           </select>
         </div>
         {hasDateGrades ? (
-          <ResponsiveContainer width="100%" height={200}>
-            <LineChart data={timelineData} margin={{ top: 4, right: 8, left: -16, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-              <XAxis dataKey="date" tick={{ fontSize: 11 }} />
-              <YAxis domain={[1, 6]} ticks={[1, 2, 3, 4, 5, 6]} tick={{ fontSize: 11 }} />
-              <Tooltip content={<GradeTooltip />} />
-              <ReferenceLine y={4} stroke="#f59e0b" strokeDasharray="4 4" />
+          <ResponsiveContainer width="100%" height={220} className="chart">
+            <LineChart data={timelineData} margin={{ top: 8, right: 12, left: -20, bottom: 0 }}>
+              <CartesianGrid vertical={false} stroke={HAIRLINE} />
+              <XAxis dataKey="date" tick={axisTick} tickLine={false} axisLine={axisLine} />
+              <YAxis domain={[1, 6]} ticks={[1, 2, 3, 4, 5, 6]} tick={axisTick} tickLine={false} axisLine={false} />
+              <Tooltip content={<GradeTooltip />} cursor={{ stroke: INK, strokeWidth: 2 }} />
+              <ReferenceLine y={4} stroke={INK} strokeWidth={2} strokeDasharray="5 4" />
               <Line
-                type="monotone"
+                type="linear"
                 dataKey="avg"
                 name={t('averageGrade')}
-                stroke="#2563eb"
-                strokeWidth={2}
-                dot={{ r: 4, fill: '#2563eb' }}
-                activeDot={{ r: 6 }}
+                stroke={INK}
+                strokeWidth={2.5}
+                dot={{ r: 4, fill: 'var(--paper)', stroke: INK, strokeWidth: 2 }}
+                activeDot={{ r: 6, fill: 'var(--hue)', stroke: INK, strokeWidth: 2 }}
+                isAnimationActive={false}
               />
             </LineChart>
           </ResponsiveContainer>
         ) : (
-          <p className="text-sm text-gray-400 dark:text-gray-500 text-center py-8">
-            {t('statsNoDates')}
-          </p>
+          <p className="muted text-sm">{t('statsNoDates')}</p>
         )}
-      </div>
+      </section>
 
       {/* ── Radar Chart: Performance profile ──────────────────────────── */}
       {radarData.length >= 3 && (
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4">
-          <h3 className="text-base font-semibold text-gray-800 dark:text-gray-200 mb-4">
-            {t('statsPerformanceProfile')}
-          </h3>
-          <ResponsiveContainer width="100%" height={260}>
-            <RadarChart data={radarData}>
-              <PolarGrid />
-              <PolarAngleAxis dataKey="subject" tick={{ fontSize: 10 }} />
+        <section className="leaf subject">
+          <h3 className="leaf-title">{t('statsPerformanceProfile')}</h3>
+          <ResponsiveContainer width="100%" height={280} className="chart">
+            <RadarChart data={radarData} outerRadius="46%">
+              <PolarGrid stroke={HAIRLINE} />
+              <PolarAngleAxis dataKey="subject" tick={axisTick} tickFormatter={(name: string) => shortName(name, 9)} />
               <Radar
                 name={t('finalGrade')}
                 dataKey="grade"
-                stroke="#2563eb"
-                fill="#2563eb"
-                fillOpacity={0.25}
+                stroke={INK}
+                strokeWidth={2}
+                fill="var(--hue)"
+                fillOpacity={1}
+                isAnimationActive={false}
               />
               <Tooltip content={<GradeTooltip />} />
             </RadarChart>
           </ResponsiveContainer>
-        </div>
+        </section>
       )}
 
       {/* ── Bar Chart: Grade distribution ─────────────────────────────── */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4">
-        <h3 className="text-base font-semibold text-gray-800 dark:text-gray-200 mb-4">
-          {t('statsGradeDistribution')}
-        </h3>
-        <ResponsiveContainer width="100%" height={180}>
-          <BarChart data={distributionData} margin={{ top: 4, right: 8, left: -16, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-            <XAxis dataKey="range" tick={{ fontSize: 11 }} />
-            <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
-            <Tooltip />
-            <Bar dataKey="count" name={t('statsCount')} radius={[3, 3, 0, 0]}>
-              {distributionData.map((entry, i) => (
-                <rect key={i} fill={entry.passing ? PASSING_COLOR : FAILING_COLOR} />
+      <section className="leaf subject">
+        <h3 className="leaf-title">{t('statsGradeDistribution')}</h3>
+        <ResponsiveContainer width="100%" height={200} className="chart">
+          <BarChart data={distributionData} margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
+            <CartesianGrid vertical={false} stroke={HAIRLINE} />
+            <XAxis dataKey="range" tick={axisTick} tickLine={false} axisLine={axisLine} />
+            <YAxis allowDecimals={false} tick={axisTick} tickLine={false} axisLine={false} />
+            <Tooltip content={<GradeTooltip decimals={0} />} cursor={{ fill: 'var(--hue-wash)' }} />
+            <Bar dataKey="count" name={t('statsCount')} radius={[4, 4, 0, 0]} stroke={INK} strokeWidth={2} isAnimationActive={false}>
+              {distributionData.map((entry) => (
+                <Cell key={entry.range} fill={entry.passing ? INK : DANGER} />
               ))}
             </Bar>
           </BarChart>
         </ResponsiveContainer>
-      </div>
+      </section>
 
       {/* ── Summary stats ────────────────────────────────────────────── */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4">
-        <h3 className="text-base font-semibold text-gray-800 dark:text-gray-200 mb-3">
-          {t('statsSummary')}
-        </h3>
+      <section className="leaf subject">
+        <h3 className="leaf-title">{t('statsSummary')}</h3>
         <SummaryStats subjects={leafSubjects} t={t} />
-      </div>
+      </section>
     </div>
   );
 };
@@ -316,11 +325,11 @@ function SummaryStats({ subjects, t }: SummaryStatsProps) {
   ];
 
   return (
-    <div className="grid grid-cols-3 gap-3">
+    <div>
       {stats.map(({ label, value }) => (
-        <div key={label} className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3 text-center">
-          <div className="text-lg font-bold text-gray-800 dark:text-gray-100">{value}</div>
-          <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{label}</div>
+        <div key={label} className="kv-row">
+          <span className="kv-label">{label}</span>
+          <span className="kv-value">{value}</span>
         </div>
       ))}
     </div>

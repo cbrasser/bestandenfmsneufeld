@@ -21,6 +21,7 @@ export interface Subject extends PromotionEntity {
 
 export interface CombinedSubject extends PromotionEntity {
   subjects: Subject[];
+  unassignedGrades?: Grade[]; // grades from a former flat subject, not yet assigned to a Teilfach
 };
 
 // Type guard functions
@@ -37,7 +38,7 @@ export type Year = 1 | 2 | 3;
 export type Direction = {
   id: string;
   name: string;
-  subjects: Subject[];
+  subjects: (Subject | CombinedSubject)[];
 };
 
 export type Division = 'FMS' | 'Gymnasium';

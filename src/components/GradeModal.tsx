@@ -23,6 +23,7 @@ export const GradeModal = ({
   const [label, setLabel] = useState('');
   const [semester, setSemester] = useState<Semester | undefined>(undefined);
   const [date, setDate] = useState<Date | undefined>(new Date());
+  const [invalid, setInvalid] = useState({ value: false, weight: false });
 
   useEffect(() => {
     if (existingGrade) {
@@ -38,6 +39,7 @@ export const GradeModal = ({
       setSemester(undefined);
       setDate(new Date());
     }
+    setInvalid({ value: false, weight: false });
   }, [existingGrade, isOpen]);
 
   if (!isOpen) return null;
@@ -47,16 +49,12 @@ export const GradeModal = ({
     const numValue = parseFloat(value);
     const numWeight = parseFloat(weight);
 
-    if (
-      isNaN(numValue) ||
-      numValue < 1 ||
-      numValue > 6 ||
-      isNaN(numWeight) ||
-      numWeight <= 0
-    ) {
-      alert(t('invalidValues'));
-      return;
-    }
+    const nextInvalid = {
+      value: isNaN(numValue) || numValue < 1 || numValue > 6,
+      weight: isNaN(numWeight) || numWeight <= 0,
+    };
+    setInvalid(nextInvalid);
+    if (nextInvalid.value || nextInvalid.weight) return;
 
     const roundedValue = Math.round(numValue * 100) / 100;
     const roundedWeight = Math.round(numWeight * 100) / 100;
@@ -80,112 +78,109 @@ export const GradeModal = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-100">
+    <div className="scrim">
+      <div className="leaf dialog" role="dialog" aria-modal="true" aria-labelledby="grade-modal-title">
+        <div className="dialog-head">
+          <h2 id="grade-modal-title" className="leaf-title">
             {existingGrade ? t('editGrade') : t('addGrade')}
           </h2>
-          <button
-            onClick={onClose}
-            className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded"
-            aria-label="Close"
-          >
-            <X className="w-5 h-5" />
+          <button type="button" onClick={onClose} className="btn btn-quiet btn-icon" aria-label={t('close')}>
+            <X size={18} strokeWidth={2.5} aria-hidden="true" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              {t('grade')}
-            </label>
-            <input
-              type="text"
-              inputMode="decimal"
-              min="1"
-              max="6"
-              value={value}
-              onChange={handleValueChange}
-              placeholder="e.g., 4.5"
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              required
-            />
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-              {t('gradeRange')}
+        <form onSubmit={handleSubmit} className="form" noValidate>
+          {(invalid.value || invalid.weight) && (
+            <p className="form-error" role="alert">
+              {t('invalidValues')}
             </p>
+          )}
+          <div className="field-row">
+            <div className="field">
+              <label htmlFor="grade-value" className="field-label">
+                {t('grade')}
+              </label>
+              <input
+                id="grade-value"
+                type="text"
+                inputMode="decimal"
+                value={value}
+                onChange={handleValueChange}
+                placeholder="4.5"
+                aria-invalid={invalid.value ? true : undefined}
+                className="input"
+                autoFocus
+                required
+              />
+              <span className="field-hint">{t('gradeRange')}</span>
+            </div>
+
+            <div className="field">
+              <label htmlFor="grade-weight" className="field-label">
+                {t('weight')}
+              </label>
+              <input
+                id="grade-weight"
+                type="number"
+                step="0.1"
+                min="0.1"
+                value={weight}
+                onChange={(e) => setWeight(e.target.value)}
+                aria-invalid={invalid.weight ? true : undefined}
+                className="input"
+                required
+              />
+              <span className="field-hint">{t('weightDescription')}</span>
+            </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              {t('weight')}
-            </label>
-            <input
-              type="number"
-              step="0.1"
-              min="0.1"
-              value={weight}
-              onChange={(e) => setWeight(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              required
-            />
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-              {t('weightDescription')}
-            </p>
+          <div className="field-row">
+            <div className="field">
+              <span className="field-label">{t('date')}</span>
+              <DatePicker
+                date={date}
+                onDateChange={setDate}
+                placeholder={t('datePlaceholder')}
+                language={language}
+              />
+            </div>
+
+            <div className="field">
+              <label htmlFor="grade-semester" className="field-label">
+                {t('semester')}
+              </label>
+              <select
+                id="grade-semester"
+                value={semester || ''}
+                onChange={(e) => setSemester((e.target.value as Semester) || undefined)}
+                className="select"
+              >
+                <option value="">{t('noSemester')}</option>
+                <option value="Herbstsemester">{t('fallSemester')}</option>
+                <option value="Frühlingssemester">{t('springSemester')}</option>
+              </select>
+            </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              {t('date')}
-            </label>
-            <DatePicker
-              date={date}
-              onDateChange={setDate}
-              placeholder={t('datePlaceholder')}
-              language={language}
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              {t('semester')}
-            </label>
-            <select
-              value={semester || ''}
-              onChange={(e) => setSemester((e.target.value as Semester) || undefined)}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="">{t('noSemester')}</option>
-              <option value="Herbstsemester">{t('fallSemester')}</option>
-              <option value="Frühlingssemester">{t('springSemester')}</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          <div className="field">
+            <label htmlFor="grade-label" className="field-label">
               {t('label')}
             </label>
             <input
+              id="grade-label"
               type="text"
               value={label}
               onChange={(e) => setLabel(e.target.value)}
               placeholder={t('labelPlaceholder')}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="input"
             />
           </div>
 
-          <div className="flex gap-3 pt-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-            >
+          <div className="dialog-actions">
+            <button type="button" onClick={onClose} className="btn btn-quiet">
               {t('cancel')}
             </button>
-            <button
-              type="submit"
-              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            >
+            <button type="submit" className="btn btn-primary">
               {t('save')}
             </button>
           </div>

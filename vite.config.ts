@@ -18,17 +18,17 @@ export default defineConfig({
         name: 'Grade Tracker',
         short_name: 'Grades',
         description: 'Track your grades and promotion status',
-        theme_color: '#2563eb',
+        theme_color: '#e6eaef',
         icons: [
           {
-            src: '/vite.svg',
+            src: '/icon.svg',
             sizes: 'any',
             type: 'image/svg+xml',
           },
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
       },
     }),
   ],

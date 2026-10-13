@@ -96,9 +96,9 @@ export const checkPromotionCriteria = (
       : 0;
   const roundedAverage = roundToTwoDecimals(average);
 
-  // Calculate total deficit (sum of how much each grade is below 4)
-  // Use rounded values for deficit calculation
-  const deficit = failures.reduce(
+  // Calculate total deficit (sum of how much each Fach grade is below 4)
+  // Unlike failures, this uses the grade of the Fach, not of its Teilfächer
+  const deficit = validGrades.reduce(
     (sum, grade) => sum + Math.max(0, 4 - grade),
     0
   );
