@@ -17,11 +17,11 @@ A mobile-first Progressive Web App (PWA) for students to track their grades and 
 - ✅ **Promotion Status** - Real-time calculation of promotion criteria
 - 💾 **Local Storage** - All data stored locally in browser (privacy-first)
 
-## Promotion Criteria (Year 1)
+## Promotion Criteria
 
-- No more than 4 final grades below 4
-- Average grade above or equal to 4
-- Total deficit (sum of grades below 4) not larger than 2
+- No more than 3 grades below 4 (Teilfächer count individually)
+- Average of the Fach grades above or equal to 4
+- Total deficit (sum of how far Fach grades are below 4) not larger than 2
 
 ## Getting Started
 

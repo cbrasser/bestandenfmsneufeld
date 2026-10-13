@@ -30,6 +30,8 @@ export const I18nProvider = ({ children }: { children: ReactNode }) => {
   });
 
   useEffect(() => {
+    // Hyphenation and screen readers follow the document language
+    document.documentElement.lang = language;
     // Save language to localStorage whenever it changes
     try {
       localStorage.setItem(STORAGE_KEY, language);
@@ -47,7 +49,8 @@ export const I18nProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const tSubject = (name: string): string => {
-    return getTranslatedSubjectName(name, language);
+    // A zero-width space lets "Pädagogik/Entwicklungspsychologie" break after the slash
+    return getTranslatedSubjectName(name, language).replaceAll('/', '/\u200B');
   };
 
   return (

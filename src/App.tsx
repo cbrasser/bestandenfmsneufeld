@@ -1,17 +1,19 @@
 import { useState, useEffect } from 'react';
-import type { StudentData, Year, Grade, StudentInfo, Subject, CombinedSubject, PromotionEntity } from './types';
+import type { StudentData, Year, Grade, StudentInfo, Subject } from './types';
 import { isSubject, isCombinedSubject } from './types';
 import { storageService } from './utils/storage';
-import { initializeStudentData, getSubjectsForYear, reconcileAllYears } from './utils/initializeData';
-import { checkPromotionCriteria, calculateFinalGrade } from './utils/promotion';
+import { initializeStudentData, getSubjectsForYear, reconcileAllYears, reconcileSubjectList } from './utils/initializeData';
+import { checkPromotionCriteria } from './utils/promotion';
 import { getCriteriaForYear } from './config/criteria';
 import { year3Directions } from './config/subjects';
 import { PromotionStatus } from './components/PromotionStatus';
 import { SubjectCard } from './components/SubjectCard';
 import { GradeModal } from './components/GradeModal';
+import { AssignGradesModal } from './components/AssignGradesModal';
 import { DirectionSelector } from './components/DirectionSelector';
 import { Onboarding } from './components/Onboarding';
 import { Menu } from './components/Menu';
+import { YearTabs } from './components/YearTabs';
 import { CloudSync } from './components/CloudSync';
 import { useI18n } from './i18n/context';
 import { CombinedSubjectCard } from './components/CombinedSubjectCard';
@@ -32,6 +34,7 @@ function App() {
   const [editingGradeId, setEditingGradeId] = useState<string | null>(null);
   const [isGradeModalOpen, setIsGradeModalOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [assigningSubjectId, setAssigningSubjectId] = useState<string | null>(null);
 
   useEffect(() => {
     const savedData = storageService.getData();
@@ -51,10 +54,21 @@ function App() {
     }
   }, [data]);
 
+  // The year's hue is the page: bind it on <html> so the body and portals follow
+  const hasProfile = Boolean(data?.studentInfo);
+  useEffect(() => {
+    const root = document.documentElement;
+    if (hasProfile) {
+      root.dataset.year = String(currentYear);
+    } else {
+      delete root.dataset.year;
+    }
+  }, [hasProfile, currentYear]);
+
   if (!data) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-        <div className="text-gray-500 dark:text-gray-400">{t('loading')}</div>
+      <div className="auth">
+        <p className="muted">{t('loading')}</p>
       </div>
     );
   }
@@ -98,7 +112,7 @@ function App() {
       years: {
         ...data.years,
         3: {
-          subjects: direction.subjects.map((s) => ({ ...s, grades: [] })),
+          subjects: reconcileSubjectList(data.years[3].subjects, direction.subjects),
         },
       },
     };
@@ -205,6 +219,26 @@ function App() {
     setData({ ...updatedData });
   };
 
+  const assigningSubject = subjects
+    .filter(isCombinedSubject)
+    .find((s) => s.id === assigningSubjectId);
+
+  const handleAssignGrades = (assignments: Record<string, string | null>) => {
+    if (!assigningSubject?.unassignedGrades) return;
+
+    const remaining: Grade[] = [];
+    assigningSubject.unassignedGrades.forEach((grade) => {
+      const target = assigningSubject.subjects.find((s) => s.id === assignments[grade.id]);
+      if (target) {
+        target.grades = [...target.grades, grade];
+      } else if (assignments[grade.id] !== null) {
+        remaining.push(grade);
+      }
+    });
+    assigningSubject.unassignedGrades = remaining.length > 0 ? remaining : undefined;
+    setData({ ...data });
+  };
+
   const existingGrade = selectedSubjectId && editingGradeId
     ? (() => {
         // First try to find as a direct Subject
@@ -219,26 +253,6 @@ function App() {
         return nestedSubject?.grades.find((g) => g.id === editingGradeId);
       })()
     : undefined;
-
-    const finalGradeCombinedSubject = (subject: PromotionEntity) => {
-      return calculateFinalGrade(subject);
-    }
-
-    const isPassing = (subject: PromotionEntity) => {
-      const grade = calculateFinalGrade(subject);
-      return grade >= 4;
-    }
-    
-    const hasGrades = (subject: CombinedSubject) => {
-      let hasGradesFinal = false;
-      subject.subjects.forEach((sub) => {
-        console.log(sub)
-        if (sub.grades.length > 0) {
-          hasGradesFinal = true;
-        }
-      })
-      return hasGradesFinal;
-    }
 
     const yearLabels: Record<Year, string> = {
       1: t('year1'),
@@ -258,7 +272,7 @@ function App() {
 
     const handleImport = async (file: File) => {
       try {
-        const importedData = await storageService.importData(file);
+        const importedData = reconcileAllYears(await storageService.importData(file));
         setData(importedData);
         setCurrentYear(importedData.currentYear);
         alert(t('importSuccess'));
@@ -285,127 +299,139 @@ function App() {
       }
     };
 
+  const direction = currentYear === 3
+    ? year3Directions.find((d) => d.id === data.year3Direction)
+    : undefined;
+  const needsDirection = currentYear === 3 && !direction;
+
+  // The verdict is the page title
+  const verdict = !promotionStatus.hasGrades
+    ? t('noGradesYetStatus')
+    : promotionStatus.isPassing
+    ? t('passing')
+    : t('notPassing');
+
+  const views: { id: View; label: string; icon: typeof BookOpen }[] = [
+    { id: 'grades', label: t('subjectsTitle'), icon: BookOpen },
+    { id: 'stats', label: t('stats'), icon: BarChart2 },
+  ];
+  const viewButtons = views.map(({ id, label, icon: Icon }) => (
+    <button key={id} onClick={() => setView(id)} aria-current={view === id ? 'page' : undefined}>
+      <Icon size={18} strokeWidth={2.5} aria-hidden="true" />
+      {label}
+    </button>
+  ));
+
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-20">
-      {/* Sticky header */}
-      <div className="bg-white dark:bg-gray-800 shadow-sm sticky top-0 z-10">
-        <div className="max-w-2xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex-1">
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{t('gradeTracker')}</h1>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              {data.studentInfo.name} • {data.studentInfo.division} • {yearLabels[currentYear]}
+    <div className="app has-dock">
+      <header className="page app-bar">
+        <span className="wordmark">{t('gradeTracker')}</span>
+        <Menu
+          isOpen={isMenuOpen}
+          onToggle={() => setIsMenuOpen(!isMenuOpen)}
+          onExport={handleExport}
+          onImport={handleImport}
+          onReset={handleReset}
+          cloudSlot={
+            <CloudSync
+              data={data}
+              onLoaded={(loaded) => {
+                const reconciled = reconcileAllYears(loaded);
+                setData(reconciled);
+                setCurrentYear(reconciled.currentYear);
+                setIsMenuOpen(false);
+              }}
+            />
+          }
+        />
+      </header>
+
+      <main className="page">
+        <div className="page-head">
+          <div className="page-head-text">
+            <h1 className="display">{needsDirection ? yearLabels[3] : verdict}</h1>
+            <p className="meta">
+              {!needsDirection && <span>{yearLabels[currentYear]}</span>}
+              {direction && <span>{tSubject(direction.name)}</span>}
+              <span>{data.studentInfo.name}</span>
+              <span>{data.studentInfo.division}</span>
             </p>
           </div>
-          <Menu
-            isOpen={isMenuOpen}
-            onToggle={() => setIsMenuOpen(!isMenuOpen)}
-            onExport={handleExport}
-            onImport={handleImport}
-            onReset={handleReset}
-            currentYear={currentYear}
-            onYearChange={handleYearChange}
-            cloudSlot={
-              <CloudSync
-                data={data}
-                onLoaded={(loaded) => {
-                  const reconciled = reconcileAllYears(loaded);
-                  setData(reconciled);
-                  setCurrentYear(reconciled.currentYear);
-                  setIsMenuOpen(false);
-                }}
-              />
-            }
-          />
+          <nav className="segmented view-switch">{viewButtons}</nav>
         </div>
-      </div>
 
-      {/* Main content */}
-      <div className="max-w-2xl mx-auto px-4 pt-6">
-        {view === 'grades' ? (
-          <>
-            {currentYear === 3 && (
-              <DirectionSelector
-                directions={year3Directions}
-                selectedDirectionId={data.year3Direction}
-                onSelect={handleDirectionSelect}
-              />
-            )}
+        <div className="workspace">
+          <div className="workspace-side">
+            <YearTabs currentYear={currentYear} onYearChange={handleYearChange} />
+            <div className="side-stack">
+              {subjects.length > 0 && <PromotionStatus status={promotionStatus} />}
+              {currentYear === 3 && (
+                <DirectionSelector
+                  directions={year3Directions}
+                  selectedDirectionId={data.year3Direction}
+                  onSelect={handleDirectionSelect}
+                />
+              )}
+            </div>
+          </div>
 
-            {currentYear === 3 && !data.year3Direction && (
-              <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 mb-4">
-                <p className="text-sm text-yellow-800 dark:text-yellow-200">
-                  {t('selectDirectionYear3')}
-                </p>
-              </div>
-            )}
-
-            {subjects.length > 0 ? (
+          <div className="main-stack">
+            {view === 'grades' ? (
               <>
-                <PromotionStatus status={promotionStatus} />
+                {subjects
+                  .filter(isCombinedSubject)
+                  .filter((subject) => subject.unassignedGrades?.length)
+                  .map((subject) => (
+                    <div key={subject.id} className="leaf notice">
+                      <p>
+                        <strong>{tSubject(subject.name)}</strong> {t('assignGradesNotice')}
+                      </p>
+                      <button onClick={() => setAssigningSubjectId(subject.id)} className="btn btn-primary">
+                        {t('assignGrades')}
+                      </button>
+                    </div>
+                  ))}
 
-                <div className="mb-4">
-                  <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-3">
-                    {t('subjectsTitle')}
-                  </h2>
-                  <div>
-                    {subjects.filter(isSubject).map((subject) => (
-                      <SubjectCard
-                        key={subject.id}
-                        subject={subject}
-                        onAddGrade={() => handleAddGrade(subject.id)}
-                        onEditGrade={(gradeId) => handleEditGrade(subject.id, gradeId)}
-                        onDeleteGrade={(gradeId) => handleDeleteGrade(subject.id, gradeId)}
-                        onOralGradeChange={(oralGrade) => handleOralGradeUpdate(subject.id, oralGrade)}
-                      />
-                    ))}
-                    {subjects.filter(isCombinedSubject).map((subject) => {
-                      const combinedFinalGrade = finalGradeCombinedSubject(subject);
-                      const combinedHasGrades = hasGrades(subject);
-                      const combinedIsPassing = isPassing(subject);
-                      return (
-                        <div key={subject.id} className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 mb-4 overflow-hidden">
-                          <div className="bg-gray-50 dark:bg-gray-700/50 px-4 py-3 border-b border-gray-200 dark:border-gray-700">
-                            <div className="flex items-center justify-between">
-                              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                                {tSubject(subject.name)}
-                              </h3>
-                              {combinedHasGrades && (
-                                <div className="text-right">
-                                  <div className="text-xs text-gray-500 dark:text-gray-400">{t('finalGrade')}</div>
-                                  <span className={`text-xl font-bold ${combinedIsPassing ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                                    {combinedFinalGrade === 0 ? '-' : combinedFinalGrade.toFixed(1)}
-                                  </span>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                          <div className="p-3 space-y-2">
-                            {subject.subjects.map((sub) => (
-                              <CombinedSubjectCard
-                                key={sub.id}
-                                subject={sub}
-                                onAddGrade={() => handleAddGrade(sub.id)}
-                                onEditGrade={(gradeId) => handleEditGrade(sub.id, gradeId)}
-                                onDeleteGrade={(gradeId) => handleDeleteGrade(sub.id, gradeId)}
-                                onOralGradeChange={(oralGrade) => handleOralGradeUpdate(sub.id, oralGrade)}
-                              />
-                            ))}
-                          </div>
-                        </div>
-                      );
-                    })}
+                {subjects.length > 0 ? (
+                  <>
+                    <h2 className="section-title">{t('subjectsTitle')}</h2>
+                    <div className="subjects">
+                      {subjects.filter(isSubject).map((subject) => (
+                        <SubjectCard
+                          key={subject.id}
+                          subject={subject}
+                          onAddGrade={() => handleAddGrade(subject.id)}
+                          onEditGrade={(gradeId) => handleEditGrade(subject.id, gradeId)}
+                          onDeleteGrade={(gradeId) => handleDeleteGrade(subject.id, gradeId)}
+                          onOralGradeChange={(oralGrade) => handleOralGradeUpdate(subject.id, oralGrade)}
+                        />
+                      ))}
+                      {subjects.filter(isCombinedSubject).map((subject) => (
+                        <CombinedSubjectCard
+                          key={subject.id}
+                          subject={subject}
+                          onAddGrade={handleAddGrade}
+                          onEditGrade={handleEditGrade}
+                          onDeleteGrade={handleDeleteGrade}
+                          onOralGradeChange={handleOralGradeUpdate}
+                        />
+                      ))}
+                    </div>
+                  </>
+                ) : needsDirection ? null : (
+                  <div className="leaf state-card">
+                    <p>{t('noSubjectsAvailable')}</p>
                   </div>
-                </div>
+                )}
               </>
-            ) : currentYear === 3 && !data.year3Direction ? null : (
-              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-8 text-center">
-                <p className="text-gray-500 dark:text-gray-400">{t('noSubjectsAvailable')}</p>
-              </div>
+            ) : (
+              <>
+                <h2 className="section-title">{t('stats')}</h2>
+                <StatsPage data={data} currentYear={currentYear} />
+              </>
             )}
-          </>
-        ) : (
-          <StatsPage data={data} currentYear={currentYear} />
-        )}
+          </div>
+        </div>
 
         <GradeModal
           isOpen={isGradeModalOpen}
@@ -417,38 +443,19 @@ function App() {
           onSave={handleSaveGrade}
           existingGrade={existingGrade}
         />
-      </div>
+
+        <AssignGradesModal
+          subject={assigningSubject}
+          onClose={() => setAssigningSubjectId(null)}
+          onSave={handleAssignGrades}
+        />
+      </main>
 
       {/* Footer only on grades view */}
       {view === 'grades' && <Footer onExport={handleExport} />}
 
-      {/* Bottom tab bar */}
-      <nav className="fixed bottom-0 left-0 right-0 z-20 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
-        <div className="max-w-2xl mx-auto flex">
-          <button
-            onClick={() => setView('grades')}
-            className={`flex-1 flex flex-col items-center gap-1 py-3 text-xs font-medium transition-colors ${
-              view === 'grades'
-                ? 'text-blue-600 dark:text-blue-400'
-                : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
-            }`}
-          >
-            <BookOpen className="w-5 h-5" />
-            {t('subjectsTitle')}
-          </button>
-          <button
-            onClick={() => setView('stats')}
-            className={`flex-1 flex flex-col items-center gap-1 py-3 text-xs font-medium transition-colors ${
-              view === 'stats'
-                ? 'text-blue-600 dark:text-blue-400'
-                : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
-            }`}
-          >
-            <BarChart2 className="w-5 h-5" />
-            {t('stats')}
-          </button>
-        </div>
-      </nav>
+      {/* Subjects / Statistics, docked on phones */}
+      <nav className="dock">{viewButtons}</nav>
     </div>
   );
 }

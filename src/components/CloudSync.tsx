@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Cloud, CloudOff, Copy, Check, KeyRound, LogIn, Loader2, AlertTriangle } from 'lucide-react';
+import { CloudOff, Copy, Check, KeyRound, LogIn, Loader2, AlertTriangle, X } from 'lucide-react';
 import { useI18n } from '../i18n/context';
 import type { StudentData } from '../types';
 import {
@@ -128,6 +128,12 @@ export const CloudSync = ({ data, onLoaded }: CloudSyncProps) => {
     }
   };
 
+  const closeEnter = () => {
+    setShowEnter(false);
+    setEnteredCode('');
+    setError(null);
+  };
+
   const statusLabel: Record<SyncStatus, string> = {
     idle: '',
     saving: t('cloudSaving'),
@@ -136,97 +142,84 @@ export const CloudSync = ({ data, onLoaded }: CloudSyncProps) => {
   };
 
   return (
-    <div className="mb-6">
-      <div className="flex items-center gap-2 mb-4">
-        <Cloud className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-        <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200">{t('cloudSync')}</h3>
-      </div>
+    <section className="menu-group">
+      <h3 className="group-title">{t('cloudSync')}</h3>
 
       {!connected ? (
-        <div className="space-y-2">
-          <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
-            {t('cloudSyncDescription')}
-          </p>
-          <button
-            onClick={handleCreate}
-            disabled={busy}
-            className="w-full text-left px-4 py-3 rounded-lg border-2 border-blue-200 dark:border-blue-900 hover:border-blue-300 dark:hover:border-blue-700 text-blue-700 dark:text-blue-300 transition-colors flex items-center gap-3 disabled:opacity-50"
-          >
-            {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <KeyRound className="w-4 h-4" />}
-            <div className="font-medium">{t('cloudCreateCode')}</div>
+        <div className="stack">
+          <p className="lede text-sm">{t('cloudSyncDescription')}</p>
+          <button onClick={handleCreate} disabled={busy} className="btn btn-block btn-start">
+            {busy ? (
+              <Loader2 size={16} strokeWidth={2.5} className="animate-spin" aria-hidden="true" />
+            ) : (
+              <KeyRound size={16} strokeWidth={2.5} aria-hidden="true" />
+            )}
+            {t('cloudCreateCode')}
           </button>
           <button
             onClick={() => {
               setShowEnter(true);
               setError(null);
             }}
-            className="w-full text-left px-4 py-3 rounded-lg border-2 border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 text-gray-700 dark:text-gray-300 transition-colors flex items-center gap-3"
+            className="btn btn-block btn-start"
           >
-            <LogIn className="w-4 h-4" />
-            <div className="font-medium">{t('cloudLoginWithCode')}</div>
+            <LogIn size={16} strokeWidth={2.5} aria-hidden="true" />
+            {t('cloudLoginWithCode')}
           </button>
-          {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+          {error && <p className="form-error">{error}</p>}
         </div>
       ) : (
-        <div className="space-y-2">
-          <div className="px-4 py-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-blue-900 dark:text-blue-100">{t('cloudConnected')}</span>
-              <span className="flex items-center gap-1 text-xs text-blue-700 dark:text-blue-300">
-                {status === 'saving' && <Loader2 className="w-3 h-3 animate-spin" />}
-                {status === 'saved' && <Check className="w-3 h-3" />}
-                {status === 'error' && <AlertTriangle className="w-3 h-3" />}
+        <div className="stack">
+          <div className="note">
+            <div className="flex items-center justify-between gap-3">
+              <span className="font-extrabold">{t('cloudConnected')}</span>
+              <span
+                className={`flex items-center gap-1 text-xs font-bold ${status === 'error' ? 'text-danger' : 'text-ink-2'}`}
+                role="status"
+              >
+                {status === 'saving' && <Loader2 size={14} strokeWidth={2.5} className="animate-spin" aria-hidden="true" />}
+                {status === 'saved' && <Check size={14} strokeWidth={3} aria-hidden="true" />}
+                {status === 'error' && <AlertTriangle size={14} strokeWidth={2.5} aria-hidden="true" />}
                 {statusLabel[status]}
               </span>
             </div>
-            <div className="mt-1 font-mono text-sm tracking-wider text-blue-800 dark:text-blue-200">
-              {code ? formatCode(code) : ''}
-            </div>
+            <div className="code mt-1 text-sm">{code ? formatCode(code) : ''}</div>
           </div>
-          <button
-            onClick={handleCopy}
-            className="w-full text-left px-4 py-3 rounded-lg border-2 border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 text-gray-700 dark:text-gray-300 transition-colors flex items-center gap-3"
-          >
-            {copied ? <Check className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4" />}
-            <div className="font-medium">{copied ? t('cloudCopied') : t('cloudCopyCode')}</div>
+          <button onClick={handleCopy} className="btn btn-block btn-start">
+            {copied ? (
+              <Check size={16} strokeWidth={3} aria-hidden="true" />
+            ) : (
+              <Copy size={16} strokeWidth={2.5} aria-hidden="true" />
+            )}
+            {copied ? t('cloudCopied') : t('cloudCopyCode')}
           </button>
-          <button
-            onClick={handleDisconnect}
-            className="w-full text-left px-4 py-3 rounded-lg border-2 border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 text-gray-700 dark:text-gray-300 transition-colors flex items-center gap-3"
-          >
-            <CloudOff className="w-4 h-4" />
-            <div className="font-medium">{t('cloudDisconnect')}</div>
+          <button onClick={handleDisconnect} className="btn btn-block btn-start">
+            <CloudOff size={16} strokeWidth={2.5} aria-hidden="true" />
+            {t('cloudDisconnect')}
           </button>
         </div>
       )}
 
       {/* Modal: Code erstellt */}
       {showCreated && code && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black bg-opacity-50">
-          <div className="w-full max-w-sm bg-white dark:bg-gray-800 rounded-xl shadow-xl p-6">
-            <div className="flex items-center gap-2 mb-3">
-              <KeyRound className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-              <h4 className="text-lg font-bold text-gray-900 dark:text-gray-100">{t('cloudYourCode')}</h4>
-            </div>
-            <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">
-              {t('cloudCodeNotice')}{' '}
-              <strong className="text-red-600 dark:text-red-400">{t('cloudCodeWarning')}</strong>
-            </p>
-            <div className="text-center font-mono text-xl tracking-widest py-4 px-3 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100 select-all">
-              {formatCode(code)}
-            </div>
-            <div className="mt-4 flex gap-2">
-              <button
-                onClick={handleCopy}
-                className="flex-1 px-4 py-2 rounded-lg border-2 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 font-medium flex items-center justify-center gap-2"
-              >
-                {copied ? <Check className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4" />}
+        <div className="scrim">
+          <div className="leaf dialog" role="dialog" aria-modal="true" aria-labelledby="cloud-created-title">
+            <h4 id="cloud-created-title" className="leaf-title">
+              {t('cloudYourCode')}
+            </h4>
+            <p className="lede text-sm">{t('cloudCodeNotice')}</p>
+            <p className="form-error">{t('cloudCodeWarning')}</p>
+            <div className="note code text-center select-all">{formatCode(code)}</div>
+            <div className="dialog-actions">
+              <button onClick={handleCopy} className="btn">
+                {copied ? (
+                  <Check size={16} strokeWidth={3} aria-hidden="true" />
+                ) : (
+                  <Copy size={16} strokeWidth={2.5} aria-hidden="true" />
+                )}
                 {copied ? t('cloudCopied') : t('cloudCopy')}
               </button>
-              <button
-                onClick={() => setShowCreated(false)}
-                className="flex-1 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium"
-              >
+              <button onClick={() => setShowCreated(false)} className="btn btn-primary">
                 {t('cloudUnderstood')}
               </button>
             </div>
@@ -236,49 +229,42 @@ export const CloudSync = ({ data, onLoaded }: CloudSyncProps) => {
 
       {/* Modal: Mit Code anmelden */}
       {showEnter && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black bg-opacity-50">
-          <div className="w-full max-w-sm bg-white dark:bg-gray-800 rounded-xl shadow-xl p-6">
-            <div className="flex items-center gap-2 mb-3">
-              <LogIn className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-              <h4 className="text-lg font-bold text-gray-900 dark:text-gray-100">{t('cloudLoginWithCode')}</h4>
+        <div className="scrim">
+          <div className="leaf dialog" role="dialog" aria-modal="true" aria-labelledby="cloud-enter-title">
+            <div className="dialog-head">
+              <h4 id="cloud-enter-title" className="leaf-title">
+                {t('cloudLoginWithCode')}
+              </h4>
+              <button onClick={closeEnter} className="btn btn-quiet btn-icon" aria-label={t('close')}>
+                <X size={18} strokeWidth={2.5} aria-hidden="true" />
+              </button>
             </div>
-            <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">
-              {t('cloudEnterCodeDescription')}
-            </p>
+            <p className="lede text-sm">{t('cloudEnterCodeDescription')}</p>
+            {error && <p className="form-error">{error}</p>}
             <input
               type="text"
               value={enteredCode}
               onChange={(e) => setEnteredCode(e.target.value)}
               placeholder="XXXX-XXXX-XXXX-XXXX"
+              aria-label={t('cloudLoginWithCode')}
+              aria-invalid={error ? true : undefined}
               autoCapitalize="characters"
               autoCorrect="off"
               spellCheck={false}
-              className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 font-mono tracking-wider focus:border-blue-500 focus:outline-none"
+              className="input code"
             />
-            {error && <p className="text-sm text-red-600 dark:text-red-400 mt-2">{error}</p>}
-            <div className="mt-4 flex gap-2">
-              <button
-                onClick={() => {
-                  setShowEnter(false);
-                  setEnteredCode('');
-                  setError(null);
-                }}
-                className="flex-1 px-4 py-2 rounded-lg border-2 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 font-medium"
-              >
+            <div className="dialog-actions">
+              <button onClick={closeEnter} className="btn btn-quiet">
                 {t('cancel')}
               </button>
-              <button
-                onClick={handleConnect}
-                disabled={busy}
-                className="flex-1 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium flex items-center justify-center gap-2 disabled:opacity-50"
-              >
-                {busy && <Loader2 className="w-4 h-4 animate-spin" />}
+              <button onClick={handleConnect} disabled={busy} className="btn btn-primary">
+                {busy && <Loader2 size={16} strokeWidth={2.5} className="animate-spin" aria-hidden="true" />}
                 {t('cloudLogin')}
               </button>
             </div>
           </div>
         </div>
       )}
-    </div>
+    </section>
   );
 };

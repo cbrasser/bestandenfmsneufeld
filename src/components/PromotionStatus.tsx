@@ -1,104 +1,98 @@
+import type { ReactNode } from 'react';
 import type { PromotionStatus as PromotionStatusType } from '../types';
-import { CheckCircle, XCircle, Minus } from 'lucide-react';
+import { Check, X, Minus } from 'lucide-react';
 import { useI18n } from '../i18n/context';
 
 interface PromotionStatusProps {
   status: PromotionStatusType;
 }
 
+// Grades run from 1 to 6
+const GRADE_MIN = 1;
+const GRADE_SPAN = 5;
+
+const share = (value: number) => `${Math.min(Math.max(value, 0), 1) * 100}%`;
+const fill = (value: number) => ({ '--share': share(value) }) as React.CSSProperties;
+
 export const PromotionStatus = ({ status }: PromotionStatusProps) => {
   const { t } = useI18n();
   const { criteria, hasGrades } = status;
+  const { failures, average, deficit } = criteria;
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 mb-4">
-      <div
-        className={`flex items-center gap-2 mb-4 pb-4 border-b ${
-          !hasGrades
-            ? 'text-gray-500 dark:text-gray-400 border-gray-200 dark:border-gray-700'
-            : status.isPassing
-            ? 'text-green-600 dark:text-green-400 border-green-200 dark:border-green-800'
-            : 'text-red-600 dark:text-red-400 border-red-200 dark:border-red-800'
-        }`}
+    <div className="leaf">
+      <Criterion
+        label={t('maximumFailures')}
+        note={t('finalGradesBelow4')}
+        value={`${failures.count} / ${failures.max}`}
+        passed={failures.passed}
       >
-        {!hasGrades ? (
-          <Minus className="w-5 h-5" />
-        ) : status.isPassing ? (
-          <CheckCircle className="w-5 h-5" />
-        ) : (
-          <XCircle className="w-5 h-5" />
-        )}
-        <h2 className="text-lg font-semibold">
-          {!hasGrades ? t('noGradesYetStatus') : status.isPassing ? t('passing') : t('notPassing')}
-        </h2>
-      </div>
+        <div className="slots">
+          {Array.from({ length: failures.max }, (_, i) => (
+            <div key={i} className={`slot ${i < failures.count ? 'is-used' : ''}`} />
+          ))}
+        </div>
+      </Criterion>
 
-      <div className="space-y-3">
-        <CriterionItem
-          label={t('maximumFailures')}
-          passed={criteria.failures.passed}
-          value={`${criteria.failures.count} / ${criteria.failures.max}`}
-          description={t('finalGradesBelow4')}
-        />
-        <CriterionItem
-          label={t('averageGrade')}
-          passed={criteria.average.passed}
-          value={hasGrades ? criteria.average.value.toFixed(1) : null}
-          description={`${t('minimum')}: ${criteria.average.min}`}
-        />
-        <CriterionItem
-          label={t('totalDeficit')}
-          passed={criteria.deficit.passed}
-          value={criteria.deficit.value.toFixed(2)}
-          description={`${t('maximum')}: ${criteria.deficit.max}`}
-        />
-      </div>
+      <Criterion
+        label={t('averageGrade')}
+        note={`${t('minimum')}: ${average.min}`}
+        value={hasGrades ? average.value.toFixed(2) : null}
+        passed={average.passed}
+      >
+        <div className="meter meter-hue">
+          <div className="meter-track">
+            {hasGrades && (
+              <div className="meter-fill" style={fill((average.value - GRADE_MIN) / GRADE_SPAN)} />
+            )}
+          </div>
+          <div className="meter-mark" style={{ left: share((average.min - GRADE_MIN) / GRADE_SPAN) }} />
+        </div>
+      </Criterion>
+
+      <Criterion
+        label={t('totalDeficit')}
+        note={`${t('maximum')}: ${deficit.max}`}
+        value={deficit.value.toFixed(2)}
+        passed={deficit.passed}
+      >
+        <div className="meter">
+          <div className="meter-track">
+            {deficit.value > 0 && (
+              <div className="meter-fill" style={fill(deficit.value / deficit.max)} />
+            )}
+          </div>
+        </div>
+      </Criterion>
     </div>
   );
 };
 
-interface CriterionItemProps {
+interface CriterionProps {
   label: string;
+  note: string;
+  value: string | null; // null means there is nothing to judge yet
   passed: boolean;
-  value: string | null; // null means show icon instead
-  description: string;
+  children: ReactNode;
 }
 
-const CriterionItem = ({
-  label,
-  passed,
-  value,
-  description,
-}: CriterionItemProps) => {
-  const showIcon = value === null;
-  
+const Criterion = ({ label, note, value, passed, children }: CriterionProps) => {
+  const pending = value === null;
+  const Icon = pending ? Minus : passed ? Check : X;
+
   return (
-    <div className="flex items-start justify-between">
-      <div className="flex-1">
-        <div className="flex items-center gap-2">
-          {showIcon ? (
-            <Minus className="w-4 h-4 text-gray-400 dark:text-gray-500" />
-          ) : passed ? (
-            <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400" />
-          ) : (
-            <XCircle className="w-4 h-4 text-red-600 dark:text-red-400" />
-          )}
-          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{label}</span>
+    <div className={`criterion ${!pending && !passed ? 'is-failed' : ''}`}>
+      <div className="criterion-head">
+        <div>
+          <div className="criterion-label">
+            <Icon size={18} strokeWidth={3} aria-hidden="true" />
+            {label}
+          </div>
+          <p className="criterion-note">{note}</p>
         </div>
-        <p className="text-xs text-gray-500 dark:text-gray-400 ml-6">{description}</p>
+        <span className="criterion-value">{value ?? '–'}</span>
       </div>
-      {showIcon ? (
-        <Minus className="w-5 h-5 text-gray-400 dark:text-gray-500" />
-      ) : (
-        <span
-          className={`text-sm font-semibold ${
-            passed ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
-          }`}
-        >
-          {value}
-        </span>
-      )}
+      {children}
     </div>
   );
 };
-

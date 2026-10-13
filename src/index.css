@@ -1,70 +1,1513 @@
 @tailwind base;
-@tailwind components;
-@tailwind utilities;
 
-@layer base {
-  :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 221.2 83.2% 53.3%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 221.2 83.2% 53.3%;
-    --radius: 0.5rem;
-  }
+/* Design tokens, shared with yaft and wgly. Every colour is a token; the dark
+   theme redefines them and components never hold a hex value. */
 
-  .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 217.2 91.2% 59.8%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 224.3 76.3% 48%;
-  }
+:root {
+  /* Ink and paper */
+  --ink: #15161a;
+  --ink-2: #3a3d46;
+  --ink-3: #5c606b;
+  --paper: #ffffff;
+  --ground: #e6eaef;
+  --ground-wash: #f3f5f8;
+  --ground-tint: #dde3ea;
+  --ink-hover: #2c2e36;
+  --hairline: rgb(21 22 26 / 0.12);
+  --quiet-hover: rgb(21 22 26 / 0.08);
+  --scrim: rgb(21 22 26 / 0.5);
+
+  /* Year hues: full strength, each school year is a section of the manual */
+  --year-1: #ffc93c;
+  --year-2: #2ec4b6;
+  --year-3: #b49af8;
+  /* Text on a full-strength hue stays dark in both themes */
+  --on-hue: #15161a;
+
+  /* Current section; set on <html> with data-year */
+  --hue: var(--ground);
+  --page: var(--ground);
+
+  /* Semantic */
+  --danger: #c8262b;
+  --danger-tint: #ffe3e1;
+
+  /* Lines and depth: outlines plus short, hard ink shadows */
+  --line-w: 2px;
+  --line: var(--line-w) solid var(--ink);
+  --shadow-sm: 2px 2px 0 var(--ink);
+  --shadow: 4px 4px 0 var(--ink);
+  --shadow-lg: 6px 6px 0 var(--ink);
+
+  /* Shape */
+  --r-leaf: 14px;
+  --r-control: 10px;
+  --r-tab: 12px;
+  --r-bar: 8px;
+  --r-pill: 999px;
+
+  /* Space (4px base) */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 24px;
+  --s-6: 32px;
+  --s-7: 48px;
+  --s-8: 64px;
+
+  /* Type */
+  --font-display: "Bricolage Grotesque Variable", "Avenir Next", system-ui, sans-serif;
+  --font-ui: "Manrope Variable", system-ui, sans-serif;
+  --t-xs: 0.75rem;
+  --t-sm: 0.875rem;
+  --t-md: 1rem;
+  --t-lg: 1.125rem;
+  --t-xl: 1.375rem;
+  --t-2xl: 1.75rem;
+  --t-display: clamp(2.5rem, 2rem + 3.2vw, 4.75rem);
+
+  /* Motion */
+  --ease: cubic-bezier(0.2, 0.9, 0.25, 1);
+  --dur-fast: 120ms;
+  --dur: 200ms;
+  --dur-slow: 320ms;
+
+  --tap: 44px;
+  --dock: 56px;
+  --page-max: 1180px;
+  --gutter: clamp(16px, 3vw, 40px);
 }
 
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+/* Dark theme: ink and paper swap places. The hue deepens into the ground and
+   stays full strength wherever it is a fill. */
+.dark {
+  color-scheme: dark;
+  --ink: #f1f2f5;
+  --ink-2: #c3c7d0;
+  --ink-3: #9a9eaa;
+  --paper: #1c1e24;
+  --ground: #101115;
+  --ground-wash: #262931;
+  --ground-tint: #343843;
+  --ink-hover: #d5d8df;
+  --hairline: rgb(241 242 245 / 0.16);
+  --quiet-hover: rgb(241 242 245 / 0.1);
+  --scrim: rgb(0 0 0 / 0.6);
+  --danger: #ff8a8c;
+  --danger-tint: #47191c;
+}
+
+[data-year="1"] { --hue: var(--year-1); }
+[data-year="2"] { --hue: var(--year-2); }
+[data-year="3"] { --hue: var(--year-3); }
+
+[data-year] {
+  --page: var(--hue);
+  --hue-tint: color-mix(in oklab, var(--hue) 30%, var(--paper));
+  --hue-wash: color-mix(in oklab, var(--hue) 14%, var(--paper));
+}
+
+.dark[data-year] {
+  --page: color-mix(in oklab, var(--hue) 24%, var(--ground));
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  scrollbar-color: var(--ink) transparent;
 }
 
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
+  background: var(--page);
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-size: var(--t-md);
+  font-weight: 500;
+  line-height: 1.5;
+  font-feature-settings: "ss01";
+  font-variant-numeric: tabular-nums;
   -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  background-color: #f5f5f5;
+  caret-color: var(--ink);
+  transition: background-color var(--dur-slow) var(--ease);
 }
 
-.dark body {
-  background-color: #111827;
+::selection {
+  background: var(--ink);
+  color: var(--paper);
 }
+
+:focus-visible {
+  outline: 3px solid var(--ink);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-display);
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.015em;
+  text-wrap: balance;
+}
+
+p {
+  text-wrap: pretty;
+}
+
+a {
+  color: inherit;
+  text-underline-offset: 0.2em;
+  text-decoration-thickness: 2px;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* ---------------------------------------------------------------- leaves */
+
+.leaf {
+  position: relative;
+  background: var(--paper);
+  border: var(--line);
+  border-radius: var(--r-leaf);
+  box-shadow: var(--shadow);
+  padding: var(--s-5);
+}
+
+.leaf-title {
+  font-size: var(--t-xl);
+}
+
+.lede {
+  font-weight: 600;
+  color: var(--ink-2);
+  max-width: 62ch;
+}
+
+.muted {
+  font-weight: 600;
+  color: var(--ink-3);
+}
+
+/* Group title inside a leaf: Manrope over a 2px ink rule */
+.group-title {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  font-family: var(--font-ui);
+  font-size: var(--t-sm);
+  font-weight: 800;
+  letter-spacing: 0;
+  padding-bottom: 6px;
+  border-bottom: var(--line);
+}
+
+/* --------------------------------------------------------------- buttons */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-2);
+  min-height: var(--tap);
+  padding: 0 var(--s-4);
+  border: var(--line);
+  border-radius: var(--r-control);
+  background: var(--paper);
+  color: var(--ink);
+  font-weight: 700;
+  font-size: var(--t-sm);
+  white-space: nowrap;
+  text-decoration: none;
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  transition:
+    transform var(--dur-fast) var(--ease),
+    box-shadow var(--dur-fast) var(--ease),
+    background-color var(--dur-fast) var(--ease);
+}
+
+.btn:not([disabled]):hover {
+  background: var(--hue-wash, var(--ground-wash));
+}
+
+.btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: 0 0 0 var(--ink);
+}
+
+.btn[disabled],
+.btn[aria-disabled="true"] {
+  cursor: not-allowed;
+  color: var(--ink-3);
+  border-color: var(--ink-3);
+  box-shadow: none;
+  background: var(--paper);
+  transform: none;
+}
+
+.btn-primary {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.btn-primary:not([disabled]):hover {
+  background: var(--ink-hover);
+}
+
+.btn-quiet {
+  border-color: transparent;
+  box-shadow: none;
+  background: transparent;
+}
+
+.btn-quiet:not([disabled]):hover {
+  background: var(--quiet-hover);
+}
+
+.btn-quiet[disabled] {
+  border-color: transparent;
+  background: transparent;
+}
+
+.btn-quiet:active {
+  transform: none;
+}
+
+.btn-sm {
+  min-height: 36px;
+  padding: 0 var(--s-3);
+}
+
+.btn-icon {
+  width: var(--tap);
+  padding: 0;
+  flex: none;
+}
+
+.btn-icon.btn-sm {
+  width: 36px;
+}
+
+.btn-block {
+  width: 100%;
+}
+
+.btn-start {
+  justify-content: flex-start;
+}
+
+/* A quiet button that reads as a sentence may wrap; labelled actions never do */
+.btn-wrap {
+  white-space: normal;
+  padding-top: var(--s-2);
+  padding-bottom: var(--s-2);
+  text-align: left;
+}
+
+/* ----------------------------------------------------------------- field */
+
+.field {
+  display: grid;
+  gap: var(--s-1);
+}
+
+.field-label {
+  font-size: var(--t-xs);
+  font-weight: 700;
+  color: var(--ink-2);
+  letter-spacing: 0.01em;
+}
+
+.field-hint {
+  font-size: var(--t-xs);
+  font-weight: 600;
+  color: var(--ink-3);
+}
+
+.field-error {
+  font-size: var(--t-xs);
+  font-weight: 700;
+  color: var(--danger);
+}
+
+.select,
+.input {
+  width: 100%;
+  min-height: var(--tap);
+  border: var(--line);
+  border-radius: var(--r-control);
+  background-color: var(--paper);
+  color: var(--ink);
+  padding: 0 var(--s-3);
+  font-weight: 600;
+  box-shadow: var(--shadow-sm);
+}
+
+.select {
+  appearance: none;
+  padding-right: 40px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%2315161a' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m4 6 4 4 4-4'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  cursor: pointer;
+}
+
+.dark .select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%23f1f2f5' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m4 6 4 4 4-4'/%3E%3C/svg%3E");
+}
+
+.input::placeholder {
+  color: var(--ink-3);
+  opacity: 1;
+}
+
+.input[aria-invalid="true"] {
+  border-color: var(--danger);
+  box-shadow: 2px 2px 0 var(--danger);
+}
+
+/* A button that opens a picker and reads like an input */
+.input-button {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  text-align: left;
+  cursor: pointer;
+}
+
+.input-button[data-empty="true"] {
+  color: var(--ink-3);
+}
+
+/* The access code: counted, not typeset as code */
+.code {
+  font-weight: 800;
+  font-size: var(--t-lg);
+  letter-spacing: 0.14em;
+}
+
+.note {
+  background: var(--hue-wash, var(--ground-wash));
+  border: var(--line);
+  border-radius: var(--r-control);
+  padding: var(--s-3) var(--s-4);
+  font-size: var(--t-sm);
+  font-weight: 600;
+}
+
+.form-error {
+  background: var(--danger-tint);
+  border: 2px solid var(--danger);
+  border-radius: var(--r-control);
+  color: var(--danger);
+  padding: var(--s-3) var(--s-4);
+  font-size: var(--t-sm);
+  font-weight: 700;
+}
+
+/* ------------------------------------------------------- segmented control */
+
+.segmented {
+  display: inline-flex;
+  border: var(--line);
+  border-radius: var(--r-control);
+  background: var(--paper);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+.segmented button {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-2);
+  min-height: 40px;
+  padding: 0 var(--s-4);
+  border-left: var(--line);
+  font-weight: 700;
+  font-size: var(--t-sm);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color var(--dur-fast) var(--ease);
+}
+
+.segmented button:first-child {
+  border-left: 0;
+}
+
+/* Fills its row; segments share the width and tighten to fit */
+.segmented-block {
+  display: flex;
+}
+
+.segmented-block button {
+  gap: 6px;
+  padding: 0 var(--s-2);
+}
+
+.segmented button:hover {
+  background: var(--hue-wash, var(--ground-wash));
+}
+
+.segmented button[aria-pressed="true"],
+.segmented button[aria-current="page"] {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+/* The group clips an outer ring, so these draw theirs inside, in their own text colour */
+.segmented button:focus-visible,
+.dock button:focus-visible {
+  outline-offset: -6px;
+  outline-color: currentColor;
+  border-radius: 0;
+}
+
+/* ---------------------------------------------------------------- badges */
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 26px;
+  padding: 0 10px;
+  border: var(--line);
+  border-radius: var(--r-pill);
+  font-size: var(--t-xs);
+  font-weight: 800;
+  background: var(--paper);
+  white-space: nowrap;
+}
+
+.chip-ink {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.chip-muted {
+  border-color: var(--ink-3);
+  color: var(--ink-3);
+}
+
+/* ------------------------------------------------------------------ page */
+
+.app {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+.page {
+  width: 100%;
+  max-width: var(--page-max);
+  margin: 0 auto;
+  padding: 0 var(--gutter);
+}
+
+.app-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-4);
+  padding-top: max(var(--s-4), env(safe-area-inset-top));
+}
+
+.wordmark {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: var(--t-lg);
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  background: var(--paper);
+  border: var(--line);
+  border-radius: var(--r-control);
+  box-shadow: var(--shadow-sm);
+  padding: 6px 12px 8px;
+}
+
+.page-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--s-4) var(--s-5);
+  padding: var(--s-6) 0 var(--s-6);
+}
+
+.page-head-text {
+  display: grid;
+  gap: var(--s-3);
+  min-width: 0;
+}
+
+.display {
+  font-size: var(--t-display);
+  line-height: 0.95;
+  letter-spacing: -0.035em;
+  overflow-wrap: anywhere;
+}
+
+/* Year, name and division under the title, separated by ink dots */
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 10px;
+  font-weight: 700;
+}
+
+.meta > * + *::before {
+  content: "";
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  margin-right: 10px;
+  border-radius: 50%;
+  background: currentColor;
+  vertical-align: middle;
+}
+
+.workspace {
+  display: grid;
+  gap: var(--s-6);
+  padding-bottom: var(--s-8);
+}
+
+.side-stack,
+.main-stack {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--s-5);
+  min-width: 0;
+}
+
+.side-stack > .leaf:first-child {
+  z-index: 1;
+}
+
+.section-title {
+  font-size: var(--t-2xl);
+}
+
+.subjects {
+  display: grid;
+  gap: var(--s-5);
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr));
+  align-items: start;
+}
+
+.stats {
+  display: grid;
+  gap: var(--s-5);
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr));
+  align-items: start;
+}
+
+.stats > * {
+  min-width: 0;
+}
+
+@media (min-width: 960px) {
+  .workspace {
+    grid-template-columns: 360px minmax(0, 1fr);
+    gap: var(--s-6);
+    align-items: start;
+  }
+
+  .workspace-side {
+    position: sticky;
+    top: var(--s-4);
+  }
+}
+
+/* ------------------------------------------------------------- year tabs */
+
+/* The three years as divider tabs on the first leaf. Each carries its own
+   year's hue; the selected one is paper and joins the leaf without a seam. */
+.year-tabs {
+  position: relative;
+  display: flex;
+  gap: 6px;
+  padding: 0 var(--s-4);
+  margin-bottom: calc(var(--line-w) * -1);
+}
+
+.year-tab {
+  position: relative;
+  min-height: var(--tap);
+  padding: 8px 16px 10px;
+  border: var(--line);
+  border-bottom: 0;
+  border-radius: var(--r-tab) var(--r-tab) 0 0;
+  background: var(--tab-hue);
+  color: var(--on-hue);
+  font-weight: 800;
+  font-size: var(--t-sm);
+  white-space: nowrap;
+  box-shadow: 3px -3px 0 var(--ink);
+  transform: translateY(6px);
+  cursor: pointer;
+  transition: transform var(--dur) var(--ease);
+}
+
+.year-tab:hover {
+  transform: translateY(2px);
+}
+
+.year-tab[aria-current="page"] {
+  z-index: 2;
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: none;
+  transform: none;
+  cursor: default;
+}
+
+/* ------------------------------------------------------ promotion conditions */
+
+.criterion {
+  display: grid;
+  gap: var(--s-2);
+  padding: var(--s-3) 0;
+  border-top: 1px solid var(--hairline);
+}
+
+.criterion:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.criterion:last-child {
+  padding-bottom: 0;
+}
+
+.criterion-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--s-3);
+}
+
+.criterion-label {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.criterion-note {
+  margin-left: 26px;
+  font-size: var(--t-xs);
+  font-weight: 600;
+  color: var(--ink-3);
+}
+
+.criterion-value {
+  font-size: var(--t-lg);
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+
+.criterion.is-failed .criterion-value,
+.criterion.is-failed .criterion-label svg {
+  color: var(--danger);
+}
+
+/* A drawn track from the scale's start to its end, with an optional limit mark */
+.meter {
+  position: relative;
+  padding: 4px 0;
+}
+
+.meter-track {
+  position: relative;
+  height: 14px;
+  border: var(--line);
+  border-radius: var(--r-pill);
+  background: var(--paper);
+  overflow: hidden;
+}
+
+/* The fill is as wide as the track and slides in from the left by --share */
+.meter-fill {
+  position: absolute;
+  inset: 0;
+  background: var(--ink);
+  border-right: var(--line);
+  transform: translateX(calc(var(--share) - 100%));
+  transition: transform var(--dur-slow) var(--ease);
+}
+
+.meter-hue .meter-fill {
+  background: var(--hue);
+}
+
+.criterion.is-failed .meter-fill {
+  background: var(--danger);
+}
+
+.meter-mark {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: var(--line-w);
+  margin-left: -1px;
+  background: var(--ink);
+}
+
+.slots {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 6px;
+  padding: 4px 0;
+}
+
+.slot {
+  height: 14px;
+  border: var(--line);
+  border-radius: var(--r-bar);
+  background: var(--paper);
+}
+
+.slot.is-used {
+  background: var(--ink);
+}
+
+.criterion.is-failed .slot.is-used {
+  background: var(--danger);
+}
+
+/* --------------------------------------------------------------- subjects */
+
+.subject {
+  display: grid;
+  /* minmax(0, …) keeps a chart or a long word from widening the leaf */
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--s-3);
+}
+
+.subject-head {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+}
+
+.subject-title {
+  flex: 1;
+  min-width: 0;
+  font-size: 1.25rem;
+  overflow-wrap: anywhere;
+  hyphens: auto;
+}
+
+.final {
+  display: grid;
+  justify-items: end;
+  line-height: 1.1;
+}
+
+.final-label {
+  font-size: var(--t-xs);
+  font-weight: 700;
+  color: var(--ink-2);
+}
+
+.final-value {
+  font-size: var(--t-2xl);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.is-below {
+  color: var(--danger);
+}
+
+/* A Teilfach inside its Fach: a titled group, not a card in a card */
+.part {
+  display: grid;
+  gap: var(--s-2);
+  padding-top: var(--s-2);
+}
+
+.part-head {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding-bottom: 6px;
+  border-bottom: var(--line);
+}
+
+.part-title {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--font-ui);
+  font-size: var(--t-md);
+  font-weight: 800;
+  letter-spacing: 0;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+  hyphens: auto;
+}
+
+.part-value {
+  font-size: var(--t-lg);
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+.rows > * + * {
+  border-top: 1px solid var(--hairline);
+}
+
+.grade {
+  position: relative;
+  overflow: hidden;
+  touch-action: pan-y;
+}
+
+.grade-actions {
+  position: absolute;
+  inset: 0 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding: 0 var(--s-1) 0 var(--s-2);
+}
+
+.grade-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  min-height: var(--tap);
+  padding: 6px 0;
+  background: var(--paper);
+  transition: transform var(--dur) var(--ease);
+}
+
+.grade-value {
+  min-width: 2.6em;
+  font-size: var(--t-lg);
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+.grade-text {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  line-height: 1.3;
+}
+
+.grade-label {
+  font-size: var(--t-sm);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.grade-date {
+  font-size: var(--t-xs);
+  font-weight: 700;
+  color: var(--ink-2);
+}
+
+.grade-tags {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--t-xs);
+  font-weight: 700;
+  color: var(--ink-2);
+}
+
+.oral {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-3);
+  padding-top: var(--s-3);
+  border-top: 1px solid var(--hairline);
+}
+
+.oral-text {
+  display: grid;
+  gap: 2px;
+  line-height: 1.3;
+}
+
+.oral-label {
+  font-size: var(--t-sm);
+  font-weight: 700;
+}
+
+.oral .input {
+  width: 96px;
+  flex: none;
+  text-align: right;
+}
+
+/* A notice that needs an answer, on the hue */
+.notice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--s-3) var(--s-4);
+  padding: var(--s-4);
+}
+
+.notice p {
+  flex: 1 1 240px;
+  font-weight: 600;
+}
+
+/* ---------------------------------------------------------- picker cards */
+
+.picker {
+  display: grid;
+  gap: var(--s-3);
+}
+
+.picker-card {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  min-height: 64px;
+  padding: var(--s-3) var(--s-4);
+  border: var(--line);
+  border-radius: var(--r-control);
+  background: var(--paper);
+  box-shadow: var(--shadow-sm);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    transform var(--dur-fast) var(--ease),
+    box-shadow var(--dur-fast) var(--ease),
+    background-color var(--dur-fast) var(--ease);
+}
+
+.picker-card:hover {
+  background: var(--hue-wash, var(--ground-wash));
+}
+
+.picker-card.is-checked {
+  background: var(--hue);
+  color: var(--on-hue);
+  box-shadow: var(--shadow);
+  transform: translate(-2px, -2px);
+}
+
+.picker-card.is-disabled {
+  cursor: not-allowed;
+  color: var(--ink-3);
+  border-color: var(--ink-3);
+  box-shadow: none;
+  background: var(--paper);
+}
+
+.picker-card:has(:focus-visible) {
+  outline: 3px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.picker-swatch {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  border: var(--line);
+  border-radius: 50%;
+  background: var(--paper);
+}
+
+.picker-card.is-checked .picker-swatch {
+  border-color: var(--on-hue);
+  background: var(--on-hue);
+  box-shadow: inset 0 0 0 3px var(--hue);
+}
+
+.picker-card.is-disabled .picker-swatch {
+  border-color: var(--ink-3);
+}
+
+.picker-text {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  line-height: 1.3;
+}
+
+.picker-name {
+  font-weight: 800;
+}
+
+.picker-sub {
+  font-size: var(--t-xs);
+  font-weight: 700;
+}
+
+/* ---------------------------------------------------------------- dialogs */
+
+.scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--s-4);
+  background: var(--scrim);
+}
+
+.dialog {
+  width: 100%;
+  max-width: 460px;
+  max-height: calc(100dvh - 2 * var(--s-4));
+  overflow-y: auto;
+  display: grid;
+  gap: var(--s-4);
+  box-shadow: var(--shadow-lg);
+}
+
+.dialog-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-3);
+}
+
+.dialog-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--s-3);
+}
+
+.form {
+  display: grid;
+  gap: var(--s-4);
+}
+
+.form > *,
+.dialog > *,
+.auth-card > * {
+  min-width: 0;
+}
+
+.field-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--s-4);
+}
+
+/* ------------------------------------------------------------ date picker */
+
+.popover {
+  z-index: 70;
+  background: var(--paper);
+  color: var(--ink);
+  border: var(--line);
+  border-radius: var(--r-control);
+  box-shadow: var(--shadow);
+  padding: var(--s-3);
+}
+
+.cal-month {
+  display: grid;
+  gap: var(--s-2);
+}
+
+.cal-caption {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  font-weight: 800;
+  font-size: var(--t-sm);
+}
+
+.cal-nav {
+  position: absolute;
+  inset: 0 0 auto;
+  display: flex;
+  justify-content: space-between;
+  pointer-events: none;
+}
+
+.cal-nav button {
+  pointer-events: auto;
+}
+
+.cal-weekday {
+  width: 40px;
+  font-size: var(--t-xs);
+  font-weight: 700;
+  color: var(--ink-2);
+}
+
+.cal-day {
+  padding: 0;
+  text-align: center;
+}
+
+.cal-day button {
+  width: 40px;
+  height: 40px;
+  border: 2px solid transparent;
+  border-radius: var(--r-bar);
+  font-size: var(--t-sm);
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color var(--dur-fast) var(--ease);
+}
+
+.cal-day button:hover {
+  background: var(--hue-wash, var(--ground-wash));
+}
+
+.cal-today button {
+  border-color: var(--ink);
+}
+
+.cal-selected button,
+.cal-selected button:hover {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.cal-outside button {
+  color: var(--ink-3);
+  font-weight: 600;
+}
+
+/* ------------------------------------------------------------------ menu */
+
+.menu-panel {
+  position: fixed;
+  inset: 0 0 0 auto;
+  z-index: 50;
+  width: 380px;
+  max-width: 90vw;
+  overflow-y: auto;
+  display: grid;
+  align-content: start;
+  gap: var(--s-6);
+  padding: max(var(--s-4), env(safe-area-inset-top)) var(--s-5) var(--s-6);
+  background: var(--paper);
+  border-left: var(--line);
+  transform: translateX(100%);
+  visibility: hidden;
+  transition:
+    transform var(--dur-slow) var(--ease),
+    visibility 0s var(--dur-slow);
+}
+
+.menu-panel.is-open {
+  transform: none;
+  visibility: visible;
+  transition: transform var(--dur-slow) var(--ease);
+}
+
+.menu-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: var(--scrim);
+}
+
+.menu-group {
+  display: grid;
+  gap: var(--s-3);
+}
+
+.stack {
+  display: grid;
+  gap: var(--s-2);
+}
+
+/* ------------------------------------------------------------ view switch */
+
+/* Subjects / Statistics: a segmented control in the page head on wide
+   screens, docked to the bottom edge on phones. */
+.view-switch {
+  display: none;
+}
+
+.dock {
+  position: fixed;
+  inset: auto 0 0;
+  z-index: 20;
+  display: flex;
+  background: var(--paper);
+  border-top: var(--line);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.dock button {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-2);
+  min-height: var(--dock);
+  border-left: var(--line);
+  font-weight: 700;
+  font-size: var(--t-sm);
+  cursor: pointer;
+  transition: background-color var(--dur-fast) var(--ease);
+}
+
+.dock button:first-child {
+  border-left: 0;
+}
+
+.dock button:hover {
+  background: var(--hue-wash, var(--ground-wash));
+}
+
+.dock button[aria-current="page"] {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.has-dock {
+  padding-bottom: calc(var(--dock) + env(safe-area-inset-bottom));
+}
+
+@media (min-width: 700px) {
+  .view-switch {
+    display: inline-flex;
+  }
+
+  .dock {
+    display: none;
+  }
+
+  .has-dock {
+    padding-bottom: 0;
+  }
+}
+
+/* ---------------------------------------------------------------- footer */
+
+.site-footer {
+  margin-top: auto;
+  background: var(--ground);
+  border-top: var(--line);
+  padding: var(--s-6) 0;
+  font-size: var(--t-sm);
+}
+
+.site-footer .page {
+  display: grid;
+  gap: var(--s-4);
+}
+
+.footer-note {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--s-3) var(--s-4);
+  background: var(--paper);
+}
+
+.footer-note p {
+  flex: 1 1 280px;
+}
+
+.footer-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--s-2) var(--s-4);
+  font-weight: 700;
+  color: var(--ink-2);
+}
+
+.footer-row a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: var(--tap);
+}
+
+/* ------------------------------------------------------------- statistics */
+
+.chart-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--s-3);
+}
+
+.chart-head .select {
+  width: auto;
+  max-width: 100%;
+}
+
+.chart {
+  font-family: var(--font-ui);
+  font-size: var(--t-xs);
+  font-weight: 700;
+}
+
+.chart-tooltip {
+  background: var(--paper);
+  border: var(--line);
+  border-radius: var(--r-control);
+  box-shadow: var(--shadow-sm);
+  padding: var(--s-2) var(--s-3);
+  font-size: var(--t-xs);
+  font-weight: 600;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2) var(--s-4);
+  font-size: var(--t-xs);
+  font-weight: 700;
+  color: var(--ink-2);
+}
+
+.legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.legend i {
+  width: 12px;
+  height: 12px;
+  border: var(--line);
+  border-radius: 3px;
+  background: var(--ink);
+}
+
+.legend i.is-below {
+  background: var(--danger);
+}
+
+/* Label and value rows, as on a numbers sheet */
+.kv-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s-3);
+  min-height: 34px;
+  padding: 6px 0;
+  border-top: 1px solid var(--hairline);
+}
+
+.kv-row:first-child {
+  border-top: 0;
+}
+
+.kv-label {
+  font-weight: 600;
+  color: var(--ink-2);
+}
+
+.kv-value {
+  font-size: var(--t-lg);
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+/* --------------------------------------------------- empty / error cards */
+
+.state-card {
+  max-width: 560px;
+  padding: var(--s-6);
+  display: grid;
+  gap: var(--s-4);
+  justify-items: start;
+}
+
+.state-card h2 {
+  font-size: var(--t-2xl);
+}
+
+.state-card p {
+  color: var(--ink-2);
+  font-weight: 600;
+}
+
+/* ------------------------------------------------------------ onboarding */
+
+.auth {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: grid;
+  grid-template-columns: minmax(0, 460px);
+  place-content: center;
+  padding: var(--s-5) var(--gutter);
+}
+
+.auth-card {
+  padding: var(--s-6);
+  display: grid;
+  gap: var(--s-5);
+}
+
+.auth-title {
+  font-size: 2.5rem;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+.rule {
+  border: 0;
+  border-top: var(--line);
+}
+
+/* Phones swipe a grade row to reach its actions: leave room for their shadow */
+@media (max-width: 767px) {
+  .grade-row {
+    min-height: 52px;
+  }
+}
+
+@media (max-width: 599px) {
+  .leaf {
+    padding: var(--s-4);
+  }
+
+  .auth-card,
+  .state-card {
+    padding: var(--s-5);
+  }
+
+  .page-head {
+    padding: var(--s-5) 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0ms !important;
+    animation-duration: 0ms !important;
+  }
+}
+
+@tailwind utilities;

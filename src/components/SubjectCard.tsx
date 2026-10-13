@@ -22,79 +22,84 @@ export const SubjectCard = ({
   const { t, tSubject } = useI18n();
   const finalGrade = calculateFinalGrade(subject);
   const hasGrades = subject.grades.length > 0;
-  const isPassing = finalGrade >= 4 || !hasGrades;
+  const name = tSubject(subject.name);
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 mb-3">
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="text-base font-semibold text-gray-800 dark:text-gray-200">
-          {tSubject(subject.name)}
-        </h3>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={onAddGrade}
-            className="p-1.5 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors"
-            aria-label="Add grade"
-          >
-            <Plus className="w-4 h-4" />
-          </button>
-        </div>
+    <article className="leaf subject">
+      <div className="subject-head">
+        <h3 className="subject-title">{name}</h3>
+        {hasGrades && (
+          <div className="final">
+            <span className="final-label">{t('finalGrade')}</span>
+            <span className={`final-value ${finalGrade < 4 ? 'is-below' : ''}`}>
+              {finalGrade === 0 ? '–' : finalGrade.toFixed(1)}
+            </span>
+          </div>
+        )}
+        <button onClick={onAddGrade} className="btn btn-icon" aria-label={`${t('addGrade')}: ${name}`}>
+          <Plus size={18} strokeWidth={3} aria-hidden="true" />
+        </button>
       </div>
 
-      {hasGrades ? (
-        <>
-          <div className="mb-3">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-gray-600 dark:text-gray-400">{t('finalGrade')}</span>
-              <span
-                className={`text-lg font-bold ${
-                  isPassing ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
-                }`}
-              >
-                {finalGrade === 0 ? '-' : finalGrade.toFixed(1)}
-              </span>
-            </div>
-          </div>
-
-          <div className="mt-2 pt-2 mb-3 border-t border-gray-200 dark:border-gray-700">
-            <div className="flex items-center justify-between">
-              <label className="text-xs text-gray-600 dark:text-gray-400">
-                {t('oralGrade')}
-              </label>
-              <input
-                type="number"
-                step="0.01"
-                value={subject.oralGrade ?? ''}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  onOralGradeChange(value === '' ? undefined : parseFloat(value));
-                }}
-                placeholder="±0.00"
-                className="w-20 px-2 py-1 text-sm text-right border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-              {t('oralGradeDescription')}
-            </p>
-          </div>
-
-          <div className="space-y-2">
-            {subject.grades.map((grade) => (
-              <SwipeableGradeItem
-                key={grade.id}
-                grade={grade}
-                onEdit={() => onEditGrade(grade.id)}
-                onDelete={() => onDeleteGrade(grade.id)}
-              />
-            ))}
-          </div>
-        </>
-      ) : (
-        <p className="text-sm text-gray-400 dark:text-gray-500 text-center py-2">
-          {t('noGradesYet')}
-        </p>
-      )}
-    </div>
+      <SubjectGrades
+        subject={subject}
+        onEditGrade={onEditGrade}
+        onDeleteGrade={onDeleteGrade}
+        onOralGradeChange={onOralGradeChange}
+      />
+    </article>
   );
 };
 
+type SubjectGradesProps = Omit<SubjectCardProps, 'onAddGrade'>;
+
+// The grades of one subject and its oral adjustment; shared by a Fach and a Teilfach
+export const SubjectGrades = ({
+  subject,
+  onEditGrade,
+  onDeleteGrade,
+  onOralGradeChange,
+}: SubjectGradesProps) => {
+  const { t } = useI18n();
+  const oralId = `oral-${subject.id}`;
+
+  if (subject.grades.length === 0) {
+    return <p className="muted text-sm">{t('noGradesYet')}</p>;
+  }
+
+  return (
+    <>
+      <div className="rows">
+        {subject.grades.map((grade) => (
+          <SwipeableGradeItem
+            key={grade.id}
+            grade={grade}
+            onEdit={() => onEditGrade(grade.id)}
+            onDelete={() => onDeleteGrade(grade.id)}
+          />
+        ))}
+      </div>
+
+      <div className="oral">
+        <div className="oral-text">
+          <label htmlFor={oralId} className="oral-label">
+            {t('oralGrade')}
+          </label>
+          <span className="field-hint">{t('oralGradeDescription')}</span>
+        </div>
+        <input
+          id={oralId}
+          type="number"
+          step="0.01"
+          value={subject.oralGrade ?? ''}
+          onChange={(e) => {
+            const value = e.target.value;
+            onOralGradeChange(value === '' ? undefined : parseFloat(value));
+          }}
+          placeholder="±0.00"
+          className="input"
+        />
+      </div>
+    </>
+  );
+};

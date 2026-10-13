@@ -33,52 +33,74 @@ export const defaultSubjects: Record<Year, (Subject | CombinedSubject)[]> = {
     createDefaultSubject('Deutsch'),
     createDefaultSubject('Französisch'),
     createDefaultSubject('Englisch'),
-    createDefaultSubject('Maths'),
+    createDefaultSubject('Mathematik'),
     createDefaultSubject('Sport'),
-    createDefaultSubject('Berufseinblicke'),
     createCombinedSubject('Naturwissenschaften', ['Chemie', 'Biologie', 'Physik']),
-    createCombinedSubject('Geistes- und Sozialwissenschaften', ['Geschichte & Politik', 'Philosophie']),
+    createCombinedSubject('Geistes- und Sozialwissenschaften', ['Geschichte und Politik', 'Philosophie']),
+    createCombinedSubject('Musische Fächer', ['Musik', 'Bildnerisches Gestalten']),
+    createCombinedSubject('Berufsfeldeinblicke', ['Humanbiologie', 'Soziologie', 'Pädagogik/Entwicklungspsychologie']),
   ],
   3: [], // Year 3 subjects depend on direction
 };
 
-// Year 3 Directions - adjust names and subjects as needed
+// Old id -> current id for renamed subjects, so saved grades follow the rename
+export const renamedSubjectIds: Record<string, string> = {
+  'maths': 'mathematik',
+  'geschichte-&-politik': 'geschichte-und-politik',
+  // former year 3 placeholder subjects
+  'french': 'französisch',
+  'english': 'englisch',
+  'math': 'mathematik',
+  'biology': 'biologie',
+};
+
+// Old flat subject id -> id of the combined subject that replaced it. Its saved
+// grades can't be mapped to a Teilfach automatically, so the user assigns them.
+export const splitSubjectIds: Record<string, string> = {
+  'berufseinblicke': 'berufsfeldeinblicke',
+};
+
+// Subjects shared by all year 3 directions. The Fach Naturwissenschaften has
+// Biologie as its only Teilfach in year 3, so it is listed as Biologie.
+const year3CommonSubjects = (): Subject[] => [
+  createDefaultSubject('Deutsch'),
+  createDefaultSubject('Französisch'),
+  createDefaultSubject('Englisch'),
+  createDefaultSubject('Mathematik'),
+  createDefaultSubject('Biologie'),
+  createDefaultSubject('Sport'),
+];
+
+// Year 3 Directions (Berufsfelder)
 export const year3Directions: Direction[] = [
   {
-    id: 'direction-a',
-    name: 'Direction A',
+    id: 'gesundheit',
+    name: 'Gesundheit',
     subjects: [
-      createDefaultSubject('Advanced Math'),
-      createDefaultSubject('Physics'),
-      createDefaultSubject('Chemistry'),
-      createDefaultSubject('Biology'),
-      createDefaultSubject('French'),
-      createDefaultSubject('English'),
+      ...year3CommonSubjects(),
+      createDefaultSubject('Humanbiologie'),
+      createCombinedSubject('Chemie und Physik', ['Chemie', 'Physik']),
+      createCombinedSubject('Mensch und Gesellschaft', ['Psychologie', 'Philosophie/Ethik', 'Wirtschaft und Recht']),
     ],
   },
   {
-    id: 'direction-b',
-    name: 'Direction B',
+    id: 'soziale-arbeit',
+    name: 'Soziale Arbeit',
     subjects: [
-      createDefaultSubject('Economics'),
-      createDefaultSubject('Business'),
-      createDefaultSubject('Math'),
-      createDefaultSubject('History'),
-      createDefaultSubject('French'),
-      createDefaultSubject('English'),
+      ...year3CommonSubjects(),
+      createDefaultSubject('Soziologie'),
+      createCombinedSubject('Gesellschaft und Wirtschaft', ['Geschichte und Politik', 'Wirtschaft und Recht']),
+      createCombinedSubject('Mensch und Gesellschaft', ['Philosophie/Ethik', 'Psychologie', 'Pädagogik/Entwicklungspsychologie']),
     ],
   },
   {
-    id: 'direction-c',
-    name: 'Direction C',
+    id: 'paedagogik',
+    name: 'Pädagogik',
     subjects: [
-      createDefaultSubject('Literature'),
-      createDefaultSubject('History'),
-      createDefaultSubject('Philosophy'),
-      createDefaultSubject('Languages'),
-      createDefaultSubject('French'),
-      createDefaultSubject('English'),
+      ...year3CommonSubjects(),
+      createCombinedSubject('Psychologie', ['Psychologie', 'Pädagogik/Entwicklungspsychologie']),
+      createCombinedSubject('Musik und Bildnerisches Gestalten', ['Musik', 'Bildnerisches Gestalten']),
+      createCombinedSubject('Naturwissenschaften und Geografie', ['Naturwissenschaften (Chemie/Physik)', 'Geografie']),
     ],
   },
 ];
-

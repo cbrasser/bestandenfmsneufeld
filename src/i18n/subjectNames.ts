@@ -25,12 +25,6 @@ const subjectNameTranslations: Record<string, Record<Language, string>> = {
     en: 'Mathematics',
     it: 'Matematica',
   },
-  'Maths': {
-    de: 'Maths',
-    fr: 'Maths',
-    en: 'Maths',
-    it: 'Matematica',
-  },
   'Psychologie': {
     de: 'Psychologie',
     fr: 'Psychologie',
@@ -43,11 +37,29 @@ const subjectNameTranslations: Record<string, Record<Language, string>> = {
     en: 'Sports',
     it: 'Sport',
   },
-  'Berufseinblicke': {
-    de: 'Berufseinblicke',
-    fr: 'Aperçus professionnels',
-    en: 'Career Insights',
-    it: 'Approfondimenti professionali',
+  'Berufsfeldeinblicke': {
+    de: 'Berufsfeldeinblicke',
+    fr: 'Aperçus des champs professionnels',
+    en: 'Career Field Insights',
+    it: 'Approfondimenti sui campi professionali',
+  },
+  'Humanbiologie': {
+    de: 'Humanbiologie',
+    fr: 'Biologie humaine',
+    en: 'Human Biology',
+    it: 'Biologia umana',
+  },
+  'Soziologie': {
+    de: 'Soziologie',
+    fr: 'Sociologie',
+    en: 'Sociology',
+    it: 'Sociologia',
+  },
+  'Pädagogik/Entwicklungspsychologie': {
+    de: 'Pädagogik/Entwicklungspsychologie',
+    fr: 'Pédagogie/Psychologie du développement',
+    en: 'Pedagogy/Developmental Psychology',
+    it: 'Pedagogia/Psicologia dello sviluppo',
   },
   'Naturwissenschaften': {
     de: 'Naturwissenschaften',
@@ -127,89 +139,71 @@ const subjectNameTranslations: Record<string, Record<Language, string>> = {
     en: 'Humanities and Social Sciences',
     it: 'Scienze umane e sociali',
   },
-  'Geschichte & Politik': {
-    de: 'Geschichte & Politik',
-    fr: 'Histoire & Politique',
-    en: 'History & Politics',
-    it: 'Storia & Politica',
-  },
   'Philosophie': {
     de: 'Philosophie',
     fr: 'Philosophie',
     en: 'Philosophy',
     it: 'Filosofia',
   },
-  'Advanced Math': {
-    de: 'Erweiterte Mathematik',
-    fr: 'Maths avancées',
-    en: 'Advanced Math',
-    it: 'Matematica avanzata',
+  'Philosophie/Ethik': {
+    de: 'Philosophie/Ethik',
+    fr: 'Philosophie/Éthique',
+    en: 'Philosophy/Ethics',
+    it: 'Filosofia/Etica',
   },
-  'Economics': {
-    de: 'Wirtschaft',
-    fr: 'Économie',
-    en: 'Economics',
-    it: 'Economia',
+  'Chemie und Physik': {
+    de: 'Chemie und Physik',
+    fr: 'Chimie et physique',
+    en: 'Chemistry and Physics',
+    it: 'Chimica e fisica',
   },
-  'Business': {
-    de: 'Business',
-    fr: 'Commerce',
-    en: 'Business',
-    it: 'Business',
+  'Mensch und Gesellschaft': {
+    de: 'Mensch und Gesellschaft',
+    fr: 'Homme et société',
+    en: 'People and Society',
+    it: 'Uomo e società',
   },
-  'Math': {
-    de: 'Mathematik',
-    fr: 'Maths',
-    en: 'Math',
-    it: 'Matematica',
+  'Gesellschaft und Wirtschaft': {
+    de: 'Gesellschaft und Wirtschaft',
+    fr: 'Société et économie',
+    en: 'Society and Economics',
+    it: 'Società ed economia',
   },
-  'History': {
-    de: 'Geschichte',
-    fr: 'Histoire',
-    en: 'History',
-    it: 'Storia',
+  'Musik und Bildnerisches Gestalten': {
+    de: 'Musik und Bildnerisches Gestalten',
+    fr: 'Musique et arts visuels',
+    en: 'Music and Visual Arts',
+    it: 'Musica e arti visive',
   },
-  'Literature': {
-    de: 'Literatur',
-    fr: 'Littérature',
-    en: 'Literature',
-    it: 'Letteratura',
+  'Naturwissenschaften und Geografie': {
+    de: 'Naturwissenschaften und Geografie',
+    fr: 'Sciences naturelles et géographie',
+    en: 'Natural Sciences and Geography',
+    it: 'Scienze naturali e geografia',
   },
-  'Languages': {
-    de: 'Sprachen',
-    fr: 'Langues',
-    en: 'Languages',
-    it: 'Lingue',
+  'Naturwissenschaften (Chemie/Physik)': {
+    de: 'Naturwissenschaften (Chemie/Physik)',
+    fr: 'Sciences naturelles (chimie/physique)',
+    en: 'Natural Sciences (Chemistry/Physics)',
+    it: 'Scienze naturali (chimica/fisica)',
   },
-  'French': {
-    de: 'Französisch',
-    fr: 'Français',
-    en: 'French',
-    it: 'Francese',
+  'Gesundheit': {
+    de: 'Gesundheit',
+    fr: 'Santé',
+    en: 'Health',
+    it: 'Sanità',
   },
-  'English': {
-    de: 'Englisch',
-    fr: 'Anglais',
-    en: 'English',
-    it: 'Inglese',
+  'Soziale Arbeit': {
+    de: 'Soziale Arbeit',
+    fr: 'Travail social',
+    en: 'Social Work',
+    it: 'Lavoro sociale',
   },
-  'Physics': {
-    de: 'Physik',
-    fr: 'Physique',
-    en: 'Physics',
-    it: 'Fisica',
-  },
-  'Chemistry': {
-    de: 'Chemie',
-    fr: 'Chimie',
-    en: 'Chemistry',
-    it: 'Chimica',
-  },
-  'Biology': {
-    de: 'Biologie',
-    fr: 'Biologie',
-    en: 'Biology',
-    it: 'Biologia',
+  'Pädagogik': {
+    de: 'Pädagogik',
+    fr: 'Pédagogie',
+    en: 'Pedagogy',
+    it: 'Pedagogia',
   },
 };
 
