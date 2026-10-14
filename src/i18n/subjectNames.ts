@@ -205,6 +205,78 @@ const subjectNameTranslations: Record<string, Record<Language, string>> = {
     en: 'Pedagogy',
     it: 'Pedagogia',
   },
+  'Geschichte': {
+    de: 'Geschichte',
+    fr: 'Histoire',
+    en: 'History',
+    it: 'Storia',
+  },
+  'Informatik': {
+    de: 'Informatik',
+    fr: 'Informatique',
+    en: 'Computer Science',
+    it: 'Informatica',
+  },
+  'Italienisch': {
+    de: 'Italienisch',
+    fr: 'Italien',
+    en: 'Italian',
+    it: 'Italiano',
+  },
+  'Latein': {
+    de: 'Latein',
+    fr: 'Latin',
+    en: 'Latin',
+    it: 'Latino',
+  },
+  'Spanisch': {
+    de: 'Spanisch',
+    fr: 'Espagnol',
+    en: 'Spanish',
+    it: 'Spagnolo',
+  },
+  'Einführung in Wirtschaft und Recht': {
+    de: 'Einführung in Wirtschaft und Recht',
+    fr: "Introduction à l'économie et au droit",
+    en: 'Introduction to Economics and Law',
+    it: "Introduzione all'economia e al diritto",
+  },
+  'Biologie und Chemie': {
+    de: 'Biologie und Chemie',
+    fr: 'Biologie et chimie',
+    en: 'Biology and Chemistry',
+    it: 'Biologia e chimica',
+  },
+  'Philosophie/Pädagogik/Psychologie': {
+    de: 'Philosophie/Pädagogik/Psychologie',
+    fr: 'Philosophie/Pédagogie/Psychologie',
+    en: 'Philosophy/Pedagogy/Psychology',
+    it: 'Filosofia/Pedagogia/Psicologia',
+  },
+  'Physik und Anwendungen der Mathematik': {
+    de: 'Physik und Anwendungen der Mathematik',
+    fr: 'Physique et applications des mathématiques',
+    en: 'Physics and Applied Mathematics',
+    it: 'Fisica e applicazioni della matematica',
+  },
+  'Anwendungen der Mathematik': {
+    de: 'Anwendungen der Mathematik',
+    fr: 'Applications des mathématiques',
+    en: 'Applied Mathematics',
+    it: 'Applicazioni della matematica',
+  },
+  'Pädagogik/Psychologie': {
+    de: 'Pädagogik/Psychologie',
+    fr: 'Pédagogie/Psychologie',
+    en: 'Pedagogy/Psychology',
+    it: 'Pedagogia/Psicologia',
+  },
+  'Religionslehre': {
+    de: 'Religionslehre',
+    fr: 'Sciences des religions',
+    en: 'Religious Studies',
+    it: 'Scienze delle religioni',
+  },
 };
 
 export const getTranslatedSubjectName = (name: string, language: Language): string => {

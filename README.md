@@ -19,9 +19,17 @@ A mobile-first Progressive Web App (PWA) for students to track their grades and 
 
 ## Promotion Criteria
 
+FMS ("Promotionsbestimmungen FMS ab 24"):
+
 - No more than 3 grades below 4 (Teilfächer count individually)
 - Average of the Fach grades above or equal to 4
 - Total deficit (sum of how far Fach grades are below 4) not larger than 2
+
+Gymnasium ("Auszug aus den Promotionsbestimmungen", Gymnasium Neufeld 2023):
+
+- No more than 4 grades below 4
+- Twice the sum of how far grades are below 4 not larger than the sum of how far grades are above 4
+- The subjects per year follow Gymnasium Neufeld's Lektionentafel (Lehrplan 17, from 2022/23); see `src/config/gymnasium.ts`
 
 ## Getting Started
 

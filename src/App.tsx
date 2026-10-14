@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
-import type { StudentData, Year, Grade, StudentInfo, Subject } from './types';
+import type { StudentData, Year, Grade, StudentInfo, Subject, GymProfile as GymProfileType } from './types';
 import { isSubject, isCombinedSubject } from './types';
 import { storageService } from './utils/storage';
-import { initializeStudentData, getSubjectsForYear, reconcileAllYears, reconcileSubjectList } from './utils/initializeData';
+import { initializeStudentData, getSubjectsForYear, reconcileAllYears, reconcileSubjectList, subjectsLosingGrades } from './utils/initializeData';
 import { checkPromotionCriteria } from './utils/promotion';
-import { getCriteriaForYear } from './config/criteria';
+import { getCriteria } from './config/criteria';
+import { GYM_YEARS } from './config/gymnasium';
 import { year3Directions } from './config/subjects';
 import { PromotionStatus } from './components/PromotionStatus';
 import { SubjectCard } from './components/SubjectCard';
@@ -14,6 +15,7 @@ import { DirectionSelector } from './components/DirectionSelector';
 import { Onboarding } from './components/Onboarding';
 import { Menu } from './components/Menu';
 import { YearTabs } from './components/YearTabs';
+import { GymProfile } from './components/GymProfile';
 import { CloudSync } from './components/CloudSync';
 import { useI18n } from './i18n/context';
 import { CombinedSubjectCard } from './components/CombinedSubjectCard';
@@ -78,7 +80,8 @@ function App() {
     return (
       <Onboarding
         onComplete={(info: StudentInfo) => {
-          const updatedData = { ...data, studentInfo: info };
+          // Builds the subject lists of the chosen Bildungsgang
+          const updatedData = reconcileAllYears({ ...data, studentInfo: info });
           setData(updatedData);
           storageService.saveData(updatedData);
         }}
@@ -91,8 +94,10 @@ function App() {
     );
   }
 
+  const isGym = data.studentInfo.division === 'Gymnasium';
+  const years: Year[] = isGym ? GYM_YEARS : [1, 2, 3];
   const subjects = getSubjectsForYear(data, currentYear);
-  const criteria = getCriteriaForYear(currentYear);
+  const criteria = getCriteria(data.studentInfo.division);
   const promotionStatus = checkPromotionCriteria(subjects, criteria);
 
   const handleYearChange = (year: Year) => {
@@ -119,6 +124,15 @@ function App() {
 
     setData(updatedData);
     storageService.saveData(updatedData);
+  };
+
+  const handleGymProfileChange = (profile: GymProfileType) => {
+    const updatedData = reconcileAllYears({ ...data, gymProfile: profile });
+    const lost = subjectsLosingGrades(data, updatedData);
+    if (lost.length > 0 && !window.confirm(`${t('gymConfirmDrop')} ${[...new Set(lost.map(tSubject))].join(', ')}`)) {
+      return;
+    }
+    setData(updatedData);
   };
 
   const handleAddGrade = (subjectId: string) => {
@@ -258,6 +272,7 @@ function App() {
       1: t('year1'),
       2: t('year2'),
       3: t('year3'),
+      4: t('year4'),
     };
 
     const handleExport = () => {
@@ -299,10 +314,14 @@ function App() {
       }
     };
 
-  const direction = currentYear === 3
+  // FMS year 3 depends on the Berufsfeld
+  const hasDirections = !isGym && currentYear === 3;
+  const direction = hasDirections
     ? year3Directions.find((d) => d.id === data.year3Direction)
     : undefined;
-  const needsDirection = currentYear === 3 && !direction;
+  const needsDirection = hasDirections && !direction;
+  // The last Gymnasium year ends without a promotion
+  const isLastGymYear = isGym && currentYear === GYM_YEARS[GYM_YEARS.length - 1];
 
   // The verdict is the page title
   const verdict = !promotionStatus.hasGrades
@@ -362,10 +381,18 @@ function App() {
 
         <div className="workspace">
           <div className="workspace-side">
-            <YearTabs currentYear={currentYear} onYearChange={handleYearChange} />
+            <YearTabs years={years} currentYear={currentYear} onYearChange={handleYearChange} />
             <div className="side-stack">
-              {subjects.length > 0 && <PromotionStatus status={promotionStatus} />}
-              {currentYear === 3 && (
+              {subjects.length > 0 && (
+                <PromotionStatus
+                  status={promotionStatus}
+                  note={isLastGymYear ? t('lastYearNoPromotion') : undefined}
+                />
+              )}
+              {isGym && (
+                <GymProfile year={currentYear} profile={data.gymProfile ?? {}} onChange={handleGymProfileChange} />
+              )}
+              {hasDirections && (
                 <DirectionSelector
                   directions={year3Directions}
                   selectedDirectionId={data.year3Direction}

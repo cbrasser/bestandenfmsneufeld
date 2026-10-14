@@ -27,7 +27,12 @@ export const SubjectCard = ({
   return (
     <article className="leaf subject">
       <div className="subject-head">
-        <h3 className="subject-title">{name}</h3>
+        <div className="subject-title">
+          <h3>{name}</h3>
+          {subject.kind && (
+            <span className="chip mt-1">{subject.kind === 'spf' ? t('gymSpf') : t('gymEf')}</span>
+          )}
+        </div>
         {hasGrades && (
           <div className="final">
             <span className="final-label">{t('finalGrade')}</span>

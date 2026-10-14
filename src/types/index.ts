@@ -16,6 +16,7 @@ export type PromotionEntity = {
 
 export interface Subject extends PromotionEntity {
   grades: Grade[];
+  kind?: 'spf' | 'ef'; // Gymnasium: Schwerpunktfach or Ergänzungsfach
   oralGrade?: number; // optional oral grade adjustment (e.g., +0.03, -0.25)
 };
 
@@ -33,7 +34,8 @@ export function isCombinedSubject(entity: PromotionEntity): entity is CombinedSu
   return 'subjects' in entity;
 }
 
-export type Year = 1 | 2 | 3;
+// FMS has years 1 to 3, the Gymnasium 1 to 4
+export type Year = 1 | 2 | 3 | 4;
 
 export type Direction = {
   id: string;
@@ -48,10 +50,19 @@ export type StudentInfo = {
   division: Division;
 };
 
+// The Gymnasium subjects a student chooses; the rest follow from the Lektionentafel
+export type GymProfile = {
+  thirdLanguage?: string; // Englisch, Italienisch or Latein
+  arts?: string; // Bildnerisches Gestalten or Musik
+  spf?: string; // Schwerpunktfach id
+  ef?: string; // Ergänzungsfach id, taught in years 3 and 4
+};
+
 export type StudentData = {
   studentInfo?: StudentInfo;
   currentYear: Year;
   year3Direction?: string; // direction ID for year 3
+  gymProfile?: GymProfile;
   years: {
     [key in Year]: {
       subjects: (Subject | CombinedSubject)[];
@@ -59,11 +70,18 @@ export type StudentData = {
   };
 };
 
-export type PromotionCriteria = {
-  maxFailures: number; // max number of final grades below 4
-  minAverage: number; // minimum average (typically 4)
-  maxDeficit: number; // max total sum of grades below 4 (typically 2)
-};
+export type PromotionCriteria =
+  | {
+      kind: 'fms';
+      maxFailures: number; // max number of grades below 4, counted per Teilfach
+      minAverage: number; // minimum average of the Fach grades
+      maxDeficit: number; // max sum of how far Fach grades are below 4
+    }
+  | {
+      kind: 'gym';
+      maxFailures: number; // max number of grades below 4
+      deficitFactor: number; // the deficit, times this, may not exceed the surplus
+    };
 
 export type PromotionStatus = {
   isPassing: boolean;
@@ -74,16 +92,23 @@ export type PromotionStatus = {
       count: number;
       max: number;
     };
-    average: {
+    // FMS
+    average?: {
       passed: boolean;
       value: number;
       min: number;
     };
-    deficit: {
+    deficit?: {
       passed: boolean;
       value: number;
       max: number;
     };
+    // Gymnasium: the doubled deficit is weighed against the surplus
+    compensation?: {
+      passed: boolean;
+      surplus: number; // sum of how far grades are above 4
+      deficit: number; // sum of how far grades are below 4, times the factor
+      factor: number;
+    };
   };
 };
-

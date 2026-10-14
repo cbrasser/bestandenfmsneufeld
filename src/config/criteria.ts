@@ -1,33 +1,20 @@
-import type { PromotionCriteria } from '../types';
+import type { Division, PromotionCriteria } from '../types';
 
-// Promotion criteria for year 1 (as specified)
-export const year1Criteria: PromotionCriteria = {
-  maxFailures: 3, // no more than 3 final grades below 4
-  minAverage: 4, // average above or equal to 4
-  maxDeficit: 2, // total sum of grades below 4 is not larger than 2
+// FMS: "Promotionsbestimmungen FMS ab 24"
+export const fmsCriteria: PromotionCriteria = {
+  kind: 'fms',
+  maxFailures: 3, // no more than 3 grades below 4, counted per Teilfach
+  minAverage: 4, // average of the Fach grades at least 4
+  maxDeficit: 2, // sum of how far Fach grades are below 4 at most 2
 };
 
-// Default criteria for other years (can be customized)
-export const year2Criteria: PromotionCriteria = {
-  maxFailures: 3,
-  minAverage: 4,
-  maxDeficit: 2,
+// Gymnasium: "Auszug aus den Promotionsbestimmungen" (Gymnasium Neufeld, 2023)
+export const gymCriteria: PromotionCriteria = {
+  kind: 'gym',
+  maxFailures: 4, // no more than 4 grades below 4
+  deficitFactor: 2, // twice the deficit may not exceed the surplus
 };
 
-export const year3Criteria: PromotionCriteria = {
-  maxFailures: 3,
-  minAverage: 4,
-  maxDeficit: 2,
-};
-
-export const getCriteriaForYear = (year: 1 | 2 | 3): PromotionCriteria => {
-  switch (year) {
-    case 1:
-      return year1Criteria;
-    case 2:
-      return year2Criteria;
-    case 3:
-      return year3Criteria;
-  }
-};
-
+// The rules are the same in every year of a Bildungsgang
+export const getCriteria = (division: Division): PromotionCriteria =>
+  division === 'Gymnasium' ? gymCriteria : fmsCriteria;

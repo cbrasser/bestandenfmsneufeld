@@ -177,6 +177,24 @@ export interface Translations {
   // Icon buttons
   deleteGrade: string;
   close: string;
+
+  // Gymnasium
+  year4: string;
+  gymProfile: string;
+  gymProfileIncomplete: string;
+  gymThirdLanguage: string;
+  gymArts: string;
+  gymSpf: string;
+  gymEf: string;
+  gymEfHint: string;
+  gymSpfLanguageHint: string;
+  gymChoose: string;
+  gymConfirmDrop: string;
+  compensation: string;
+  compensationNote: string;
+  plusPoints: string;
+  minusPointsDouble: string;
+  lastYearNoPromotion: string;
 }
 
 export const translations: Record<Language, Translations> = {
@@ -353,6 +371,24 @@ export const translations: Record<Language, Translations> = {
     // Icon buttons
     deleteGrade: 'Note löschen',
     close: 'Schliessen',
+
+    // Gymnasium
+    year4: 'Jahr 4',
+    gymProfile: 'Deine Fächerwahl',
+    gymProfileIncomplete: 'Wähle deine Fächer, damit alle Noten zählen.',
+    gymThirdLanguage: 'Dritte Sprache',
+    gymArts: 'Bildnerisches Gestalten oder Musik',
+    gymSpf: 'Schwerpunktfach',
+    gymEf: 'Ergänzungsfach',
+    gymEfHint: 'Gewählt Ende Jahr 2, zählt in Jahr 3 und 4',
+    gymSpfLanguageHint: 'Mit diesem Schwerpunktfach ist das deine dritte Sprache.',
+    gymChoose: 'Bitte wählen',
+    gymConfirmDrop: 'Diese Fächer zählen danach nicht mehr, ihre Noten werden gelöscht:',
+    compensation: 'Ausgleich',
+    compensationNote: 'Doppelte Minuspunkte höchstens gleich Pluspunkte',
+    plusPoints: 'Pluspunkte',
+    minusPointsDouble: '2 × Minuspunkte',
+    lastYearNoPromotion: 'Im letzten Jahr gibt es keine Promotion: ein ungenügendes Ergebnis bleibt ohne Wirkung.',
   },
   fr: {
     // General
@@ -527,6 +563,24 @@ export const translations: Record<Language, Translations> = {
     // Icon buttons
     deleteGrade: 'Supprimer la note',
     close: 'Fermer',
+
+    // Gymnasium
+    year4: 'Année 4',
+    gymProfile: 'Tes options',
+    gymProfileIncomplete: 'Choisis tes branches pour que toutes les notes comptent.',
+    gymThirdLanguage: 'Troisième langue',
+    gymArts: 'Arts visuels ou musique',
+    gymSpf: 'Option spécifique',
+    gymEf: 'Option complémentaire',
+    gymEfHint: 'Choisie à la fin de la 2e année, compte en 3e et 4e année',
+    gymSpfLanguageHint: "Avec cette option spécifique, c'est ta troisième langue.",
+    gymChoose: 'Choisir',
+    gymConfirmDrop: 'Ces branches ne compteront plus et leurs notes seront supprimées :',
+    compensation: 'Compensation',
+    compensationNote: 'Double des points négatifs au plus égal aux points positifs',
+    plusPoints: 'Points positifs',
+    minusPointsDouble: '2 × points négatifs',
+    lastYearNoPromotion: 'Pas de promotion en dernière année : un résultat insuffisant reste sans effet.',
   },
   en: {
     // General
@@ -701,6 +755,24 @@ export const translations: Record<Language, Translations> = {
     // Icon buttons
     deleteGrade: 'Delete grade',
     close: 'Close',
+
+    // Gymnasium
+    year4: 'Year 4',
+    gymProfile: 'Your subject choices',
+    gymProfileIncomplete: 'Choose your subjects so every grade counts.',
+    gymThirdLanguage: 'Third language',
+    gymArts: 'Visual arts or music',
+    gymSpf: 'Main subject',
+    gymEf: 'Supplementary subject',
+    gymEfHint: 'Chosen at the end of year 2, counts in years 3 and 4',
+    gymSpfLanguageHint: 'With this main subject, this is your third language.',
+    gymChoose: 'Choose',
+    gymConfirmDrop: 'These subjects will no longer count and their grades will be deleted:',
+    compensation: 'Compensation',
+    compensationNote: 'Twice the minus points at most equal to the plus points',
+    plusPoints: 'Plus points',
+    minusPointsDouble: '2 × minus points',
+    lastYearNoPromotion: 'There is no promotion in the last year: an insufficient result has no effect.',
   },
   it: {
     // General
@@ -875,6 +947,24 @@ export const translations: Record<Language, Translations> = {
     // Icon buttons
     deleteGrade: 'Elimina voto',
     close: 'Chiudi',
+
+    // Gymnasium
+    year4: 'Anno 4',
+    gymProfile: 'Le tue scelte',
+    gymProfileIncomplete: 'Scegli le tue materie affinché contino tutti i voti.',
+    gymThirdLanguage: 'Terza lingua',
+    gymArts: 'Arti visive o musica',
+    gymSpf: 'Opzione specifica',
+    gymEf: 'Opzione complementare',
+    gymEfHint: 'Scelta alla fine del 2° anno, conta nel 3° e 4° anno',
+    gymSpfLanguageHint: 'Con questa opzione specifica, è la tua terza lingua.',
+    gymChoose: 'Scegli',
+    gymConfirmDrop: 'Queste materie non conteranno più e i loro voti saranno eliminati:',
+    compensation: 'Compensazione',
+    compensationNote: 'Doppio dei punti negativi al massimo pari ai punti positivi',
+    plusPoints: 'Punti positivi',
+    minusPointsDouble: '2 × punti negativi',
+    lastYearNoPromotion: "Nell'ultimo anno non c'è promozione: un risultato insufficiente resta senza effetto.",
   },
 };
 

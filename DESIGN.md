@@ -17,6 +17,7 @@ colors:
   year-1: "#ffc93c"
   year-2: "#2ec4b6"
   year-3: "#b49af8"
+  year-4: "#ff8cc3"
   dark-ink: "#f1f2f5"
   dark-ink-2: "#c3c7d0"
   dark-ink-3: "#9a9eaa"
@@ -186,6 +187,7 @@ The year hues, taken from yaft's category hues. Each is the page ground of its y
 - **Year 1 Marigold** (`year-1`, #ffc93c).
 - **Year 2 Lagoon Teal** (`year-2`, #2ec4b6).
 - **Year 3 Lilac** (`year-3`, #b49af8).
+- **Year 4 Flamingo** (`year-4`, #ff8cc3): the Gymnasium's fourth year only.
 
 Two tints are derived wherever `data-year` is set: **wash** (14% hue in paper) for hover fills and note boxes, **tint** (30%) in reserve. Without a year (onboarding, loading) the page is Fog Ground and Pale Wash stands in.
 
@@ -256,6 +258,9 @@ One leaf of three rows separated by hairlines. Each row has a check, cross or da
 - **Grades under 4:** one outlined slot per allowed failure, filled ink for each one used.
 - **Average:** a pill track from 1 to 6 filled with the year's hue up to the average, and a 2px ink mark at the minimum.
 - **Deficit:** a pill track from 0 to the maximum, filled ink.
+- **Ausgleich** (Gymnasium, instead of average and deficit): two tracks on one shared scale, the plus points in the year's hue and twice the minus points in ink, each with its figure, so the longer bar shows which side wins.
+
+The Gymnasium has four slots for grades under 4. In its last year a footnote under a hairline says that no promotion follows.
 
 A failed condition turns its figure, icon and fill red. Without grades the average shows a dash and an empty track.
 
@@ -263,6 +268,9 @@ A failed condition turns its figure, icon and fill red. Without grades the avera
 Head row: the subject's name, "Endnote" over the final grade (red under 4), and a 44px square add button. Then one row per grade: the grade, its label over its date, the weight ("×2") and a semester chip. On wide screens the row ends in quiet edit and delete icon buttons; on phones the row is swiped left to show them. Last, the oral adjustment: label and hint on the left, a 96px right-aligned input on the right. A subject without grades says so in Muted Slate.
 
 A Fach made of Teilfächer is one leaf. Each Teilfach is a titled group inside it, its name in 800 over a 2px ink rule with its own grade and add button, never a card in a card.
+
+### Subject choices (Gymnasium)
+A leaf titled "Deine Fächerwahl" in the side column with four native selects: Schwerpunktfach, third language, Bildnerisches Gestalten or Musik, Ergänzungsfach (with a hint that it counts from year 3). With a language Schwerpunktfach the third-language select is disabled and shows that language. Until the choices are made, a Slate Ink line asks for them. A Schwerpunktfach or Ergänzungsfach leaf carries a chip with that word under its name.
 
 ### Picker cards
 Outlined cards with a round swatch, a name in 800 and a line under it. The checked card fills with the hue, lifts 2px onto a medium shadow and its swatch turns ink. Used for the year 3 direction and for the division in onboarding (where a disabled card is drawn in Muted Slate with an "In Arbeit" chip).

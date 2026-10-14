@@ -21,6 +21,7 @@
   --year-1: #ffc93c;
   --year-2: #2ec4b6;
   --year-3: #b49af8;
+  --year-4: #ff8cc3; /* the Gymnasium has a fourth year */
   /* Text on a full-strength hue stays dark in both themes */
   --on-hue: #15161a;
 
@@ -101,6 +102,7 @@
 [data-year="1"] { --hue: var(--year-1); }
 [data-year="2"] { --hue: var(--year-2); }
 [data-year="3"] { --hue: var(--year-3); }
+[data-year="4"] { --hue: var(--year-4); }
 
 [data-year] {
   --page: var(--hue);
@@ -352,6 +354,13 @@ a {
   padding: 0 var(--s-3);
   font-weight: 600;
   box-shadow: var(--shadow-sm);
+}
+
+.select:disabled {
+  cursor: not-allowed;
+  color: var(--ink-3);
+  border-color: var(--ink-3);
+  box-shadow: none;
 }
 
 .select {
@@ -667,6 +676,17 @@ a {
   transform: translateY(2px);
 }
 
+/* Four Gymnasium years still fit a phone */
+@media (max-width: 420px) {
+  .year-tabs {
+    gap: 4px;
+  }
+
+  .year-tab {
+    padding: 8px 12px 10px;
+  }
+}
+
 .year-tab[aria-current="page"] {
   z-index: 2;
   background: var(--paper);
@@ -770,6 +790,37 @@ a {
   background: var(--ink);
 }
 
+/* Gymnasium: plus points against the doubled minus points */
+.balance {
+  display: grid;
+  gap: 2px;
+}
+
+.balance-row {
+  display: grid;
+  grid-template-columns: minmax(0, 8.5em) minmax(0, 1fr) 2.5em;
+  align-items: center;
+  gap: var(--s-3);
+}
+
+.balance-label {
+  font-size: var(--t-xs);
+  font-weight: 700;
+  color: var(--ink-2);
+}
+
+.balance-value {
+  font-size: var(--t-sm);
+  font-weight: 800;
+  text-align: right;
+}
+
+.criterion-footnote {
+  margin: var(--s-3) 0 0;
+  padding-top: var(--s-3);
+  border-top: 1px solid var(--hairline);
+}
+
 .slots {
   display: grid;
   grid-auto-flow: column;
@@ -808,10 +859,16 @@ a {
   gap: var(--s-3);
 }
 
+.subject-title,
+.subject-title h3 {
+  font-size: 1.25rem;
+}
+
 .subject-title {
   flex: 1;
   min-width: 0;
-  font-size: 1.25rem;
+  font-family: var(--font-display);
+  font-weight: 800;
   overflow-wrap: anywhere;
   hyphens: auto;
 }
