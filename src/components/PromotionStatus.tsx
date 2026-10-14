@@ -5,6 +5,7 @@ import { useI18n } from '../i18n/context';
 
 interface PromotionStatusProps {
   status: PromotionStatusType;
+  note?: string; // shown under the conditions
 }
 
 // Grades run from 1 to 6
@@ -14,10 +15,10 @@ const GRADE_SPAN = 5;
 const share = (value: number) => `${Math.min(Math.max(value, 0), 1) * 100}%`;
 const fill = (value: number) => ({ '--share': share(value) }) as React.CSSProperties;
 
-export const PromotionStatus = ({ status }: PromotionStatusProps) => {
+export const PromotionStatus = ({ status, note }: PromotionStatusProps) => {
   const { t } = useI18n();
   const { criteria, hasGrades } = status;
-  const { failures, average, deficit } = criteria;
+  const { failures, average, deficit, compensation } = criteria;
 
   return (
     <div className="leaf">
@@ -34,36 +35,79 @@ export const PromotionStatus = ({ status }: PromotionStatusProps) => {
         </div>
       </Criterion>
 
-      <Criterion
-        label={t('averageGrade')}
-        note={`${t('minimum')}: ${average.min}`}
-        value={hasGrades ? average.value.toFixed(2) : null}
-        passed={average.passed}
-      >
-        <div className="meter meter-hue">
-          <div className="meter-track">
-            {hasGrades && (
-              <div className="meter-fill" style={fill((average.value - GRADE_MIN) / GRADE_SPAN)} />
-            )}
+      {average && (
+        <Criterion
+          label={t('averageGrade')}
+          note={`${t('minimum')}: ${average.min}`}
+          value={hasGrades ? average.value.toFixed(2) : null}
+          passed={average.passed}
+        >
+          <div className="meter meter-hue">
+            <div className="meter-track">
+              {hasGrades && (
+                <div className="meter-fill" style={fill((average.value - GRADE_MIN) / GRADE_SPAN)} />
+              )}
+            </div>
+            <div className="meter-mark" style={{ left: share((average.min - GRADE_MIN) / GRADE_SPAN) }} />
           </div>
-          <div className="meter-mark" style={{ left: share((average.min - GRADE_MIN) / GRADE_SPAN) }} />
-        </div>
-      </Criterion>
+        </Criterion>
+      )}
 
-      <Criterion
-        label={t('totalDeficit')}
-        note={`${t('maximum')}: ${deficit.max}`}
-        value={deficit.value.toFixed(2)}
-        passed={deficit.passed}
-      >
-        <div className="meter">
-          <div className="meter-track">
-            {deficit.value > 0 && (
-              <div className="meter-fill" style={fill(deficit.value / deficit.max)} />
-            )}
+      {deficit && (
+        <Criterion
+          label={t('totalDeficit')}
+          note={`${t('maximum')}: ${deficit.max}`}
+          value={deficit.value.toFixed(2)}
+          passed={deficit.passed}
+        >
+          <div className="meter">
+            <div className="meter-track">
+              {deficit.value > 0 && (
+                <div className="meter-fill" style={fill(deficit.value / deficit.max)} />
+              )}
+            </div>
           </div>
+        </Criterion>
+      )}
+
+      {compensation && (
+        <Criterion
+          label={t('compensation')}
+          note={t('compensationNote')}
+          value={hasGrades ? `${compensation.deficit.toFixed(1)} / ${compensation.surplus.toFixed(1)}` : null}
+          passed={compensation.passed}
+        >
+          <Balance surplus={compensation.surplus} deficit={compensation.deficit} />
+        </Criterion>
+      )}
+
+      {note && <p className="criterion-note criterion-footnote">{note}</p>}
+    </div>
+  );
+};
+
+// Plus points and the doubled minus points on one scale, so the longer bar is visible at a glance
+const Balance = ({ surplus, deficit }: { surplus: number; deficit: number }) => {
+  const { t } = useI18n();
+  const scale = Math.max(surplus, deficit, 1);
+  const rows = [
+    { label: t('plusPoints'), value: surplus, className: 'meter-hue' },
+    { label: t('minusPointsDouble'), value: deficit, className: '' },
+  ];
+
+  return (
+    <div className="balance">
+      {rows.map(({ label, value, className }) => (
+        <div key={label} className="balance-row">
+          <span className="balance-label">{label}</span>
+          <div className={`meter ${className}`}>
+            <div className="meter-track">
+              {value > 0 && <div className="meter-fill" style={fill(value / scale)} />}
+            </div>
+          </div>
+          <span className="balance-value">{value.toFixed(1)}</span>
         </div>
-      </Criterion>
+      ))}
     </div>
   );
 };

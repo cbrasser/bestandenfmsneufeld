@@ -8,9 +8,9 @@ web
 
 ## Users
 
-FMS students at Gymnasium Neufeld (Bern) who track their own grades, mostly on a phone, and check after each new grade whether they will be promoted. Confirmed by the owner on 2026-10-14.
+FMS and Gymnasium students at Gymnasium Neufeld (Bern) who track their own grades, mostly on a phone, and check after each new grade whether they will be promoted. Confirmed by the owner on 2026-10-14; the Gymnasium was added the same day.
 
-Teachers and the school are not users. Gymnasium students are not served yet: the division exists in onboarding but is marked "under construction".
+Teachers and the school are not users. The Sportklasse (five-year Gymnasium) is not modelled.
 
 ## Product Purpose
 
@@ -18,13 +18,15 @@ A personal grade tracker that answers one question: am I passing this year? The 
 
 ## Positioning
 
-It applies the canton's promotion rules for the FMS exactly (Fächer, Teilfächer and the three conditions from "Promotionsbestimmungen FMS ab 24"), per school year and, in year 3, per Berufsfeld. A generic grade average app cannot say whether a student is promoted.
+It applies the official promotion rules exactly, per school year: for the FMS the Fächer, Teilfächer and three conditions from "Promotionsbestimmungen FMS ab 24" (in year 3 per Berufsfeld); for the Gymnasium the two conditions from the school's "Auszug aus den Promotionsbestimmungen" with the subjects of its Lektionentafel and the student's own choices. A generic grade average app cannot say whether a student is promoted.
 
 ## Operating Context
 
-- Three school years. Years 1 and 2 have fixed subjects; year 3 depends on the Berufsfeld: Gesundheit, Soziale Arbeit or Pädagogik.
+- FMS: three school years. Years 1 and 2 have fixed subjects; year 3 depends on the Berufsfeld: Gesundheit, Soziale Arbeit or Pädagogik.
+- Gymnasium: four school years (GYM1 to GYM4). The student chooses a Schwerpunktfach (from year 1), a third language, Bildnerisches Gestalten or Musik, and an Ergänzungsfach (chosen at the end of year 2, graded in years 3 and 4). Which Grundlagenfächer are graded in which year follows Gymnasium Neufeld's Lektionentafel (Lehrplan 17, from 2022/23); the canton leaves that split to each school. There is no promotion at the end of the last year.
 - Grades run from 1 to 6, 4 is sufficient. A subject's grade is rounded to a half; a Fach made of Teilfächer is the rounded mean of its rounded Teilfach grades.
-- Promotion needs all three: average of the Fach grades at least 4.0; sum of how far Fach grades are below 4 at most 2; at most three grades under 4, counted per Teilfach.
+- FMS promotion needs all three: average of the Fach grades at least 4.0; sum of how far Fach grades are below 4 at most 2; at most three grades under 4, counted per Teilfach.
+- Gymnasium promotion needs both: twice the sum of how far grades are below 4 no larger than the sum of how far they are above 4; at most four grades under 4. Each Schwerpunktfach has one grade (owner's decision, 2026-10-14).
 - The interface exists in German (default, Swiss style without ß), French, English and Italian.
 - A personal project, free to use. The result is unofficial and the app says so.
 
@@ -47,7 +49,8 @@ It applies the canton's promotion rules for the FMS exactly (Fächer, Teilfäche
 
 ## Evidence on Hand
 
-- The official document "FMS 21+ / Promotionsbestimmungen, Fächer, Teilfächer" (2021.BKD.19263/859597) is the source for subjects and rules.
+- The official document "FMS 21+ / Promotionsbestimmungen, Fächer, Teilfächer" (2021.BKD.19263/859597) is the source for FMS subjects and rules.
+- Gymnasium Neufeld's "Auszug aus den Promotionsbestimmungen" (July 2023), its Lektionentafel (Lehrplan 17, from 2022/23) and its Wegleitung 2025/26 are the sources for the Gymnasium.
 
 ## Product Principles
 

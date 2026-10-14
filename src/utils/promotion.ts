@@ -87,6 +87,28 @@ export const checkPromotionCriteria = (
       }
     }
   });
+  if (criteria.kind === 'gym') {
+    // Gymnasium: every Zeugnisnote counts once
+    const failureCount = validGrades.filter((grade) => grade < 4).length;
+    const surplus = roundToTwoDecimals(
+      validGrades.reduce((sum, grade) => sum + Math.max(0, grade - 4), 0)
+    );
+    const deficit = roundToTwoDecimals(
+      validGrades.reduce((sum, grade) => sum + Math.max(0, 4 - grade), 0) * criteria.deficitFactor
+    );
+    const failuresPassed = failureCount <= criteria.maxFailures;
+    const compensationPassed = deficit <= surplus;
+
+    return {
+      isPassing: failuresPassed && compensationPassed,
+      hasGrades,
+      criteria: {
+        failures: { passed: failuresPassed, count: failureCount, max: criteria.maxFailures },
+        compensation: { passed: compensationPassed, surplus, deficit, factor: criteria.deficitFactor },
+      },
+    };
+  }
+
   const failures = individualGrades.filter((grade) => grade < 4);
 
   // Calculate average (use rounded grades)

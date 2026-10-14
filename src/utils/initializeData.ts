@@ -1,6 +1,7 @@
 import type { StudentData, Year, CombinedSubject, Subject } from '../types';
 import { isSubject, isCombinedSubject } from '../types';
 import { defaultSubjects, renamedSubjectIds, splitSubjectIds, year3Directions } from '../config/subjects';
+import { GYM_YEARS, gymSubjectsForYear } from '../config/gymnasium';
 
 export const initializeStudentData = (): StudentData => {
   return {
@@ -13,6 +14,9 @@ export const initializeStudentData = (): StudentData => {
         subjects: reconcileSubjectList([], defaultSubjects[2]),
       },
       3: {
+        subjects: [],
+      },
+      4: {
         subjects: [],
       },
     },
@@ -58,30 +62,53 @@ export function reconcileSubjectList(
 }
 
 export const reconcileAllYears = (data: StudentData): StudentData => {
+  // Data saved before the Gymnasium existed has no year 4
+  const existing = (year: Year) => data.years[year]?.subjects ?? [];
+
+  if (data.studentInfo?.division === 'Gymnasium') {
+    const years = { ...data.years };
+    GYM_YEARS.forEach((year) => {
+      years[year] = { subjects: reconcileSubjectList(existing(year), gymSubjectsForYear(year, data.gymProfile)) };
+    });
+    return { ...data, years };
+  }
+
   const direction = year3Directions.find((d) => d.id === data.year3Direction);
 
   return {
     ...data,
+    // The FMS has no year 4
+    currentYear: data.currentYear === 4 ? 3 : data.currentYear,
     // An unknown direction (e.g. a former placeholder) is cleared so the user picks a real one
     year3Direction: direction?.id,
     years: {
-      1: { subjects: reconcileSubjectList(data.years[1].subjects, defaultSubjects[1]) },
-      2: { subjects: reconcileSubjectList(data.years[2].subjects, defaultSubjects[2]) },
+      1: { subjects: reconcileSubjectList(existing(1), defaultSubjects[1]) },
+      2: { subjects: reconcileSubjectList(existing(2), defaultSubjects[2]) },
       3: {
         subjects: direction
-          ? reconcileSubjectList(data.years[3].subjects, direction.subjects)
-          : data.years[3].subjects,
+          ? reconcileSubjectList(existing(3), direction.subjects)
+          : existing(3),
       },
+      4: { subjects: existing(4) },
     },
   };
 };
+
+// Subjects whose saved grades a profile change would drop
+export const subjectsLosingGrades = (before: StudentData, after: StudentData): string[] =>
+  GYM_YEARS.flatMap((year) => {
+    const kept = new Set(after.years[year].subjects.map((s) => s.id));
+    return (before.years[year]?.subjects ?? [])
+      .filter((s) => !kept.has(s.id) && isSubject(s) && s.grades.length > 0)
+      .map((s) => s.name);
+  });
 
 export const getSubjectsForYear = (
   data: StudentData,
   year: Year
 ): StudentData['years'][Year]['subjects'] => {
-  // Year 3 subjects depend on the direction
-  if (year === 3 && !data.year3Direction) return [];
+  // FMS year 3 subjects depend on the direction
+  if (data.studentInfo?.division !== 'Gymnasium' && year === 3 && !data.year3Direction) return [];
 
-  return data.years[year].subjects;
+  return data.years[year]?.subjects ?? [];
 };

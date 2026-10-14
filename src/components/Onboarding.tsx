@@ -1,8 +1,14 @@
 import { useState } from 'react';
 import type { Division, StudentData, StudentInfo } from '../types';
 import { useI18n } from '../i18n/context';
-import { Construction, KeyRound, Loader2 } from 'lucide-react';
+import { KeyRound, Loader2 } from 'lucide-react';
 import { cloudSync, normalizeCode, setStoredCode } from '../utils/cloudSync';
+
+// Names of the Bildungsgänge, as Gymnasium Neufeld writes them
+const divisionDescriptions: Record<Division, string> = {
+  FMS: 'Fachmittelschule',
+  Gymnasium: 'Maturitätsschule',
+};
 
 interface OnboardingProps {
   onComplete: (info: StudentInfo) => void;
@@ -54,7 +60,7 @@ export const Onboarding = ({ onComplete, onLoadFromCode }: OnboardingProps) => {
     
     setErrors(newErrors);
     
-    if (!newErrors.name && !newErrors.division && division && division !== 'Gymnasium') {
+    if (!newErrors.name && !newErrors.division && division) {
       onComplete({
         name: name.trim(),
         division: division as Division,
@@ -95,38 +101,25 @@ export const Onboarding = ({ onComplete, onLoadFromCode }: OnboardingProps) => {
             <legend className="field-label mb-1">{t('division')}</legend>
             <div className="picker" style={{ '--hue': 'var(--year-1)' } as React.CSSProperties}>
               {(['FMS', 'Gymnasium'] as Division[]).map((div) => {
-                const isDisabled = div === 'Gymnasium';
-                const isChecked = division === div && !isDisabled;
+                const isChecked = division === div;
                 return (
-                  <label
-                    key={div}
-                    className={`picker-card ${isChecked ? 'is-checked' : ''} ${isDisabled ? 'is-disabled' : ''}`}
-                  >
+                  <label key={div} className={`picker-card ${isChecked ? 'is-checked' : ''}`}>
                     <input
                       type="radio"
                       name="division"
                       value={div}
-                      checked={division === div}
+                      checked={isChecked}
                       onChange={(e) => {
-                        if (!isDisabled) {
-                          setDivision(e.target.value as Division);
-                          setErrors({ ...errors, division: false });
-                        }
+                        setDivision(e.target.value as Division);
+                        setErrors({ ...errors, division: false });
                       }}
-                      disabled={isDisabled}
                       className="visually-hidden"
                     />
                     <span className="picker-swatch" aria-hidden="true" />
                     <span className="picker-text">
                       <span className="picker-name">{div}</span>
-                      {div === 'FMS' && <span className="picker-sub">Fachmittelschule</span>}
+                      <span className="picker-sub">{divisionDescriptions[div]}</span>
                     </span>
-                    {isDisabled && (
-                      <span className="chip chip-muted">
-                        <Construction size={12} strokeWidth={2.5} aria-hidden="true" />
-                        {t('underConstruction')}
-                      </span>
-                    )}
                   </label>
                 );
               })}

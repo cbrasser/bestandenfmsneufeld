@@ -41,6 +41,7 @@ export const defaultSubjects: Record<Year, (Subject | CombinedSubject)[]> = {
     createCombinedSubject('Berufsfeldeinblicke', ['Humanbiologie', 'Soziologie', 'Pädagogik/Entwicklungspsychologie']),
   ],
   3: [], // Year 3 subjects depend on direction
+  4: [], // The FMS has three years
 };
 
 // Old id -> current id for renamed subjects, so saved grades follow the rename
