@@ -3,7 +3,7 @@ import { createRoot } from 'react-dom/client'
 import '@fontsource-variable/bricolage-grotesque/wght.css'
 import '@fontsource-variable/manrope/wght.css'
 import './index.css'
-import App from './App.tsx'
+import Root from './Root.tsx'
 import { I18nProvider } from './i18n/context.tsx'
 import { ThemeProvider } from './contexts/ThemeContext.tsx'
 import { Analytics } from '@vercel/analytics/react'
@@ -48,7 +48,7 @@ createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ThemeProvider>
       <I18nProvider>
-        <App />
+        <Root />
         <Analytics />
       </I18nProvider>
     </ThemeProvider>

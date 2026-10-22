@@ -1568,3 +1568,127 @@ a {
 }
 
 @tailwind utilities;
+
+/* ----------------------------------------------------------------- admin */
+
+.admin {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--s-5);
+  padding-bottom: var(--s-8);
+}
+
+.kpis {
+  display: grid;
+  gap: var(--s-4);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 140px), 1fr));
+}
+
+.kpi {
+  display: grid;
+  gap: var(--s-1);
+  padding: var(--s-4);
+}
+
+.kpi-value {
+  font-size: var(--t-2xl);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+.kpi-label {
+  font-size: var(--t-xs);
+  font-weight: 700;
+  color: var(--ink-2);
+}
+
+.admin-filters {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--s-3) var(--s-5);
+  margin-top: var(--s-4);
+}
+
+.table-scroll {
+  overflow-x: auto;
+  margin: calc(var(--s-2) * -1);
+  padding: var(--s-2);
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--t-sm);
+  white-space: nowrap;
+}
+
+.data-table th,
+.data-table td {
+  padding: 6px var(--s-3);
+  text-align: right;
+  border-top: 1px solid var(--hairline);
+}
+
+.data-table thead th {
+  font-size: var(--t-xs);
+  font-weight: 700;
+  color: var(--ink-2);
+  border-top: 0;
+  border-bottom: var(--line);
+}
+
+.data-table th:first-child {
+  text-align: left;
+  padding-left: 0;
+}
+
+.data-table td {
+  font-weight: 700;
+}
+
+.data-table tbody tr.is-selected {
+  background: var(--hue-wash, var(--ground-wash));
+}
+
+.data-table td.is-below {
+  color: var(--danger);
+}
+
+.row-button {
+  min-height: 36px;
+  font-weight: 800;
+  text-align: left;
+  white-space: normal;
+}
+
+.row-button:hover {
+  text-decoration: underline;
+}
+
+.row-button:focus-visible {
+  outline: 3px solid var(--ink);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.mini-hist {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 24px;
+  border-bottom: 1px solid var(--hairline);
+  vertical-align: middle;
+}
+
+.mini-hist i {
+  width: 5px;
+  background: var(--ink);
+  border-radius: 1px;
+}
+
+.mini-hist i.is-below {
+  background: var(--danger);
+}
