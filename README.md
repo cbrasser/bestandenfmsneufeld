@@ -1,21 +1,31 @@
-# Grade Tracker
+# Bestanden
 
-A mobile-first Progressive Web App (PWA) for students to track their grades and monitor their promotion status at school.
+A mobile-first Progressive Web App (PWA) for FMS and Gymnasium students at Gymnasium Neufeld to track their grades and see whether they will be promoted. A native Android app with the same features and data format is built in the private `cbrasser/bestanden-android` repo.
 
-## TODO
+## Addresses
 
-- [ ] Semsters -> Add a hint to a grade that displays the semester
-- [ ] Oral grades -> Add the option to add oral grades (e.g. 0.1 bonus)
+- `https://bestandenfms.cbradev.ch` is the primary address, used by the app and all guides.
+- `https://bestandenfmsneufeld.vercel.app` stays live with no redirect, because its browser storage is separate and may hold a student's only copy of their grades.
+
+## App guide
+
+`/#app` is a shareable guide in all four languages, also linked from the menu. `/#app/android` and `/#app/iphone` open one section; `/#app` picks the section that fits the device.
+
+- **Android:** the app comes from the public [`cbrasser/bestanden-releases`](https://github.com/cbrasser/bestanden-releases), through Obtainium or by hand. It is not in the Play Store.
+- **iPhone:** there is no native app. The guide explains creating a code in Safari, adding the site to the home screen and logging in there, because home-screen apps don't share Safari's storage. Export and import is the fallback.
+
+The guide's text is in `src/i18n/guide.ts`. The PNG icons are generated from `public/icon.svg` with `scripts/generate-icons.sh`.
 
 ## Features
 
 - 📱 **Mobile-first design** - Optimized for mobile devices
 - 🔄 **PWA Support** - Installable as a web app
 - 📊 **Grade Tracking** - Track grades across multiple subjects with weighted averages
-- 📅 **Year Management** - Support for 3 years with different subjects
-- 🎯 **Direction Selection** - Year 3 students can choose from 3 different study directions
+- 📅 **Year Management** - FMS years 1 to 3 and Gymnasium years 1 to 4, each with its own subjects
+- 🎯 **Subject Choices** - FMS Berufsfeld in year 3; Gymnasium Schwerpunktfach, third language, Bildnerisches Gestalten or Musik, and Ergänzungsfach
 - ✅ **Promotion Status** - Real-time calculation of promotion criteria
-- 💾 **Local Storage** - All data stored locally in browser (privacy-first)
+- 💾 **Local Storage** - All data stored locally in browser (privacy-first), with optional sync by code
+- 🤖 **Android App** - Installed from the public release repo (see [App guide](#app-guide))
 
 ## Promotion Criteria
 
@@ -107,7 +117,8 @@ All student data is stored locally in the browser's `localStorage` by default. N
 ## Cloud Sync (optional, privacy-first)
 
 Students can optionally create an **anonymous access code** to sync their data across
-devices. No email and no name are used for the login — the data is fully pseudonymous.
+devices. No email and no name are stored: the name stays on each device, and the server
+removes it from anything a client uploads. The data is pseudonymous.
 
 How it works:
 
@@ -122,11 +133,13 @@ How it works:
   saves with `save_student`, which refuses a save based on an out-of-date version, and
   pulls with `load_student` on open and on focus. `load_data` and `save_data` stay for
   old cached copies of the site.
+- The student chooses when both sides really did change.
+- Students can delete their cloud data themselves. Their local data stays.
 - If the code is lost, the cloud data cannot be recovered (use Export as a backup).
 
 ### Setup
 
-1. Create a Supabase project — choose region **EU (Frankfurt)** for data residency.
+1. Create a Supabase project in an EU region for data residency. The production project runs in **EU West (Ireland, `eu-west-1`)**.
 2. Open the SQL Editor and run the files in [`supabase/migrations`](./supabase/migrations), in order.
 3. Copy `.env.example` to `.env` and fill in:
    - `VITE_SUPABASE_URL` — Project Settings → API → Project URL
@@ -134,7 +147,7 @@ How it works:
 4. Restart `npm run dev`. The "Cloud-Sync" section appears in the menu automatically.
    Without these env vars the app stays fully local — the UI hides itself.
 
-> GDPR: even though no direct PII is stored, Supabase is a data processor — sign a DPA
+> GDPR: even though no name or email is stored, Supabase is a data processor — sign a DPA
 > and keep the EU region. Consider adding simple rate limiting if abuse is a concern.
 
 ## Local Supabase

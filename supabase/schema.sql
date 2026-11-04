@@ -3,14 +3,21 @@
 --  Bestanden FMS – Cloud-Sync Schema (pseudonyme Code-Anmeldung)
 -- =====================================================================
 --  Datenschutz-Konzept:
---   * Es werden KEINE personenbezogenen Daten gespeichert (keine Mail,
---     kein Name als Login). Eine Zeile = ein zufälliger Code + JSON-Daten.
+--   * Es werden keine Mail und kein Name gespeichert. Eine Zeile = ein
+--     zufälliger Code + JSON-Daten (Noten und Fächer, also pseudonym).
+--   * Der Name bleibt auf dem Gerät. Ab dem Launch entfernen create_account
+--     und der neue Speicher-Aufruf studentInfo.name serverseitig, damit kein
+--     Client ihn hochladen kann; bereits hochgeladene Namen entfernt die
+--     Launch-Migration. Die Funktionen in dieser Datei zeigen noch den Stand
+--     vor dem Launch.
+--   * Schülerinnen und Schüler können ihre Zeile selbst löschen.
 --   * Der Code wird NIE im Klartext gespeichert, nur sein SHA-256-Hash.
 --   * Die Tabelle ist per RLS komplett dicht. Zugriff ausschliesslich
 --     über die SECURITY-DEFINER-Funktionen unten, die den Code prüfen.
 --
 --  Anwendung: In Supabase -> SQL Editor einfügen und ausführen.
---  Region beim Anlegen des Projekts: EU (Frankfurt) wählen.
+--  Region beim Anlegen des Projekts: eine EU-Region wählen. Das
+--  Produktivprojekt läuft in eu-west-1 (Irland).
 -- =====================================================================
 
 -- pgcrypto liefert digest() (SHA-256) und gen_random_uuid()
