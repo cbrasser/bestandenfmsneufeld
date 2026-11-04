@@ -5,6 +5,8 @@ export const STORAGE_KEY = 'student-data';
 export const SELECTED_YEAR_KEY = 'selected-year';
 /** The one version this device can go back to, see utils/backup.ts. */
 export const BACKUP_KEY = 'data-backup';
+/** Set once the app pop-up is closed. Reset leaves it: starting over doesn't bring the pop-up back. */
+export const APP_POPUP_KEY = 'app-popup-dismissed';
 
 export type KeyValueStorage = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;
 

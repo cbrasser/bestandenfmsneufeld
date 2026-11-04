@@ -1195,8 +1195,8 @@ a {
   font-weight: 800;
 }
 
-/* Neither choice comes first, so the two share the row, or stack on a phone */
-.conflict-choices .btn {
+/* Neither choice comes first, so the two share the row, or stack when narrow */
+.dialog-choices .btn {
   flex: 1 1 auto;
 }
 

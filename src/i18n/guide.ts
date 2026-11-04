@@ -39,6 +39,7 @@ export interface GuideText {
   menuTitle: string;
   menuEntry: string;
   backToGrades: string;
+  popup: { title: string; body: string; guideFor: Record<GuideSection, string> };
   title: string;
   lede: string;
   sections: Record<GuideSection, { intro: string; warning?: string; leaves: GuideLeaf[] }>;
@@ -54,6 +55,11 @@ export const guideText: Record<Language, GuideText> = {
     menuTitle: 'App',
     menuEntry: 'App-Anleitung',
     backToGrades: 'Zu meinen Noten',
+    popup: {
+      title: 'Bestanden gibt es jetzt als App',
+      body: 'Für Android gibt es eine eigene App. Auf dem iPhone legst du die Website auf den Home-Bildschirm, dann öffnet sie sich wie eine App. Die Anleitung findest du auch später im Menü.',
+      guideFor: { android: 'Anleitung für Android', iphone: 'Anleitung für iPhone' },
+    },
     title: 'Bestanden auf dem Handy',
     lede: 'Wähle dein Handy und folge den Schritten der Reihe nach.',
     sections: {
@@ -230,6 +236,11 @@ export const guideText: Record<Language, GuideText> = {
     menuTitle: 'App',
     menuEntry: "Guide de l'app",
     backToGrades: 'Vers mes notes',
+    popup: {
+      title: 'Bestanden existe maintenant en app',
+      body: 'Android a sa propre app. Sur iPhone, ajoute le site à l\'écran d\'accueil : il s\'ouvre alors comme une app. Tu retrouveras aussi le guide plus tard dans le menu.',
+      guideFor: { android: 'Guide pour Android', iphone: 'Guide pour iPhone' },
+    },
     title: 'Bestanden sur ton téléphone',
     lede: 'Choisis ton téléphone et suis les étapes dans l\'ordre.',
     sections: {
@@ -406,6 +417,11 @@ export const guideText: Record<Language, GuideText> = {
     menuTitle: 'App',
     menuEntry: 'App guide',
     backToGrades: 'To my grades',
+    popup: {
+      title: 'Bestanden is now available as an app',
+      body: 'Android has its own app. On an iPhone, add the website to your home screen and it opens like an app. You can also find the guide in the menu later.',
+      guideFor: { android: 'Guide for Android', iphone: 'Guide for iPhone' },
+    },
     title: 'Bestanden on your phone',
     lede: 'Choose your phone and follow the steps in order.',
     sections: {
@@ -582,6 +598,11 @@ export const guideText: Record<Language, GuideText> = {
     menuTitle: 'App',
     menuEntry: "Guida all'app",
     backToGrades: 'Ai miei voti',
+    popup: {
+      title: 'Bestanden ora è disponibile come app',
+      body: 'Per Android c\'è un\'app. Su iPhone aggiungi il sito alla schermata Home: si aprirà come un\'app. Trovi la guida anche più tardi nel menu.',
+      guideFor: { android: 'Guida per Android', iphone: 'Guida per iPhone' },
+    },
     title: 'Bestanden sul telefono',
     lede: 'Scegli il tuo telefono e segui i passaggi in ordine.',
     sections: {
