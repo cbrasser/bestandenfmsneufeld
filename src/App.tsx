@@ -3,8 +3,8 @@ import type { StudentData, Year, Grade, StudentInfo, Subject, GymProfile as GymP
 import { isSubject, isCombinedSubject } from './types';
 import { storageService } from './utils/storage';
 import { initializeStudentData, getSubjectsForYear, reconcileAllYears, reconcileSubjectList, subjectsLosingGrades } from './utils/initializeData';
-import { checkPromotionCriteria } from './utils/promotion';
-import { getCriteria } from './config/criteria';
+import { checkPromotionCriteria, promotionVerdict } from './utils/promotion';
+import { endsWithoutPromotion, getCriteria } from './config/criteria';
 import { GYM_YEARS } from './config/gymnasium';
 import { year3Directions } from './config/subjects';
 import { PromotionStatus } from './components/PromotionStatus';
@@ -320,15 +320,14 @@ function App() {
     ? year3Directions.find((d) => d.id === data.year3Direction)
     : undefined;
   const needsDirection = hasDirections && !direction;
-  // The last Gymnasium year ends without a promotion
-  const isLastGymYear = isGym && currentYear === GYM_YEARS[GYM_YEARS.length - 1];
+  const isLastGymYear = endsWithoutPromotion(data.studentInfo.division, currentYear);
 
   // The verdict is the page title
-  const verdict = !promotionStatus.hasGrades
-    ? t('noGradesYetStatus')
-    : promotionStatus.isPassing
-    ? t('passing')
-    : t('notPassing');
+  const verdict = {
+    noGrades: t('noGradesYetStatus'),
+    passing: t('passing'),
+    notPassing: t('notPassing'),
+  }[promotionVerdict(promotionStatus)];
 
   const views: { id: View; label: string; icon: typeof BookOpen }[] = [
     { id: 'grades', label: t('subjectsTitle'), icon: BookOpen },
