@@ -1,7 +1,8 @@
 import type { StudentData } from '../types';
-import { countGrades, createDataBackup, type DataBackup } from '../utils/backup';
+import { createDataBackup, type DataBackup } from '../utils/backup';
+import { countGrades } from '../utils/countGrades';
 import { reconcileAllYears, selectableYear } from '../utils/initializeData';
-import { parseSelectedYear, SELECTED_YEAR_KEY, STORAGE_KEY } from '../utils/storage';
+import { parseSelectedYear, SELECTED_YEAR_KEY, STORAGE_KEY, type KeyValueStorage } from '../utils/storage';
 import type { PersistedSyncState, SyncStore } from './engine';
 
 const CODE_KEY = 'cloud-code';
@@ -11,8 +12,6 @@ const CHANGED_AT_KEY = 'cloud-changed-at';
 
 /** What tabs share: another tab writing any of these concerns this tab's sync. */
 export const SHARED_SYNC_KEYS: readonly string[] = [STORAGE_KEY, CODE_KEY, VERSION_KEY, UNSYNCED_KEY, CHANGED_AT_KEY];
-
-type KeyValueStorage = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;
 
 export type CloudDataListener = (data: StudentData, options: { keepSelectedYear: boolean }) => void;
 

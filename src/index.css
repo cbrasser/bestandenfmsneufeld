@@ -1178,23 +1178,11 @@ a {
   gap: var(--s-3);
 }
 
-.conflict-side {
-  display: grid;
-  grid-template-rows: subgrid;
-  grid-row: span 3;
-  gap: var(--s-3);
-  min-width: 0;
-}
-
-.conflict-side .btn {
-  padding: var(--s-2);
-  text-align: center;
-  white-space: normal;
-}
-
+.conflict-side,
 .conflict-side dl {
   display: grid;
-  gap: var(--s-1);
+  align-content: start;
+  gap: var(--s-2);
 }
 
 .conflict-side dt {
@@ -1205,6 +1193,11 @@ a {
 
 .conflict-side dd {
   font-weight: 800;
+}
+
+/* Neither choice comes first, so the two share the row, or stack on a phone */
+.conflict-choices .btn {
+  flex: 1 1 auto;
 }
 
 /* ------------------------------------------------------------ date picker */

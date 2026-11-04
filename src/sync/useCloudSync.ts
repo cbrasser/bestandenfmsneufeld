@@ -41,10 +41,11 @@ export function useCloudSync(data: StudentData | null, onDataFromElsewhere: Clou
     }, SAVE_DELAY_MS);
   }, [data]);
 
-  const loaded = Boolean(data);
+  // Also when onboarding ends on a connected device, which until then has nothing to sync
+  const hasProfile = Boolean(data?.studentInfo);
   useEffect(() => {
-    if (syncEngine && loaded) void syncEngine.sync();
-  }, [loaded]);
+    if (syncEngine && hasProfile) void syncEngine.sync();
+  }, [hasProfile]);
 
   useEffect(() => {
     const engine = syncEngine;

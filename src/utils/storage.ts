@@ -6,6 +6,8 @@ export const SELECTED_YEAR_KEY = 'selected-year';
 /** The one version this device can go back to, see utils/backup.ts. */
 export const BACKUP_KEY = 'data-backup';
 
+export type KeyValueStorage = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;
+
 export const parseSelectedYear = (stored: string | null): Year | null => {
   const year = Number(stored);
   return year === 1 || year === 2 || year === 3 || year === 4 ? year : null;

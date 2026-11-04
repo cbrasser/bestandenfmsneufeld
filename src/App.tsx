@@ -1,8 +1,9 @@
-import { useState, useEffect, useCallback, useSyncExternalStore } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import type { StudentData, Year, Grade, StudentInfo, Subject, GymProfile as GymProfileType } from './types';
 import { isSubject, isCombinedSubject } from './types';
 import { storageService } from './utils/storage';
-import { countGrades, dataBackup } from './utils/backup';
+import { dataBackup, useHasBackup } from './utils/backup';
+import { countGrades } from './utils/countGrades';
 import { formatDateTime } from './lib/utils';
 import { initializeStudentData, getSubjectsForYear, reconcileAllYears, reconcileSubjectList, selectableYear, subjectsLosingGrades } from './utils/initializeData';
 import { checkPromotionCriteria, promotionVerdict } from './utils/promotion';
@@ -30,19 +31,9 @@ import { BarChart2, BookOpen } from 'lucide-react';
 
 type View = 'grades' | 'stats';
 
-const subscribeToBackup = (listener: () => void) => {
-  const stop = dataBackup.subscribe(listener);
-  window.addEventListener('storage', listener);
-  return () => {
-    stop();
-    window.removeEventListener('storage', listener);
-  };
-};
-const hasBackup = () => dataBackup.read() !== null;
-
 function App() {
   const { t, tSubject, language } = useI18n();
-  const canRestore = useSyncExternalStore(subscribeToBackup, hasBackup);
+  const canRestore = useHasBackup();
   const [view, setView] = useState<View>('grades');
   const [data, setData] = useState<StudentData | null>(null);
   const [currentYear, setCurrentYear] = useState<Year>(1);
@@ -324,16 +315,16 @@ function App() {
     const handleRestore = () => {
       const kept = dataBackup.read();
       if (!kept) return;
-      const details = `${t('conflictGrades')}: ${countGrades(kept.data)}\n${formatDateTime(kept.keptAt, language)}`;
+      const details = `${t('gradesLabel')}: ${countGrades(kept.data)}\n${formatDateTime(kept.keptAt, language)}`;
       if (!window.confirm(`${t('restoreConfirm')}\n\n${details}`)) return;
       try {
         const restored = dataBackup.swapWith({ ...data, currentYear });
         if (!restored) return;
-        // Saved and synced like any other edit
+        // Saved and synced like any other edit. No alert before that: closing the tab during one
+        // would leave the kept version replaced and the restored one not stored.
         setData(restored);
         setCurrentYear(restored.currentYear);
         storageService.saveSelectedYear(restored.currentYear);
-        alert(t('restoreSuccess'));
         setIsMenuOpen(false);
       } catch (error) {
         alert(t('restoreError'));

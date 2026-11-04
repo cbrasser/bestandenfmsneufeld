@@ -35,16 +35,11 @@ const ConflictDialog = ({ engine, conflict }: { engine: SyncEngine; conflict: Sy
     setFailed(!done);
   };
 
-  const side = (choice: Choice, title: string, Icon: LucideIcon, details: ConflictSide, action: string) => (
-    <SideCard
-      title={title}
-      Icon={Icon}
-      details={details}
-      action={action}
-      disabled={choosing !== null}
-      busy={choosing === choice}
-      onChoose={() => void choose(choice)}
-    />
+  const choiceButton = (choice: Choice, label: string) => (
+    <button onClick={() => void choose(choice)} disabled={choosing !== null} className="btn">
+      {choosing === choice && <Loader2 size={16} strokeWidth={2.5} className="animate-spin" aria-hidden="true" />}
+      {label}
+    </button>
   );
 
   return (
@@ -65,31 +60,25 @@ const ConflictDialog = ({ engine, conflict }: { engine: SyncEngine; conflict: Sy
           {t('conflictDescription')}
         </p>
         <div className="conflict-sides">
-          {side('keepThisDevice', t('conflictThisDevice'), Smartphone, conflict.local, t('conflictKeepThisDevice'))}
-          {side('keepCloud', t('conflictCloud'), Cloud, conflict.cloud, t('conflictKeepCloud'))}
+          <Side title={t('conflictThisDevice')} Icon={Smartphone} details={conflict.local} />
+          <Side title={t('conflictCloud')} Icon={Cloud} details={conflict.cloud} />
         </div>
+        <p className="text-sm text-ink-2">{t('conflictBackupNote')}</p>
         {failed && (
           <p className="form-error" role="alert">
             {t('conflictChoiceError')}
           </p>
         )}
-        <p className="text-sm text-ink-2">{t('conflictBackupNote')}</p>
+        <div className="dialog-actions conflict-choices">
+          {choiceButton('keepThisDevice', t('conflictKeepThisDevice'))}
+          {choiceButton('keepCloud', t('conflictKeepCloud'))}
+        </div>
       </div>
     </div>
   );
 };
 
-interface SideCardProps {
-  title: string;
-  Icon: LucideIcon;
-  details: ConflictSide;
-  action: string;
-  disabled: boolean;
-  busy: boolean;
-  onChoose: () => void;
-}
-
-const SideCard = ({ title, Icon, details, action, disabled, busy, onChoose }: SideCardProps) => {
+const Side = ({ title, Icon, details }: { title: string; Icon: LucideIcon; details: ConflictSide }) => {
   const { t, language } = useI18n();
   return (
     <section className="note conflict-side">
@@ -99,7 +88,7 @@ const SideCard = ({ title, Icon, details, action, disabled, busy, onChoose }: Si
       </h3>
       <dl>
         <div>
-          <dt>{t('conflictGrades')}</dt>
+          <dt>{t('gradesLabel')}</dt>
           <dd>{details.gradeCount}</dd>
         </div>
         <div>
@@ -107,10 +96,6 @@ const SideCard = ({ title, Icon, details, action, disabled, busy, onChoose }: Si
           <dd>{details.changedAt ? formatDateTime(details.changedAt, language) : t('conflictLastChangeUnknown')}</dd>
         </div>
       </dl>
-      <button onClick={onChoose} disabled={disabled} className="btn btn-block">
-        {busy && <Loader2 size={16} strokeWidth={2.5} className="animate-spin" aria-hidden="true" />}
-        {action}
-      </button>
     </section>
   );
 };

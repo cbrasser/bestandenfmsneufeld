@@ -265,9 +265,20 @@ export function createSyncEngine({ store, remote }: { store: SyncStore; remote: 
     return cloud;
   };
 
+  // Whether another tab saved, chose or has an edit waiting during a call to the cloud. Its answer may
+  // then be older than what is stored, or no longer matter. If so, this tab takes what is stored.
+  const settledElsewhere = (versionAsked: number | null) => {
+    const shared = store.readState();
+    if (shared.unsynced === persisted.unsynced && shared.version === versionAsked) return false;
+    takeStoredState();
+    return true;
+  };
+
   // A device connected before versions meets the cloud for the first time
   const compareFirstTime = (cloud: CloudSnapshot) => {
-    if (storedContent() !== store.contentOf(cloud.data)) return askStudent(cloud);
+    const content = storedContent();
+    if (content === null) return false; // a reset during the load, and a device in onboarding isn't asked
+    if (content !== store.contentOf(cloud.data)) return askStudent(cloud);
     persist({ version: cloud.version, unsynced: false });
     setOutcome('saved');
     return false;
@@ -289,7 +300,8 @@ export function createSyncEngine({ store, remote }: { store: SyncStore; remote: 
     const expectedVersion = persisted.version;
     if (expectedVersion === null) {
       const cloud = await load(code);
-      return cloud ? (persisted.version === null ? compareFirstTime(cloud) : true) : false;
+      if (!cloud) return false;
+      return !persisted.unsynced || settledElsewhere(null) || compareFirstTime(cloud);
     }
 
     setOutcome('saving');
@@ -307,8 +319,10 @@ export function createSyncEngine({ store, remote }: { store: SyncStore; remote: 
 
     const cloud = await load(code);
     if (!cloud) return false;
-    if (store.contentOf(cloud.data) !== sent) return askStudent(cloud);
-    return settleSaved(cloud.version, sent);
+    if (!persisted.unsynced) return true; // a reset removed the changes during the load
+    if (store.contentOf(cloud.data) === sent) return settleSaved(cloud.version, sent);
+    // Another tab may have chosen or saved during the load, so that there is nothing to ask
+    return settledElsewhere(expectedVersion) || askStudent(cloud);
   };
 
   const pull = async (code: string): Promise<boolean> => {
@@ -317,13 +331,7 @@ export function createSyncEngine({ store, remote }: { store: SyncStore; remote: 
     if (!cloud) return false;
 
     if (persisted.unsynced) return true; // edited during the load, so the cloud data must not replace it
-    const shared = store.readState();
-    if (shared.unsynced || shared.version !== versionAsked) {
-      // Another tab has an edit waiting for its save delay, or closed before it was over. Or it saved
-      // during the load, so this answer may be older than what is stored and must not replace it.
-      takeStoredState();
-      return true;
-    }
+    if (settledElsewhere(versionAsked)) return true;
     if (persisted.version === null) return compareFirstTime(cloud);
 
     if (cloud.version !== persisted.version && !takeCloudData(code, cloud, { keepSelectedYear: true })) {

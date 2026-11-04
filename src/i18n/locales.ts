@@ -210,7 +210,7 @@ export interface Translations {
   conflictDescription: string;
   conflictThisDevice: string;
   conflictCloud: string;
-  conflictGrades: string;
+  gradesLabel: string;
   conflictLastChange: string;
   conflictLastChangeUnknown: string;
   conflictKeepThisDevice: string;
@@ -219,7 +219,6 @@ export interface Translations {
   conflictChoiceError: string;
   restorePrevious: string;
   restoreConfirm: string;
-  restoreSuccess: string;
   restoreError: string;
 }
 
@@ -392,7 +391,7 @@ export const translations: Record<Language, Translations> = {
     cloudDeleteConfirm: 'Endgültig löschen',
     cloudDeleteError: 'Löschen fehlgeschlagen. Prüfe deine Verbindung und versuche es nochmals.',
     cloudDeleted: 'Deine Cloud-Daten wurden gelöscht. Die Noten auf diesem Gerät bleiben erhalten.',
-    cloudDeleteOutOfStep: 'Es wurde nichts gelöscht: In der Cloud sind Daten, die dieses Gerät noch nicht hat. Sie werden jetzt abgeglichen. Versuche es danach nochmals.',
+    cloudDeleteOutOfStep: 'Es wurde nichts gelöscht: In der Cloud sind Daten, die dieses Gerät noch nicht hat. Sie werden jetzt synchronisiert. Versuche es danach nochmals.',
     cloudHaveCode: 'Schon einen Zugangscode? Hier anmelden',
     cloudOr: 'oder',
 
@@ -430,7 +429,7 @@ export const translations: Record<Language, Translations> = {
     conflictDescription: 'Auf diesem Gerät und in der Cloud gibt es verschiedene Änderungen. Wähle, welche Version du behalten willst.',
     conflictThisDevice: 'Dieses Gerät',
     conflictCloud: 'Cloud',
-    conflictGrades: 'Noten',
+    gradesLabel: 'Noten',
     conflictLastChange: 'Letzte Änderung',
     conflictLastChangeUnknown: 'Unbekannt',
     conflictKeepThisDevice: 'Dieses Gerät behalten',
@@ -439,7 +438,6 @@ export const translations: Record<Language, Translations> = {
     conflictChoiceError: 'Das hat nicht geklappt. Deine Daten sind unverändert. Versuche es nochmals oder wähle die andere Version.',
     restorePrevious: 'Vorherige Version wiederherstellen',
     restoreConfirm: 'Vorherige Version wiederherstellen? Sie ersetzt deine aktuellen Daten, und diese lassen sich danach auf demselben Weg zurückholen.',
-    restoreSuccess: 'Vorherige Version wiederhergestellt',
     restoreError: 'Wiederherstellen fehlgeschlagen',
   },
   fr: {
@@ -648,7 +646,7 @@ export const translations: Record<Language, Translations> = {
     conflictDescription: 'Il y a des modifications différentes sur cet appareil et dans le cloud. Choisis la version que tu veux garder.',
     conflictThisDevice: 'Cet appareil',
     conflictCloud: 'Cloud',
-    conflictGrades: 'Notes',
+    gradesLabel: 'Notes',
     conflictLastChange: 'Dernière modification',
     conflictLastChangeUnknown: 'Inconnue',
     conflictKeepThisDevice: 'Garder cet appareil',
@@ -657,7 +655,6 @@ export const translations: Record<Language, Translations> = {
     conflictChoiceError: 'Cela n\'a pas fonctionné. Tes données n\'ont pas changé. Réessaie ou choisis l\'autre version.',
     restorePrevious: 'Restaurer la version précédente',
     restoreConfirm: 'Restaurer la version précédente ? Elle remplace tes données actuelles, que tu pourras ensuite récupérer de la même manière.',
-    restoreSuccess: 'Version précédente restaurée',
     restoreError: 'La restauration a échoué',
   },
   en: {
@@ -866,7 +863,7 @@ export const translations: Record<Language, Translations> = {
     conflictDescription: 'This device and the cloud have different changes. Choose which version you want to keep.',
     conflictThisDevice: 'This device',
     conflictCloud: 'Cloud',
-    conflictGrades: 'Grades',
+    gradesLabel: 'Grades',
     conflictLastChange: 'Last change',
     conflictLastChangeUnknown: 'Unknown',
     conflictKeepThisDevice: 'Keep this device',
@@ -875,7 +872,6 @@ export const translations: Record<Language, Translations> = {
     conflictChoiceError: 'That didn\'t work. Your data hasn\'t changed. Try again or choose the other version.',
     restorePrevious: 'Restore previous version',
     restoreConfirm: 'Restore the previous version? It replaces your current data, which you can then get back the same way.',
-    restoreSuccess: 'Previous version restored',
     restoreError: 'Restoring failed',
   },
   it: {
@@ -1046,7 +1042,7 @@ export const translations: Record<Language, Translations> = {
     cloudDeleteConfirm: 'Elimina definitivamente',
     cloudDeleteError: 'Eliminazione non riuscita. Controlla la connessione e riprova.',
     cloudDeleted: 'I tuoi dati cloud sono stati eliminati. I voti su questo dispositivo restano.',
-    cloudDeleteOutOfStep: 'Non è stato eliminato nulla: il cloud contiene dati che questo dispositivo non ha ancora. Sono in corso di sincronizzazione. Riprova dopo.',
+    cloudDeleteOutOfStep: 'Non è stato eliminato nulla: il cloud contiene dati che questo dispositivo non ha ancora. Sono in corso di sincronizzazione. Riprova tra poco.',
     cloudHaveCode: 'Hai già un codice di accesso? Accedi qui',
     cloudOr: 'oppure',
 
@@ -1084,16 +1080,15 @@ export const translations: Record<Language, Translations> = {
     conflictDescription: 'Su questo dispositivo e nel cloud ci sono modifiche diverse. Scegli quale versione vuoi tenere.',
     conflictThisDevice: 'Questo dispositivo',
     conflictCloud: 'Cloud',
-    conflictGrades: 'Voti',
+    gradesLabel: 'Voti',
     conflictLastChange: 'Ultima modifica',
     conflictLastChangeUnknown: 'Sconosciuta',
     conflictKeepThisDevice: 'Tieni questo dispositivo',
     conflictKeepCloud: 'Tieni il cloud',
-    conflictBackupNote: 'L\'altra versione non va persa: puoi ripristinarla dal menu, sotto «Dati». Viene conservata solo l\'ultima versione sostituita.',
+    conflictBackupNote: 'L\'altra versione non va persa: puoi ripristinarla dal menu, nella sezione «Dati». Viene conservata solo l\'ultima versione sostituita.',
     conflictChoiceError: 'Non ha funzionato. I tuoi dati non sono cambiati. Riprova o scegli l\'altra versione.',
     restorePrevious: 'Ripristina la versione precedente',
     restoreConfirm: 'Ripristinare la versione precedente? Sostituisce i tuoi dati attuali, che potrai poi recuperare allo stesso modo.',
-    restoreSuccess: 'Versione precedente ripristinata',
     restoreError: 'Ripristino non riuscito',
   },
 };

@@ -449,6 +449,58 @@ describe('sync engine', () => {
       expect(tab.localLabel()).toBe('cloud');
     });
 
+    it('does not ask when another tab chose while the answer to a refused save was on its way', async () => {
+      const tab = setup();
+      tab.edit('edited');
+      const running = tab.engine.sync();
+      await settle();
+      tab.saves[0].answer.resolve(refused(2));
+      await settle();
+      // The other tab kept the cloud: the data here is the cloud's now, and nothing is unsynced
+      tab.items.setItem('student-data', JSON.stringify(student('cloud')));
+      tab.store.writeState({ code: CODE, version: 2, unsynced: false, changedAt: null });
+      tab.loads[0].resolve(snapshot(student('cloud', null), 2));
+      await settle();
+      tab.loads[1].resolve(snapshot(student('cloud', null), 2));
+      await running;
+      expect(tab.engine.getSnapshot()).toMatchObject({ status: 'saved', version: 2, unsynced: false, conflict: null });
+    });
+
+    it('does not ask when a reset removed the changes while the answer to a refused save was on its way', async () => {
+      const tab = setup();
+      tab.edit('edited');
+      const running = tab.engine.sync();
+      await settle();
+      tab.saves[0].answer.resolve(refused(2));
+      await settle();
+      tab.items.setItem('student-data', JSON.stringify({ ...student('x'), studentInfo: undefined }));
+      tab.engine.noteLocalChange();
+      tab.loads[0].resolve(snapshot(student('cloud', null), 2));
+      await running;
+      expect(tab.engine.getSnapshot()).toMatchObject({ unsynced: false, conflict: null, conflictPrompt: 'pending' });
+    });
+
+    it('does not ask a device from before versions when a reset happened during the first load', async () => {
+      const tab = setup({ version: null });
+      const running = tab.engine.sync();
+      tab.items.setItem('student-data', JSON.stringify({ ...student('x'), studentInfo: undefined }));
+      tab.engine.noteLocalChange();
+      tab.loads[0].resolve(snapshot(student('cloud', null), 2));
+      await running;
+      expect(tab.engine.getSnapshot()).toMatchObject({ version: null, conflict: null });
+    });
+
+    it('does not ask a device from before versions when another tab got past the first load meanwhile', async () => {
+      const tab = setup({ version: null });
+      const running = tab.engine.sync();
+      tab.store.writeState({ code: CODE, version: 2, unsynced: false, changedAt: null });
+      tab.loads[0].resolve(snapshot(student('cloud', null), 2));
+      await settle();
+      tab.loads[1].resolve(snapshot(student('local', null), 2));
+      await running;
+      expect(tab.engine.getSnapshot()).toMatchObject({ version: 2, conflict: null });
+    });
+
     it('keeps everything through a lost answer followed by a new edit', async () => {
       const tab = setup();
       tab.edit('first');

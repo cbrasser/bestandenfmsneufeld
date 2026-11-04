@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { createMemoryStorage } from '../sync/memoryStorage';
 import type { StudentData } from '../types';
-import { countGrades, createDataBackup } from './backup';
+import { createDataBackup } from './backup';
+import { countGrades } from './countGrades';
 
 function student(label: string, { name = 'Name' as string | undefined, division = 'FMS' as 'FMS' | 'Gymnasium', year = 1 as StudentData['currentYear'] } = {}): StudentData {
   return {

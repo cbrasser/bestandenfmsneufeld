@@ -1,6 +1,7 @@
-import { isCombinedSubject, isSubject, type StudentData } from '../types';
+import { useSyncExternalStore } from 'react';
+import type { StudentData } from '../types';
 import { reconcileAllYears, selectableYear } from './initializeData';
-import { BACKUP_KEY } from './storage';
+import { BACKUP_KEY, type KeyValueStorage } from './storage';
 
 /** A version of the data this device replaced, and when. */
 export interface KeptVersion {
@@ -26,8 +27,6 @@ export interface DataBackup {
   /** Listens for a version being kept. */
   subscribe(listener: () => void): () => void;
 }
-
-type KeyValueStorage = Pick<Storage, 'getItem' | 'setItem'>;
 
 export function createDataBackup(getStorage: () => KeyValueStorage): DataBackup {
   const listeners = new Set<() => void>();
@@ -73,18 +72,16 @@ export function createDataBackup(getStorage: () => KeyValueStorage): DataBackup 
 /** This browser's backup. */
 export const dataBackup = createDataBackup(() => localStorage);
 
-/** All grades in the data, in every year, including grades not yet assigned to a Teilfach. */
-export function countGrades(data: StudentData): number {
-  return Object.values(data.years ?? {}).reduce(
-    (total, year) =>
-      total +
-      (year?.subjects ?? []).reduce((inYear, subject) => {
-        if (isCombinedSubject(subject)) {
-          const inParts = subject.subjects.reduce((sum, part) => sum + part.grades.length, 0);
-          return inYear + inParts + (subject.unassignedGrades?.length ?? 0);
-        }
-        return inYear + (isSubject(subject) ? subject.grades.length : 0);
-      }, 0),
-    0
-  );
+const subscribeToBackup = (listener: () => void) => {
+  const stop = dataBackup.subscribe(listener);
+  window.addEventListener('storage', listener);
+  return () => {
+    stop();
+    window.removeEventListener('storage', listener);
+  };
+};
+
+/** Whether this browser has a version to go back to, also when another tab kept it. */
+export function useHasBackup(): boolean {
+  return useSyncExternalStore(subscribeToBackup, () => dataBackup.read() !== null);
 }

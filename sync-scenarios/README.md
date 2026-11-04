@@ -29,8 +29,8 @@ of step needs a case in every runner, so reuse the existing ones where you can.
 | `selectYear` | `device`, `year` | The student switches to another year. This must not count as an edit |
 | `reconcile` | `device` | The device brings its stored data in line with its subject lists, as a new app version does. This must not count as an edit |
 | `connectedBeforeVersions` | `device` | Makes the device one connected to this code before versions existed: it has the code, no last-seen version, and no record of unsynced changes. Follow it with `open` |
-| `keepThisDevice` | `device` | The student's choice in the conflict prompt |
-| `keepCloud` | `device` | The student's choice in the conflict prompt |
+| `keepThisDevice` | `device` | The student chooses "Keep this device" in the conflict prompt: the local data goes to the cloud, and the cloud's version becomes the backup |
+| `keepCloud` | `device` | The student chooses "Keep cloud" in the conflict prompt: the cloud's data replaces the local data, which becomes the backup |
 | `restoreBackup` | `device` | The student restores the previous version from the data menu: the two versions swap, and this counts as an edit |
 | `expectDevice` | `device`, any of `connected`, `status`, `failure`, `version`, `unsynced`, `grades`, `selectedYear`, `name`, `conflict`, `conflictPrompt`, `backupGrades` | Checks the device. Only the named fields are compared |
 | `expectCloud` | `code`?, `exists`?, `version`?, `grades`?, `name`?, `division`? | Checks the cloud through the load call |
