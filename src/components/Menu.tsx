@@ -1,6 +1,7 @@
 import { useRef, useEffect, type ReactNode } from 'react';
-import { Menu as MenuIcon, X, Sun, Moon, Monitor, Upload, Download, RotateCcw } from 'lucide-react';
+import { Menu as MenuIcon, X, Sun, Moon, Monitor, Upload, Download, RotateCcw, Smartphone } from 'lucide-react';
 import { useI18n } from '../i18n/context';
+import { guideText } from '../i18n/guide';
 import { useTheme } from '../contexts/ThemeContext';
 import type { Language } from '../i18n/locales';
 
@@ -127,6 +128,15 @@ export const Menu = ({ isOpen, onToggle, onExport, onImport, onReset, cloudSlot 
               </option>
             ))}
           </select>
+        </section>
+
+        {/* App guide */}
+        <section className="menu-group">
+          <h3 className="group-title">{guideText[language].menuTitle}</h3>
+          <a href="#app" className="btn btn-block btn-start">
+            <Smartphone size={16} strokeWidth={2.5} aria-hidden="true" />
+            {guideText[language].menuEntry}
+          </a>
         </section>
 
         {/* Cloud Sync */}

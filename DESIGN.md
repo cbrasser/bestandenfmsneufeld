@@ -287,8 +287,11 @@ Paper leaves with Bricolage titles. Charts are drawn in ink from the tokens: out
 ### Footer
 A band in Fog Ground under a 2px ink rule: the storage notice in a paper box with a small export button, the disclaimer in Slate Ink, then copyright and contact.
 
+### App guide
+A page at `/#app`, on the year's hue when a profile exists and on Fog Ground otherwise. The title is the display line, under it a segmented control (Android, iPhone) and a language select, because a shared link arrives without a menu. Each block is one leaf up to 720px wide, with numbered steps: the number in a 28px round outlined tile, the sentence, then a button for what to open. The one-tap Obtainium link is the only primary button.
+
 ### Icon
-A check mark in ink on the year 1 marigold, in a rounded tile with a 4px ink outline (`public/icon.svg`).
+A check mark in ink on the year 1 marigold, in a rounded tile with a 4px ink outline (`public/icon.svg`). The PNGs are generated from it; the iPhone's is opaque and fills the square, because iOS rounds the corners itself.
 
 ## Do's and Don'ts
 

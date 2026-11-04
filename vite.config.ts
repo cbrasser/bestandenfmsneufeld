@@ -15,8 +15,8 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       manifest: {
-        name: 'Grade Tracker',
-        short_name: 'Grades',
+        name: 'Bestanden',
+        short_name: 'Bestanden',
         description: 'Track your grades and promotion status',
         theme_color: '#e6eaef',
         icons: [
@@ -24,6 +24,16 @@ export default defineConfig({
             src: '/icon.svg',
             sizes: 'any',
             type: 'image/svg+xml',
+          },
+          {
+            src: '/icon-192.png',
+            sizes: '192x192',
+            type: 'image/png',
+          },
+          {
+            src: '/icon-512.png',
+            sizes: '512x512',
+            type: 'image/png',
           },
         ],
       },
