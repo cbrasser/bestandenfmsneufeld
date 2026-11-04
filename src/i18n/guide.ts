@@ -74,7 +74,7 @@ export const guideText: Record<Language, GuideText> = {
                     link: { href: OBTAINIUM_DOWNLOAD, label: 'Obtainium herunterladen' },
                   },
                   {
-                    text: 'Tippe auf diesem Handy auf den Knopf. Obtainium öffnet sich, und die Adresse von Bestanden ist schon eingetragen. Tippe dort auf **Hinzufügen** (Add).',
+                    text: 'Öffne diese Seite auf dem Handy und tippe auf den Knopf. Obtainium öffnet sich, und die Adresse von Bestanden ist schon eingetragen. Tippe dort auf **Hinzufügen** (Add).',
                     link: { href: OBTAINIUM_ADD_LINK, label: 'Zu Obtainium hinzufügen', primary: true },
                   },
                   {
@@ -250,7 +250,7 @@ export const guideText: Record<Language, GuideText> = {
                     link: { href: OBTAINIUM_DOWNLOAD, label: 'Télécharger Obtainium' },
                   },
                   {
-                    text: "Sur ce téléphone, touche le bouton. Obtainium s'ouvre avec l'adresse de Bestanden déjà remplie. Touche alors **Ajouter** (Add).",
+                    text: "Ouvre cette page sur ton téléphone et touche le bouton. Obtainium s'ouvre avec l'adresse de Bestanden déjà remplie. Touche alors **Ajouter** (Add).",
                     link: { href: OBTAINIUM_ADD_LINK, label: 'Ajouter à Obtainium', primary: true },
                   },
                   {
@@ -426,7 +426,7 @@ export const guideText: Record<Language, GuideText> = {
                     link: { href: OBTAINIUM_DOWNLOAD, label: 'Download Obtainium' },
                   },
                   {
-                    text: "On this phone, tap the button. Obtainium opens with Bestanden's address already filled in. Tap **Add** there.",
+                    text: "Open this page on your phone and tap the button. Obtainium opens with Bestanden's address already filled in. Tap **Add** there.",
                     link: { href: OBTAINIUM_ADD_LINK, label: 'Add to Obtainium', primary: true },
                   },
                   {
@@ -602,7 +602,7 @@ export const guideText: Record<Language, GuideText> = {
                     link: { href: OBTAINIUM_DOWNLOAD, label: 'Scarica Obtainium' },
                   },
                   {
-                    text: "Su questo telefono, tocca il pulsante. Obtainium si apre con l'indirizzo di Bestanden già inserito. Lì tocca **Aggiungi** (Add).",
+                    text: "Apri questa pagina sul telefono e tocca il pulsante. Obtainium si apre con l'indirizzo di Bestanden già inserito. Lì tocca **Aggiungi** (Add).",
                     link: { href: OBTAINIUM_ADD_LINK, label: 'Aggiungi a Obtainium', primary: true },
                   },
                   {

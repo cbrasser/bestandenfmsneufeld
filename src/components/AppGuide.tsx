@@ -34,7 +34,7 @@ const CopyValue = ({ value }: { value: string }) => {
   return (
     <div className="guide-copy">
       <span className="guide-copy-value select-all">{value}</span>
-      <button onClick={handleCopy} className="btn btn-sm">
+      <button onClick={handleCopy} className="btn">
         {copied ? (
           <Check size={16} strokeWidth={3} aria-hidden="true" />
         ) : (
@@ -51,7 +51,12 @@ const Step = ({ step }: { step: GuideStep }) => (
     <p><Marked text={step.text} /></p>
     {step.copy && <CopyValue value={step.copy} />}
     {step.link && (
-      <a href={step.link.href} className={`btn ${step.link.primary ? 'btn-primary' : ''}`}>
+      <a
+        href={step.link.href}
+        className={`btn ${step.link.primary ? 'btn-primary' : ''}`}
+        // The one-tap link hands over to Obtainium; the others keep the guide open behind them
+        {...(step.link.primary ? {} : { target: '_blank', rel: 'noreferrer' })}
+      >
         {!step.link.primary && <ExternalLink size={16} strokeWidth={2.5} aria-hidden="true" />}
         {step.link.label}
       </a>
@@ -94,7 +99,7 @@ export const AppGuide = ({ section }: { section: GuideSection | null }) => {
     <div className="app">
       <header className="page app-bar">
         <span className="wordmark">{t('gradeTracker')}</span>
-        <a href="#" className="btn">
+        <a href="#" className="btn guide-back">
           <ArrowLeft size={16} strokeWidth={2.5} aria-hidden="true" />
           {text.backToGrades}
         </a>

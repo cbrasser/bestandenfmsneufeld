@@ -1807,3 +1807,15 @@ a {
   font-weight: 700;
   overflow-wrap: anywhere;
 }
+
+/* The smallest phones: buttons never wrap, so they start under the step's
+   number, and the back button gives up its arrow */
+@media (max-width: 359px) {
+  .guide-step:not(:only-child) > .btn {
+    margin-left: -40px;
+  }
+
+  .guide-back svg {
+    display: none;
+  }
+}

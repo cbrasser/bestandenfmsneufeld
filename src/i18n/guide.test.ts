@@ -68,11 +68,27 @@ describe('the app guide', () => {
     }
   });
 
-  it('covers removing an old Android home-screen install and export as a fallback on both phones', () => {
+  it('has the blocks the spec asks for on each phone', () => {
     for (const language of languages) {
       const { android, iphone } = guideText[language].sections;
       expect(android.leaves.map((leaf) => leaf.id)).toEqual(['install', 'code', 'file', 'old-install']);
       expect(iphone.leaves.map((leaf) => leaf.id)).toEqual(['home-screen', 'file']);
+    }
+  });
+
+  it('calls export and import a one-time copy on both phones', () => {
+    for (const language of languages) {
+      for (const section of ['android', 'iphone'] as const) {
+        const file = guideText[language].sections[section].leaves.find((leaf) => leaf.id === 'file');
+        expect(file?.intro).toContain(oneTimeCopy[language]);
+      }
+    }
+  });
+
+  it('says an old Android home-screen install can be removed once the data is in the app', () => {
+    for (const language of languages) {
+      const old = guideText[language].sections.android.leaves.find((leaf) => leaf.id === 'old-install');
+      expect(old?.intro).toContain(canRemove[language]);
     }
   });
 });
@@ -83,4 +99,18 @@ const homeScreenLabel = {
   fr: "Sur l'écran d'accueil",
   en: 'Add to Home Screen',
   it: 'Aggiungi alla schermata Home',
+} as const;
+
+const oneTimeCopy = {
+  de: 'einmalige Kopie',
+  fr: 'copie unique',
+  en: 'one-time copy',
+  it: 'copia unica',
+} as const;
+
+const canRemove = {
+  de: 'Du kannst sie entfernen, sobald deine Daten in der App sind',
+  fr: "Tu peux le retirer dès que tes données sont dans l'app",
+  en: 'You can remove it once your data is in the app',
+  it: "Puoi rimuoverlo appena i tuoi dati sono nell'app",
 } as const;
