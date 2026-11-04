@@ -7,6 +7,7 @@ import Root from './Root.tsx'
 import { I18nProvider } from './i18n/context.tsx'
 import { ThemeProvider } from './contexts/ThemeContext.tsx'
 import { Analytics } from '@vercel/analytics/react'
+import { parseSelectedYear, SELECTED_YEAR_KEY } from './utils/storage.ts'
 
 // Paint the saved theme and year's hue from the first frame, before React has loaded the data
 try {
@@ -16,7 +17,7 @@ try {
 
   const saved = JSON.parse(localStorage.getItem('student-data') ?? 'null');
   if (saved?.studentInfo) {
-    document.documentElement.dataset.year = String(saved.currentYear);
+    document.documentElement.dataset.year = String(parseSelectedYear(localStorage.getItem(SELECTED_YEAR_KEY)) ?? saved.currentYear);
   }
 } catch {
   // unreadable storage: the page starts on the neutral ground

@@ -30,12 +30,20 @@ export interface PersistedSyncState {
 }
 
 export interface SyncStore {
+  /** The local data, with this device's selected year. */
   readData(): StudentData | null;
   /**
    * Replaces the local data with cloud data. readData may then return a reconciled form of it.
+   * `keepSelectedYear` leaves this device on its year, unless the new data doesn't have that year.
    * Throws, leaving the local data as it was, if the cloud data can't be read.
    */
-  applyCloudData(data: StudentData): void;
+  applyCloudData(data: StudentData, options: { keepSelectedYear: boolean }): void;
+  /**
+   * A form of the data that differs only when the student's data really does: it leaves out the
+   * selected year and the name, which stay on the device, the data format's version, and whatever
+   * reconciling alone would change.
+   */
+  contentOf(data: StudentData): string;
   readState(): PersistedSyncState;
   writeState(state: PersistedSyncState): void;
 }
@@ -71,6 +79,11 @@ export interface SyncEngine {
    * cloud needs, so the caller should call sync() after the save delay.
    */
   noteLocalChange(): boolean;
+  /**
+   * Call when another tab may have written to the shared storage, together with showing what is
+   * stored now. This tab then counts as having seen it, so it won't take it for an edit of its own.
+   */
+  noteOtherTabChange(): void;
   /** Brings this device and the cloud in step, as far as is safe. Call on open and on focus. */
   sync(): Promise<void>;
 }
@@ -86,15 +99,18 @@ const FIRST_VERSION = 1;
  *   No unsynced changes Other version  Take the cloud data
  *   Unsynced changes    Same version   Save with the expected version
  *   Unsynced changes    Newer          Refused by the save: stays unsynced, status failed
+ *
+ * A refused save whose data the cloud already holds did go through: its answer got lost, or another
+ * tab sent the same data at the same moment. That isn't a conflict.
  */
 export function createSyncEngine({ store, remote }: { store: SyncStore; remote: SyncRemote }): SyncEngine {
-  // The version is kept per engine, not re-read from the store: a second tab shares the store but
-  // may not have taken the data that its version number describes.
+  // The version is kept per engine, and only re-read together with the data it describes: a tab
+  // that hasn't seen another tab's data must have its edits refused, not save over that data.
   let persisted = store.readState();
   let status: SyncStatus = 'idle';
   let failure: SyncFailure | null = null;
   let snapshot: SyncSnapshot = { ...persisted, status, failure };
-  // The local data as last seen, to tell real changes from data that came from the cloud
+  // The content of the local data as last seen, to tell real edits from data that came from elsewhere
   let baseline: string | null = null;
   let running: Promise<void> | null = null;
   const listeners = new Set<() => void>();
@@ -120,16 +136,51 @@ export function createSyncEngine({ store, remote }: { store: SyncStore; remote: 
     return false;
   };
 
+  const storedContent = () => {
+    const data = store.readData();
+    return data?.studentInfo ? store.contentOf(data) : null;
+  };
+
+  const takeStoredState = () => {
+    persisted = store.readState();
+    baseline = storedContent();
+  };
+
   // Returns false, with nothing changed, if the cloud data can't be read
-  const takeCloudData = (code: string, cloud: CloudSnapshot): boolean => {
+  const takeCloudData = (code: string, cloud: CloudSnapshot, options: { keepSelectedYear: boolean }): boolean => {
     try {
-      store.applyCloudData(cloud.data);
+      store.applyCloudData(cloud.data, options);
     } catch {
       return false;
     }
-    baseline = JSON.stringify(store.readData());
+    baseline = storedContent();
     persist({ code, version: cloud.version, unsynced: false });
     return true;
+  };
+
+  // Returns null, with the outcome set, if there is no cloud data to go on
+  const load = async (code: string): Promise<CloudSnapshot | null> => {
+    let cloud: CloudSnapshot | null;
+    try {
+      cloud = await remote.load(code);
+    } catch {
+      fail('unreachable');
+      return null;
+    }
+    if (persisted.code !== code) return null;
+    if (!cloud) fail('unknown_code');
+    return cloud;
+  };
+
+  // The cloud has what was sent, at this version. Returns true if there is more to send.
+  const settleSaved = (version: number, sent: string): boolean => {
+    const content = storedContent();
+    // No content means a reset removed what was sent: that, and the new profile after it, isn't an edit
+    const editedMeanwhile = content !== null && content !== sent;
+    persist({ version, unsynced: editedMeanwhile });
+    if (editedMeanwhile) return true;
+    setOutcome('saved');
+    return false;
   };
 
   // Each step returns true if there is more to do
@@ -138,7 +189,7 @@ export function createSyncEngine({ store, remote }: { store: SyncStore; remote: 
     if (expectedVersion === null) return fail('no_version');
 
     setOutcome('saving');
-    const sent = JSON.stringify(data);
+    const sent = store.contentOf(data);
     let result: SaveResult;
     try {
       result = await remote.save(code, data, expectedVersion);
@@ -147,30 +198,33 @@ export function createSyncEngine({ store, remote }: { store: SyncStore; remote: 
     }
     if (persisted.code !== code) return false;
 
-    if (result.status === 'conflict') return fail('conflict');
     if (result.status === 'unknown_code') return fail('unknown_code');
+    if (result.status === 'saved') return settleSaved(result.version, sent);
 
-    const editedMeanwhile = JSON.stringify(store.readData()) !== sent;
-    persist({ version: result.version, unsynced: editedMeanwhile });
-    if (editedMeanwhile) return true;
-    setOutcome('saved');
-    return false;
+    const cloud = await load(code);
+    if (!cloud) return false;
+    if (store.contentOf(cloud.data) !== sent) return fail('conflict');
+    return settleSaved(cloud.version, sent);
   };
 
   const pull = async (code: string): Promise<boolean> => {
-    let cloud: CloudSnapshot | null;
-    try {
-      cloud = await remote.load(code);
-    } catch {
-      return fail('unreachable');
-    }
-    if (persisted.code !== code) return false;
+    const versionAsked = persisted.version;
+    const cloud = await load(code);
+    if (!cloud) return false;
 
-    if (!cloud) return fail('unknown_code');
     if (persisted.unsynced) return true; // edited during the load, so the cloud data must not replace it
+    const shared = store.readState();
+    if (shared.unsynced || shared.version !== versionAsked) {
+      // Another tab has an edit waiting for its save delay, or closed before it was over. Or it saved
+      // during the load, so this answer may be older than what is stored and must not replace it.
+      takeStoredState();
+      return true;
+    }
     if (persisted.version === null) return fail('no_version');
 
-    if (cloud.version !== persisted.version && !takeCloudData(code, cloud)) return fail('unreachable');
+    if (cloud.version !== persisted.version && !takeCloudData(code, cloud, { keepSelectedYear: true })) {
+      return fail('unreachable');
+    }
     setOutcome('saved');
     return false;
   };
@@ -200,7 +254,7 @@ export function createSyncEngine({ store, remote }: { store: SyncStore; remote: 
       if (!data) throw new Error('No local data to create an account from');
       const code = generateCode();
       await remote.createAccount(code, data);
-      baseline = JSON.stringify(data);
+      baseline = store.contentOf(data);
       persist({ code, version: FIRST_VERSION, unsynced: false });
       setOutcome('saved');
       return code;
@@ -215,7 +269,8 @@ export function createSyncEngine({ store, remote }: { store: SyncStore; remote: 
         return 'unreachable';
       }
       if (!cloud) return 'unknown_code';
-      if (!takeCloudData(code, cloud)) return 'unreachable';
+      // A device joining starts where the student last was; from then on it keeps its own year
+      if (!takeCloudData(code, cloud, { keepSelectedYear: false })) return 'unreachable';
       setOutcome('saved');
       return 'connected';
     },
@@ -236,13 +291,22 @@ export function createSyncEngine({ store, remote }: { store: SyncStore; remote: 
         }
         return false;
       }
-      const current = JSON.stringify(data);
+      const current = store.contentOf(data);
       const changed = baseline !== null && baseline !== current;
       baseline = current;
       if (!changed || !persisted.code) return false;
       persist({ unsynced: true });
       setOutcome('saving');
       return true;
+    },
+
+    noteOtherTabChange() {
+      const before = persisted;
+      takeStoredState();
+      if (!persisted.code) setOutcome('idle');
+      else if (persisted.code !== before.code || persisted.unsynced !== before.unsynced) {
+        setOutcome(persisted.unsynced ? 'saving' : 'saved');
+      } else publish();
     },
 
     // One run at a time: two parallel saves with one expected version would refuse each other.
