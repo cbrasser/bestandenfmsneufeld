@@ -47,6 +47,14 @@ npm run dev
 
 The app will be available at `http://localhost:5173`
 
+### Tests
+
+```bash
+npm test
+```
+
+`rule-cases/` holds the rule test cases shared with the Android app. Regenerate them with `npm run rule-cases` after changing a rule; see `rule-cases/README.md`.
+
 ### Build for Production
 
 ```bash
