@@ -6,7 +6,5 @@ export default defineConfig({
   test: {
     include: ['src/sync/sync.scenarios.ts'],
     testTimeout: 30_000,
-    // The scenarios use their own codes, but the database is shared with nothing else during a run.
-    sequence: { concurrent: false },
   },
 })

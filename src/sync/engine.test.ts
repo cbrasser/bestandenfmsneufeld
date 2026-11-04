@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import type { StudentData } from '../types';
 import { createSyncEngine, type CloudSnapshot, type SaveResult, type SyncRemote } from './engine';
+import { createMemoryStorage } from './memoryStorage';
 import { createWebSyncStore } from './webStore';
 
-// Timing the scenario table can't hold still: the remote's answers arrive when a test says so.
-// Everything without a race in it belongs in sync-scenarios/scenarios.json.
+// What the scenario table can't reach: races, where the remote's answers arrive when a test says so,
+// and local states and cloud data no scenario step can produce. The rest belongs in
+// sync-scenarios/scenarios.json.
 
 const CODE = 'ABCDEFGHJKMNPQRS';
 
@@ -28,13 +30,9 @@ const saved = (version: number): SaveResult => ({ status: 'saved', version, upda
 const snapshot = (data: StudentData, version: number): CloudSnapshot => ({ data, version, updatedAt: '2026-11-04T12:00:00Z' });
 
 function setup({ version = 1 as number | null, unsynced = false, code = CODE as string | null, data = student('local') } = {}) {
-  const items = new Map<string, string>([['student-data', JSON.stringify(data)]]);
-  const storage = {
-    getItem: (key: string) => items.get(key) ?? null,
-    setItem: (key: string, value: string) => void items.set(key, value),
-    removeItem: (key: string) => void items.delete(key),
-  };
-  const store = createWebSyncStore(() => storage);
+  const items = createMemoryStorage();
+  items.setItem('student-data', JSON.stringify(data));
+  const store = createWebSyncStore(() => items);
   store.writeState({ code, version, unsynced });
 
   const saves: { data: StudentData; expectedVersion: number; answer: ReturnType<typeof deferred<SaveResult>> }[] = [];
@@ -56,7 +54,7 @@ function setup({ version = 1 as number | null, unsynced = false, code = CODE as 
   const engine = createSyncEngine({ store, remote });
   engine.noteLocalChange();
   const edit = (label: string) => {
-    items.set('student-data', JSON.stringify(student(label)));
+    items.setItem('student-data', JSON.stringify(student(label)));
     return engine.noteLocalChange();
   };
   const localName = () => store.readData()?.studentInfo?.name;
@@ -144,7 +142,7 @@ describe('sync engine', () => {
 
   it('never syncs a device without a profile, such as one in onboarding after a reset', async () => {
     const { engine, items, saves, loads } = setup({ unsynced: true });
-    items.set('student-data', JSON.stringify({ ...student('x'), studentInfo: undefined }));
+    items.setItem('student-data', JSON.stringify({ ...student('x'), studentInfo: undefined }));
 
     expect(engine.noteLocalChange()).toBe(false);
     await engine.sync();
@@ -155,7 +153,7 @@ describe('sync engine', () => {
 
   it('does not treat a new profile after a reset as an edit', () => {
     const { engine, items, edit } = setup();
-    items.set('student-data', JSON.stringify({ ...student('x'), studentInfo: undefined }));
+    items.setItem('student-data', JSON.stringify({ ...student('x'), studentInfo: undefined }));
     engine.noteLocalChange();
 
     expect(edit('new profile')).toBe(false);
@@ -175,6 +173,43 @@ describe('sync engine', () => {
     await engine.sync();
     expect(saves).toHaveLength(0);
     expect(engine.getSnapshot()).toMatchObject({ status: 'error', failure: 'no_version', unsynced: true });
+  });
+
+  it('drops unsynced changes that a reset removed, so the new profile is not pushed by itself', async () => {
+    const { engine, items, edit, saves, loads } = setup();
+    edit('edited');
+    items.setItem('student-data', JSON.stringify({ ...student('x'), studentInfo: undefined }));
+    engine.noteLocalChange();
+    expect(engine.getSnapshot().unsynced).toBe(false);
+
+    items.setItem('student-data', JSON.stringify(student('new profile')));
+    engine.noteLocalChange();
+    const done = engine.sync();
+    await settle();
+
+    expect(saves).toHaveLength(0);
+    loads[0].resolve(snapshot(student('new profile'), 1));
+    await done;
+  });
+
+  it('reports cloud data it cannot read on connect, and stays disconnected', async () => {
+    const { engine, loads, localName } = setup({ code: null, version: null });
+    const result = engine.connect(CODE);
+    loads[0].resolve(snapshot({} as StudentData, 1));
+
+    await expect(result).resolves.toBe('unreachable');
+    expect(engine.getSnapshot()).toMatchObject({ code: null, version: null });
+    expect(localName()).toBe('local');
+  });
+
+  it('shows a failed status for cloud data it cannot read on a pull, and keeps local data', async () => {
+    const { engine, loads, localName } = setup();
+    const done = engine.sync();
+    loads[0].resolve(snapshot({} as StudentData, 2));
+    await done;
+
+    expect(engine.getSnapshot()).toMatchObject({ status: 'error', failure: 'unreachable', version: 1 });
+    expect(localName()).toBe('local');
   });
 
   it('only marks data unsynced while connected', () => {

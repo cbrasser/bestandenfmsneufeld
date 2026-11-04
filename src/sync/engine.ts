@@ -31,7 +31,10 @@ export interface PersistedSyncState {
 
 export interface SyncStore {
   readData(): StudentData | null;
-  /** Replaces the local data with cloud data. readData may then return a reconciled form of it. */
+  /**
+   * Replaces the local data with cloud data. readData may then return a reconciled form of it.
+   * Throws, leaving the local data as it was, if the cloud data can't be read.
+   */
   applyCloudData(data: StudentData): void;
   readState(): PersistedSyncState;
   writeState(state: PersistedSyncState): void;
@@ -42,7 +45,7 @@ export type SyncStatus = 'idle' | 'saving' | 'saved' | 'error';
 /**
  * - `conflict`: the cloud has a newer version than the unsynced changes are based on
  * - `unknown_code`: the cloud has no data for the code
- * - `unreachable`: a call to the cloud failed
+ * - `unreachable`: a call to the cloud failed, or what it returned can't be read
  * - `no_version`: connected before versions existed, so it can't yet be told which side is newer
  */
 export type SyncFailure = 'conflict' | 'unknown_code' | 'unreachable' | 'no_version';
@@ -117,10 +120,16 @@ export function createSyncEngine({ store, remote }: { store: SyncStore; remote: 
     return false;
   };
 
-  const takeCloudData = (cloud: CloudSnapshot) => {
-    store.applyCloudData(cloud.data);
+  // Returns false, with nothing changed, if the cloud data can't be read
+  const takeCloudData = (code: string, cloud: CloudSnapshot): boolean => {
+    try {
+      store.applyCloudData(cloud.data);
+    } catch {
+      return false;
+    }
     baseline = JSON.stringify(store.readData());
-    persist({ version: cloud.version, unsynced: false });
+    persist({ code, version: cloud.version, unsynced: false });
+    return true;
   };
 
   // Each step returns true if there is more to do
@@ -161,7 +170,7 @@ export function createSyncEngine({ store, remote }: { store: SyncStore; remote: 
     if (persisted.unsynced) return true; // edited during the load, so the cloud data must not replace it
     if (persisted.version === null) return fail('no_version');
 
-    if (cloud.version !== persisted.version) takeCloudData(cloud);
+    if (cloud.version !== persisted.version && !takeCloudData(code, cloud)) return fail('unreachable');
     setOutcome('saved');
     return false;
   };
@@ -206,8 +215,7 @@ export function createSyncEngine({ store, remote }: { store: SyncStore; remote: 
         return 'unreachable';
       }
       if (!cloud) return 'unknown_code';
-      persist({ code });
-      takeCloudData(cloud);
+      if (!takeCloudData(code, cloud)) return 'unreachable';
       setOutcome('saved');
       return 'connected';
     },
@@ -220,7 +228,12 @@ export function createSyncEngine({ store, remote }: { store: SyncStore; remote: 
     noteLocalChange() {
       const data = store.readData();
       if (!data?.studentInfo) {
+        // A reset removed whatever was unsynced, and the new profile isn't an edit
         baseline = null;
+        if (persisted.unsynced) {
+          persist({ unsynced: false });
+          setOutcome('idle');
+        }
         return false;
       }
       const current = JSON.stringify(data);

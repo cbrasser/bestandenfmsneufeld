@@ -8,6 +8,7 @@ import { isSubject, type StudentData } from '../types';
 import { STORAGE_KEY } from '../utils/storage';
 import { generateCode } from './code';
 import { createSyncEngine, type SyncEngine, type SyncRemote } from './engine';
+import { createMemoryStorage } from './memoryStorage';
 import { createSupabaseRemote } from './supabaseRemote';
 import { createWebSyncStore } from './webStore';
 
@@ -43,12 +44,7 @@ function withGrades(data: StudentData, values: number[]): StudentData {
 
 /** One browser: its own storage and sync engine, with a switch to cut it off from the cloud. */
 function createDevice() {
-  const items = new Map<string, string>();
-  const storage = {
-    getItem: (key: string) => items.get(key) ?? null,
-    setItem: (key: string, value: string) => void items.set(key, value),
-    removeItem: (key: string) => void items.delete(key),
-  };
+  const storage = createMemoryStorage();
   const store = createWebSyncStore(() => storage);
   const offlineGuard = <T>(call: () => Promise<T>) =>
     device.offline ? Promise.reject(new Error('offline')) : call();

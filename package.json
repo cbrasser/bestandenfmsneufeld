@@ -10,7 +10,7 @@
     "preview": "vite preview",
     "test": "vitest run --passWithNoTests",
     "test:sync": "node scripts/with-local-supabase.mjs vitest run --config vitest.scenarios.config.ts",
-    "dev:local": "node scripts/with-local-supabase.mjs vite --host --port 5193 --strictPort",
+    "dev:local": "node scripts/with-local-supabase.mjs vite --host 127.0.0.1 --port 5193 --strictPort",
     "supabase:start": "node scripts/with-local-supabase.mjs",
     "supabase:stop": "node scripts/with-local-supabase.mjs --stop"
   },
