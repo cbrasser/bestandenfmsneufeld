@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { appPopupSections, createAppPopupDismissal, isIphoneHomeScreenInstall, shouldShowAppPopup } from './appPopup';
+import { appPopupSections, createAppPopupDismissal, isAppleHomeScreenInstall, shouldShowAppPopup } from './appPopup';
 import type { KeyValueStorage } from './storage';
 
 describe('shouldShowAppPopup', () => {
@@ -38,30 +38,30 @@ describe('appPopupSections', () => {
   });
 });
 
-describe('isIphoneHomeScreenInstall', () => {
+describe('isAppleHomeScreenInstall', () => {
   it('is true on an iPhone opened from the home screen', () => {
-    expect(isIphoneHomeScreenInstall('iphone', true, true)).toBe(true);
+    expect(isAppleHomeScreenInstall('iphone', true, true)).toBe(true);
   });
 
   it('trusts either signal on an iPhone, as neither is guaranteed', () => {
-    expect(isIphoneHomeScreenInstall('iphone', true, false)).toBe(true);
-    expect(isIphoneHomeScreenInstall('iphone', undefined, true)).toBe(true);
+    expect(isAppleHomeScreenInstall('iphone', true, false)).toBe(true);
+    expect(isAppleHomeScreenInstall('iphone', undefined, true)).toBe(true);
   });
 
   it('is false in Safari on an iPhone', () => {
-    expect(isIphoneHomeScreenInstall('iphone', false, false)).toBe(false);
+    expect(isAppleHomeScreenInstall('iphone', false, false)).toBe(false);
   });
 
   it('errs towards staying away when only Apple\'s own signal is set on a device not recognised as one', () => {
-    expect(isIphoneHomeScreenInstall(null, true, false)).toBe(true);
+    expect(isAppleHomeScreenInstall(null, true, false)).toBe(true);
   });
 
   it('is false in an Android home-screen install, whose student the app is meant for', () => {
-    expect(isIphoneHomeScreenInstall('android', undefined, true)).toBe(false);
+    expect(isAppleHomeScreenInstall('android', undefined, true)).toBe(false);
   });
 
   it('is false in an installed site on a computer', () => {
-    expect(isIphoneHomeScreenInstall(null, undefined, true)).toBe(false);
+    expect(isAppleHomeScreenInstall(null, undefined, true)).toBe(false);
   });
 });
 

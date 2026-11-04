@@ -69,7 +69,7 @@ const ConflictDialog = ({ engine, conflict }: { engine: SyncEngine; conflict: Sy
             {t('conflictChoiceError')}
           </p>
         )}
-        <div className="dialog-actions conflict-choices">
+        <div className="dialog-actions dialog-choices">
           {choiceButton('keepThisDevice', t('conflictKeepThisDevice'))}
           {choiceButton('keepCloud', t('conflictKeepCloud'))}
         </div>

@@ -19,13 +19,13 @@ export const appPopupSections = (section: GuideSection | null): GuideSection[] =
   section ? [section] : ['android', 'iphone'];
 
 /**
- * Whether this is the website opened from an iPhone's home screen, where adding it there no longer
- * applies. `navigator.standalone` exists only on Apple's devices, so it counts on any of them: wrongly
- * skipping the pop-up costs less than telling a student to do what they already did.
+ * Whether this is the website opened from an Apple device's home screen, where adding it there no
+ * longer applies. `navigator.standalone` exists only on Apple's devices, so it counts on any of them:
+ * wrongly skipping the pop-up costs less than telling a student to do what they already did.
  */
-export const isIphoneHomeScreenInstall = (
+export const isAppleHomeScreenInstall = (
   section: GuideSection | null,
-  navigatorStandalone: unknown,
+  navigatorStandalone: boolean | undefined,
   displayModeStandalone: boolean
 ): boolean => navigatorStandalone === true || (section === 'iphone' && displayModeStandalone);
 
@@ -49,7 +49,7 @@ export function createAppPopupDismissal(getStorage: () => KeyValueStorage) {
     dismiss(): void {
       dismissedHere = true;
       try {
-        getStorage().setItem(APP_POPUP_KEY, new Date().toISOString());
+        getStorage().setItem(APP_POPUP_KEY, 'true');
       } catch {
         // Holds for this page; the pop-up may return on the next load
       }

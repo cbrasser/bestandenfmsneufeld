@@ -3,30 +3,23 @@ import { X } from 'lucide-react';
 import { useI18n } from '../i18n/context';
 import { guideText } from '../i18n/guide';
 import { useConflictPromptState } from '../sync/useCloudSync';
-import { appPopupDismissal, appPopupSections, isIphoneHomeScreenInstall, shouldShowAppPopup } from '../utils/appPopup';
+import { appPopupDismissal, appPopupSections, isAppleHomeScreenInstall, shouldShowAppPopup } from '../utils/appPopup';
 import { guideHash, sectionForDevice } from '../utils/guideRoute';
 
 const deviceSection = sectionForDevice(navigator.userAgent, navigator.maxTouchPoints);
 
-const homeScreenInstall = () =>
-  isIphoneHomeScreenInstall(
-    deviceSection,
-    (navigator as Navigator & { standalone?: boolean }).standalone,
-    window.matchMedia('(display-mode: standalone)').matches
-  );
+const homeScreenInstall = isAppleHomeScreenInstall(
+  deviceSection,
+  (navigator as Navigator & { standalone?: boolean }).standalone,
+  window.matchMedia('(display-mode: standalone)').matches
+);
 
 /** Tells a student once that the app exists. It yields to anything that matters more. */
 export const AppPopup = ({ otherDialogOpen }: { otherDialogOpen: boolean }) => {
   const conflictPrompt = useConflictPromptState();
   const [dismissed, setDismissed] = useState(appPopupDismissal.isDismissed);
 
-  const show = shouldShowAppPopup({
-    conflictPrompt,
-    dismissed,
-    homeScreenInstall: homeScreenInstall(),
-    otherDialogOpen,
-  });
-  if (!show) return null;
+  if (!shouldShowAppPopup({ conflictPrompt, dismissed, homeScreenInstall, otherDialogOpen })) return null;
 
   return (
     <AppPopupDialog
@@ -42,9 +35,8 @@ const AppPopupDialog = ({ onDismiss }: { onDismiss: () => void }) => {
   const { language, t } = useI18n();
   const dialog = useRef<HTMLDivElement>(null);
   const popup = guideText[language].popup;
-  const sections = appPopupSections(deviceSection);
-  const onPhone = sections.length === 1;
 
+  // Into the dialog, so that a keyboard or screen reader starts here and not behind it
   useEffect(() => dialog.current?.focus(), []);
 
   return (
@@ -69,19 +61,14 @@ const AppPopupDialog = ({ onDismiss }: { onDismiss: () => void }) => {
         <p id="app-popup-description" className="lede text-sm">
           {popup.body}
         </p>
-        <div className={`dialog-actions ${onPhone ? '' : 'app-popup-choices'}`}>
-          {onPhone && (
-            <button type="button" onClick={onDismiss} className="btn btn-quiet">
-              {t('close')}
-            </button>
-          )}
-          {sections.map((section) => (
+        <div className={`dialog-actions ${deviceSection ? '' : 'dialog-choices'}`}>
+          {appPopupSections(deviceSection).map((section) => (
             // Opening a guide counts as seen: the pop-up has done its job
             <a
               key={section}
               href={guideHash(section)}
               onClick={onDismiss}
-              className={`btn ${onPhone ? 'btn-primary' : ''}`}
+              className={`btn ${deviceSection ? 'btn-primary' : ''}`}
             >
               {popup.guideFor[section]}
             </a>
