@@ -22,5 +22,5 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true
   },
-  "include": ["vite.config.ts", "vitest.scenarios.config.ts"]
+  "include": ["vite.config.ts", "vitest.scenarios.config.ts", "vitest.launch.config.ts", "supabase/launch/rehearsal.ts"]
 }

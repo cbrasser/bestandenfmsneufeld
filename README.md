@@ -131,8 +131,8 @@ How it works:
   The table itself is never directly readable with the public anon key.
 - Every row has a `version`, raised by a database trigger on every write. The website
   saves with `save_student`, which refuses a save based on an out-of-date version, and
-  pulls with `load_student` on open and on focus. `load_data` and `save_data` stay for
-  old cached copies of the site.
+  pulls with `load_student` on open and on focus. `load_data` stays for old cached copies
+  of the site, and `save_data` too until the launch migration disables it.
 - The student chooses when both sides really did change.
 - Students can delete their cloud data themselves. Their local data stays.
 - If the code is lost, the cloud data cannot be recovered (use Export as a backup).
@@ -170,6 +170,14 @@ node scripts/with-local-supabase.mjs <command...>
 Don't rely on the database between commands, since another worktree may have reset it. A command that waits for the lock gives up after 15 minutes. If a process was killed outright and left the lock behind, the next command says so and how to remove it.
 
 Keep additive database changes in separate migrations from anything that disables old behaviour, so they can reach production at different times.
+
+## Launch
+
+The launch migration, its rollback and the steps for applying them are in [`supabase/launch`](./supabase/launch/README.md), outside `supabase/migrations`, so that nothing applies them by accident. To rehearse them on local Supabase, from a database shaped like production and with made-up rows:
+
+```bash
+npm run rehearse:launch
+```
 
 ## License
 
