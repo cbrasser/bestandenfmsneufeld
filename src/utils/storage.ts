@@ -1,6 +1,13 @@
-import type { StudentData } from '../types';
+import type { StudentData, Year } from '../types';
 
 export const STORAGE_KEY = 'student-data';
+/** The year this device shows. It belongs to the device: other devices never see or move it. */
+export const SELECTED_YEAR_KEY = 'selected-year';
+
+export const parseSelectedYear = (stored: string | null): Year | null => {
+  const year = Number(stored);
+  return year === 1 || year === 2 || year === 3 || year === 4 ? year : null;
+};
 
 export const storageService = {
   getData: (): StudentData | null => {
@@ -21,23 +28,44 @@ export const storageService = {
     }
   },
 
+  getSelectedYear: (): Year | null => {
+    try {
+      return parseSelectedYear(localStorage.getItem(SELECTED_YEAR_KEY));
+    } catch {
+      return null;
+    }
+  },
+
+  saveSelectedYear: (year: Year): void => {
+    try {
+      localStorage.setItem(SELECTED_YEAR_KEY, String(year));
+    } catch (error) {
+      console.error('Error saving to localStorage:', error);
+    }
+  },
+
   clearData: (): void => {
     try {
       localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(SELECTED_YEAR_KEY);
     } catch (error) {
       console.error('Error clearing localStorage:', error);
       throw error;
     }
   },
 
+  /** The text of an export file. Files keep the selected year, in the field they always had it in. */
+  exportText: (): string => {
+    const data = storageService.getData();
+    if (!data) {
+      throw new Error('No data to export');
+    }
+    return JSON.stringify({ ...data, currentYear: storageService.getSelectedYear() ?? data.currentYear }, null, 2);
+  },
+
   exportData: (): void => {
     try {
-      const data = storageService.getData();
-      if (!data) {
-        throw new Error('No data to export');
-      }
-
-      const dataStr = JSON.stringify(data, null, 2);
+      const dataStr = storageService.exportText();
       const dataBlob = new Blob([dataStr], { type: 'application/json' });
       const url = URL.createObjectURL(dataBlob);
       

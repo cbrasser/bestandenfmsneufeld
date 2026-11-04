@@ -61,6 +61,10 @@ export function reconcileSubjectList(
   });
 }
 
+// The FMS has no year 4
+export const selectableYear = (data: StudentData, year: Year): Year =>
+  data.studentInfo?.division !== 'Gymnasium' && year === 4 ? 3 : year;
+
 export const reconcileAllYears = (data: StudentData): StudentData => {
   // Data saved before the Gymnasium existed has no year 4
   const existing = (year: Year) => data.years[year]?.subjects ?? [];
@@ -77,8 +81,7 @@ export const reconcileAllYears = (data: StudentData): StudentData => {
 
   return {
     ...data,
-    // The FMS has no year 4
-    currentYear: data.currentYear === 4 ? 3 : data.currentYear,
+    currentYear: selectableYear(data, data.currentYear),
     // An unknown direction (e.g. a former placeholder) is cleared so the user picks a real one
     year3Direction: direction?.id,
     years: {

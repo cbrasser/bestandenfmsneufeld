@@ -5,7 +5,8 @@ import { createClient } from '@supabase/supabase-js';
 import { describe, expect, it } from 'vitest';
 import table from '../../sync-scenarios/scenarios.json';
 import { isSubject, type StudentData } from '../types';
-import { STORAGE_KEY } from '../utils/storage';
+import { reconcileAllYears } from '../utils/initializeData';
+import { SELECTED_YEAR_KEY, STORAGE_KEY } from '../utils/storage';
 import { generateCode } from './code';
 import { createSyncEngine, type SyncEngine, type SyncRemote } from './engine';
 import { createMemoryStorage } from './memoryStorage';
@@ -58,11 +59,21 @@ function createDevice() {
     createAccount: (code, data) => offlineGuard(() => cloud.createAccount(code, data)),
     delete: (code) => offlineGuard(() => cloud.delete(code)),
     load: (code) => offlineGuard(() => cloud.load(code)),
-    save: (code, data, version) => offlineGuard(() => cloud.save(code, data, version)),
+    save: (code, data, version) =>
+      offlineGuard(async () => {
+        const result = await cloud.save(code, data, version);
+        if (device.loseSaveAnswer) {
+          device.loseSaveAnswer = false;
+          throw new Error('answer lost');
+        }
+        return result;
+      }),
   };
   const device = {
     store,
+    storage,
     offline: false,
+    loseSaveAnswer: false,
     engine: null as SyncEngine | null,
     restart() {
       device.engine = createSyncEngine({ store, remote });
@@ -135,17 +146,35 @@ async function runScenario(steps: Step[]) {
       case 'setOffline':
         deviceFor(step.device).offline = step.offline;
         break;
+      case 'reconnect':
+        deviceFor(step.device).offline = false;
+        await engineOf(step.device).sync();
+        break;
+      case 'loseNextSaveAnswer':
+        deviceFor(step.device).loseSaveAnswer = true;
+        break;
+      case 'selectYear':
+        deviceFor(step.device).storage.setItem(SELECTED_YEAR_KEY, String(step.year));
+        expect(engineOf(step.device).noteLocalChange()).toBe(false);
+        break;
+      case 'reconcile': {
+        const device = deviceFor(step.device);
+        device.setData(reconcileAllYears(device.store.readData()!));
+        expect(engineOf(step.device).noteLocalChange()).toBe(false);
+        break;
+      }
       case 'expectDevice': {
         const { code: connectedCode, status, failure, version, unsynced } = engineOf(step.device).getSnapshot();
-        const data = deviceFor(step.device).store.readData();
+        const local = deviceFor(step.device).store.readData();
         const actual: Step = {
           connected: connectedCode !== null,
           status,
           failure,
           version,
           unsynced,
-          grades: gradesOf(data),
-          name: data?.studentInfo?.name ?? null,
+          grades: gradesOf(local),
+          selectedYear: local?.currentYear,
+          name: local?.studentInfo?.name ?? null,
         };
         for (const key of Object.keys(actual)) {
           if (key in step) expect(actual[key], key).toEqual(step[key]);

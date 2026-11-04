@@ -23,8 +23,12 @@ of step needs a case in every runner, so reuse the existing ones where you can.
 | `addGrade` | `device`, `value` | A student's edit: adds a grade to the subject the fixtures name |
 | `saveDelayElapsed` | `device` | The save delay after an edit has passed, so the device syncs |
 | `focus` | `device` | The student returned to the page or app, so the device syncs |
-| `setOffline` | `device`, `offline` | Cuts the device off from the cloud, or reconnects it |
-| `expectDevice` | `device`, any of `connected`, `status`, `failure`, `version`, `unsynced`, `grades`, `name` | Checks the device. Only the named fields are compared |
+| `setOffline` | `device`, `offline` | Cuts the device off from the cloud, or lets it through again without it noticing |
+| `reconnect` | `device` | The connection returned, so the device notices and syncs |
+| `loseNextSaveAnswer` | `device` | The device's next save reaches the cloud, but the device doesn't get the answer and sees a failed call |
+| `selectYear` | `device`, `year` | The student switches to another year. This must not count as an edit |
+| `reconcile` | `device` | The device brings its stored data in line with its subject lists, as a new app version does. This must not count as an edit |
+| `expectDevice` | `device`, any of `connected`, `status`, `failure`, `version`, `unsynced`, `grades`, `selectedYear`, `name` | Checks the device. Only the named fields are compared |
 | `expectCloud` | `code`?, `exists`?, `version`?, `grades`?, `name`?, `division`? | Checks the cloud through the load call |
 | `createCall` | `fixture` | Calls `create_account` directly with the fixture's data, as any client could |
 | `saveCall` | `code`?, `expectedVersion`, `grades`, `name`?, `result` | Calls the version-checked save directly, sending `name` if given, and checks the fields named in `result` |

@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import type { StudentData, Year, Grade, StudentInfo, Subject, GymProfile as GymProfileType } from './types';
 import { isSubject, isCombinedSubject } from './types';
 import { storageService } from './utils/storage';
-import { initializeStudentData, getSubjectsForYear, reconcileAllYears, reconcileSubjectList, subjectsLosingGrades } from './utils/initializeData';
+import { initializeStudentData, getSubjectsForYear, reconcileAllYears, reconcileSubjectList, selectableYear, subjectsLosingGrades } from './utils/initializeData';
 import { checkPromotionCriteria, promotionVerdict } from './utils/promotion';
 import { endsWithoutPromotion, getCriteria } from './config/criteria';
 import { GYM_YEARS } from './config/gymnasium';
@@ -45,7 +45,7 @@ function App() {
     if (savedData) {
       const reconciled = reconcileAllYears(savedData);
       setData(reconciled);
-      setCurrentYear(reconciled.currentYear);
+      setCurrentYear(selectableYear(reconciled, storageService.getSelectedYear() ?? reconciled.currentYear));
     } else {
       const newData = initializeStudentData();
       setData(newData);
@@ -58,11 +58,12 @@ function App() {
     }
   }, [data]);
 
-  const handleCloudData = useCallback((cloudData: StudentData) => {
-    setData(cloudData);
-    setCurrentYear(cloudData.currentYear);
+  // Data from the cloud or another tab: this tab stays on its year, if the new data has it
+  const handleDataFromElsewhere = useCallback((stored: StudentData, { keepSelectedYear }: { keepSelectedYear: boolean }) => {
+    setData((current) => (JSON.stringify(current) === JSON.stringify(stored) ? current : stored));
+    setCurrentYear((year) => (keepSelectedYear ? selectableYear(stored, year) : stored.currentYear));
   }, []);
-  useCloudSync(data, handleCloudData);
+  useCloudSync(data, handleDataFromElsewhere);
 
   // The year's hue is the page: bind it on <html> so the body and portals follow
   const hasProfile = Boolean(data?.studentInfo);
@@ -111,9 +112,7 @@ function App() {
 
   const handleYearChange = (year: Year) => {
     setCurrentYear(year);
-    const updatedData = { ...data, currentYear: year };
-    setData(updatedData);
-    storageService.saveData(updatedData);
+    storageService.saveSelectedYear(year);
   };
 
   const handleDirectionSelect = (directionId: string) => {
@@ -299,6 +298,7 @@ function App() {
         const importedData = reconcileAllYears(await storageService.importData(file));
         setData(importedData);
         setCurrentYear(importedData.currentYear);
+        storageService.saveSelectedYear(importedData.currentYear);
         alert(t('importSuccess'));
         setIsMenuOpen(false);
       } catch (error) {
