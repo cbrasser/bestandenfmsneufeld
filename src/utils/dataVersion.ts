@@ -12,8 +12,8 @@ export const DATA_VERSION = 1;
  * A missing value means 1. A value that isn't a whole number from 1 up can't be from any version known
  * here, so it is treated the same way.
  */
-export function isNewerData(data: Pick<StudentData, 'dataVersion'>): boolean {
-  const version: unknown = data.dataVersion;
+export function isNewerData(data: Pick<StudentData, 'dataVersion'> | null | undefined): boolean {
+  const version: unknown = data?.dataVersion;
   if (version === undefined || version === null) return false;
   return !(Number.isInteger(version) && (version as number) >= 1 && (version as number) <= DATA_VERSION);
 }

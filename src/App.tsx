@@ -24,7 +24,7 @@ import { GymProfile } from './components/GymProfile';
 import { CloudSync } from './components/CloudSync';
 import { ConflictPrompt } from './components/ConflictPrompt';
 import { NewerDataPage, ReadOnlyNotice } from './components/ReadOnlyNotice';
-import { syncEngine } from './sync/cloud';
+import { isReadOnlyNow, syncEngine } from './sync/cloud';
 import { useCloudSync, useNewerCloudData } from './sync/useCloudSync';
 import { useI18n } from './i18n/context';
 import { CombinedSubjectCard } from './components/CombinedSubjectCard';
@@ -77,18 +77,26 @@ function App() {
   }, []);
   useCloudSync(data, handleDataFromElsewhere);
 
+  // Data in a newer format is only shown: every way of changing anything is left out while it is.
+  // `data` stays this device's own data, which nothing below changes meanwhile.
+  const readOnlyData = newerFile ?? (data && isNewerData(data) ? data : newerCloudData);
+  const readOnly = readOnlyData !== null;
+  const shown = readOnlyData ?? data;
+  // What was on show may have a year this device's own data doesn't, and the other way round
+  const shownYear = shown ? selectableYear(shown, currentYear) : currentYear;
+
   // The year's hue is the page: bind it on <html> so the body and portals follow
   const hasProfile = Boolean(data?.studentInfo);
   useEffect(() => {
     const root = document.documentElement;
     if (hasProfile) {
-      root.dataset.year = String(currentYear);
+      root.dataset.year = String(shownYear);
     } else {
       delete root.dataset.year;
     }
-  }, [hasProfile, currentYear]);
+  }, [hasProfile, shownYear]);
 
-  if (!data) {
+  if (!data || !shown) {
     return (
       <div className="auth">
         <p className="muted">{t('loading')}</p>
@@ -96,11 +104,6 @@ function App() {
     );
   }
 
-  // Data in a newer format is only shown: every way of changing anything is left out while it is.
-  // `data` stays this device's own data, which nothing below changes meanwhile.
-  const readOnlyData = newerFile ?? newerCloudData ?? (isNewerData(data) ? data : null);
-  const readOnly = readOnlyData !== null;
-  const shown = readOnlyData ?? data;
   const { studentInfo } = shown;
 
   // Show onboarding if student info is missing
@@ -125,7 +128,6 @@ function App() {
 
   const isGym = studentInfo.division === 'Gymnasium';
   const years: Year[] = isGym ? GYM_YEARS : [1, 2, 3];
-  const shownYear = selectableYear(shown, currentYear);
   const subjects = getSubjectsForYear(shown, shownYear);
   const criteria = getCriteria(studentInfo.division);
   const promotionStatus = checkPromotionCriteria(subjects, criteria);
@@ -136,7 +138,11 @@ function App() {
   };
 
   // What the page last drew can be out of date after a dialog or a file being read
-  const writesBlocked = () => Boolean(syncEngine?.getSnapshot().readOnly) || isNewerData(storageService.getData() ?? {});
+  const refusedAsReadOnly = () => {
+    if (!isReadOnlyNow()) return false;
+    alert(t('newerDataRefused'));
+    return true;
+  };
 
   const handleDirectionSelect = (directionId: string) => {
     const direction = year3Directions.find((d) => d.id === directionId);
@@ -163,7 +169,7 @@ function App() {
     if (lost.length > 0 && !window.confirm(`${t('gymConfirmDrop')} ${[...new Set(lost.map(tSubject))].join(', ')}`)) {
       return;
     }
-    if (writesBlocked()) return;
+    if (isReadOnlyNow()) return;
     setData(updatedData);
   };
 
@@ -183,7 +189,7 @@ function App() {
     if (!selectedSubjectId) return;
 
     const updatedData = { ...data };
-    const yearData = updatedData.years[currentYear];
+    const yearData = updatedData.years[shownYear];
     console.log(yearData)
     let subject: Subject | undefined = yearData.subjects.find((s) => isSubject(s) && s.id === selectedSubjectId) as Subject | undefined;
     if (!subject) {
@@ -227,7 +233,7 @@ function App() {
 
   const handleDeleteGrade = (subjectId: string, gradeId: string) => {
     const updatedData = { ...data };
-    const yearData = updatedData.years[currentYear];
+    const yearData = updatedData.years[shownYear];
 
     // First try to find as a direct Subject
     let subject = yearData.subjects.find((s) => isSubject(s) && s.id === subjectId) as Subject | undefined;
@@ -247,7 +253,7 @@ function App() {
 
   const handleOralGradeUpdate = (subjectId: string, oralGrade: number | undefined) => {
     const updatedData = { ...data };
-    const yearData = updatedData.years[currentYear];
+    const yearData = updatedData.years[shownYear];
 
     // First try to find as a direct Subject
     let subject = yearData.subjects.find((s) => isSubject(s) && s.id === subjectId) as Subject | undefined;
@@ -317,14 +323,23 @@ function App() {
       }
     };
 
+    // For replacing the data with a version that was just kept. All of it happens at once, with no alert:
+    // closing the tab during one would leave the kept version replaced and the new one not stored, and
+    // a pull already under way would take the unmarked data for no change and replace it.
+    const replaceData = (next: StudentData) => {
+      storageService.saveData(next);
+      storageService.saveSelectedYear(next.currentYear);
+      if (syncEngine?.noteLocalChange()) void syncEngine.sync();
+      setData(next);
+      setCurrentYear(next.currentYear);
+      setIsMenuOpen(false);
+    };
+
     const handleImport = async (file: File) => {
       let imported: StudentData;
       try {
         const fileData = await storageService.importData(file);
-        if (writesBlocked()) {
-          alert(t('newerDataRefused'));
-          return;
-        }
+        if (refusedAsReadOnly()) return;
         if (isNewerData(fileData)) {
           syncEngine?.setViewingNewerFile(true);
           setNewerFile(fileData);
@@ -339,26 +354,17 @@ function App() {
       }
 
       if (!window.confirm(`${t('importConfirm')}\n\n${t('gradesLabel')}: ${countGrades(imported)}`)) return;
-      if (writesBlocked()) {
-        alert(t('newerDataRefused'));
-        return;
-      }
+      if (refusedAsReadOnly()) return;
 
       try {
         // What is stored now: a sync may have changed it while the file was read or the dialog was up
-        dataBackup.keep(storageService.getDataWithSelectedYear() ?? { ...data, currentYear });
+        dataBackup.keep(storageService.getDataWithSelectedYear() ?? { ...data, currentYear: shownYear });
       } catch (error) {
         alert(t('importError'));
         console.error('Import error:', error);
         return;
       }
-      // Stored at once, and no alert: closing the tab during one would leave the kept version replaced
-      // and the import not stored or not marked for sync. From here it is an edit like any other.
-      storageService.saveData(imported);
-      setData(imported);
-      setCurrentYear(imported.currentYear);
-      storageService.saveSelectedYear(imported.currentYear);
-      setIsMenuOpen(false);
+      replaceData(imported);
     };
 
     const closeNewerFile = () => {
@@ -375,19 +381,10 @@ function App() {
       }
       const details = `${t('gradesLabel')}: ${countGrades(kept.data)}\n${formatDateTime(kept.keptAt, language)}`;
       if (!window.confirm(`${t('restoreConfirm')}\n\n${details}`)) return;
-      if (writesBlocked()) {
-        alert(t('newerDataRefused'));
-        return;
-      }
+      if (refusedAsReadOnly()) return;
       try {
-        const restored = dataBackup.swapWith({ ...data, currentYear });
-        if (!restored) return;
-        // Saved and synced like any other edit. No alert before that: closing the tab during one
-        // would leave the kept version replaced and the restored one not stored.
-        setData(restored);
-        setCurrentYear(restored.currentYear);
-        storageService.saveSelectedYear(restored.currentYear);
-        setIsMenuOpen(false);
+        const restored = dataBackup.swapWith({ ...data, currentYear: shownYear });
+        if (restored) replaceData(restored);
       } catch (error) {
         alert(t('restoreError'));
         console.error('Restore error:', error);
@@ -396,10 +393,7 @@ function App() {
 
     const handleReset = () => {
       if (window.confirm(t('resetConfirm'))) {
-        if (writesBlocked()) {
-          alert(t('newerDataRefused'));
-          return;
-        }
+        if (refusedAsReadOnly()) return;
         try {
           storageService.clearData();
           const newData = initializeStudentData();
@@ -458,8 +452,6 @@ function App() {
       </header>
 
       <main className="page">
-        {readOnly && <ReadOnlyNotice onCloseFile={newerFile ? closeNewerFile : undefined} />}
-
         <div className="page-head">
           <div className="page-head-text">
             <h1 className="display">{needsDirection ? yearLabels[3] : verdict}</h1>
@@ -472,6 +464,8 @@ function App() {
           </div>
           <nav className="segmented view-switch">{viewButtons}</nav>
         </div>
+
+        {readOnly && <ReadOnlyNotice onCloseFile={newerFile ? closeNewerFile : undefined} />}
 
         <div className="workspace">
           <div className="workspace-side">

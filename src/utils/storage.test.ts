@@ -76,3 +76,18 @@ describe('data in a newer format', () => {
     expect(storageService.getData()).toEqual(newer);
   });
 });
+
+describe('reading an import file', () => {
+  it('reads a file of a newer format without asking for anything else, as it may have changed shape', () => {
+    expect(storageService.parseImport('{"dataVersion":999,"school":{}}')).toEqual({ dataVersion: 999, school: {} });
+  });
+
+  it('still wants a file this version can read to have years', () => {
+    expect(() => storageService.parseImport('{"dataVersion":1}')).toThrow('missing years');
+    expect(() => storageService.parseImport('{}')).toThrow('missing years');
+  });
+
+  it.each([['null'], ['3'], ['not json']])('refuses %s', (text) => {
+    expect(() => storageService.parseImport(text)).toThrow();
+  });
+});

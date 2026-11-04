@@ -18,6 +18,11 @@ describe('dataVersion', () => {
     expect(isNewerData(student(1))).toBe(false);
   });
 
+  it('leaves data that is no data at all to whoever reads it', () => {
+    expect(isNewerData(null)).toBe(false);
+    expect(isNewerData(undefined)).toBe(false);
+  });
+
   it('is newer above what this version supports', () => {
     expect(isNewerData(student(DATA_VERSION))).toBe(false);
     expect(isNewerData(student(DATA_VERSION + 1))).toBe(true);

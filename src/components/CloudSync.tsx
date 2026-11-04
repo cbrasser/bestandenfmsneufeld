@@ -3,6 +3,7 @@ import { CloudOff, Copy, Check, KeyRound, LogIn, Loader2, AlertTriangle, Trash2,
 import { useI18n } from '../i18n/context';
 import { formatCode, normalizeCode } from '../sync/code';
 import { syncEngine } from '../sync/cloud';
+import { connectErrors } from '../sync/connectErrors';
 import type { SyncEngine, SyncStatus } from '../sync/engine';
 
 interface CloudSyncProps {
@@ -12,12 +13,6 @@ interface CloudSyncProps {
 
 export const CloudSync = ({ onConnected }: CloudSyncProps) =>
   syncEngine ? <CloudSyncPanel engine={syncEngine} onConnected={onConnected} /> : null;
-
-const connectErrors = {
-  unknown_code: 'cloudUnknownCode',
-  unreachable: 'cloudLoadError',
-  newer_data: 'newerDataRefused',
-} as const;
 
 const deleteErrors = {
   out_of_step: 'cloudDeleteOutOfStep',

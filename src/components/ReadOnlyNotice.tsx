@@ -1,8 +1,6 @@
 import { Component, type ReactNode } from 'react';
 import { useI18n } from '../i18n/context';
-import { syncEngine } from '../sync/cloud';
-import { isNewerData } from '../utils/dataVersion';
-import { storageService } from '../utils/storage';
+import { isReadOnlyNow } from '../sync/cloud';
 
 const reload = () => window.location.reload();
 
@@ -15,7 +13,7 @@ interface ReadOnlyNoticeProps {
 export const ReadOnlyNotice = ({ onCloseFile }: ReadOnlyNoticeProps) => {
   const { t } = useI18n();
   return (
-    <div className="leaf notice mt-2 mb-4" role="status">
+    <div className="leaf notice mb-4" role="status">
       <p>
         <strong>{t('readOnlyTitle')}</strong> {t(onCloseFile ? 'readOnlyFile' : 'readOnlyData')}
       </p>
@@ -48,15 +46,6 @@ export const NewerDataPage = () => {
   );
 };
 
-const isReadOnly = () => {
-  try {
-    const stored = storageService.getData();
-    return Boolean(syncEngine?.getSnapshot().readOnly) || (stored !== null && isNewerData(stored));
-  } catch {
-    return false;
-  }
-};
-
 /**
  * A newer format may be one this version can't draw. That must not look like a broken site, so it gets
  * the same request to update. Any other error is none of this boundary's business.
@@ -70,7 +59,7 @@ export class NewerDataBoundary extends Component<{ children: ReactNode }, { erro
 
   render() {
     if (this.state.error === null) return this.props.children;
-    if (!isReadOnly()) throw this.state.error;
+    if (!isReadOnlyNow()) throw this.state.error;
     return <NewerDataPage />;
   }
 }

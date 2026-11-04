@@ -98,6 +98,29 @@ export const storageService = {
     }
   },
 
+  /**
+   * The data in an import file's text. A file in a newer format is taken as it is, whatever shape it
+   * has, so that it can ask for an update instead of looking broken. Throws if it can't be used.
+   */
+  parseImport: (text: string): StudentData => {
+    let data: StudentData;
+    try {
+      data = JSON.parse(text) as StudentData;
+    } catch {
+      throw new Error('Failed to parse JSON file');
+    }
+    if (!data || typeof data !== 'object') {
+      throw new Error('Invalid data format');
+    }
+    if (isNewerData(data)) {
+      return data;
+    }
+    if (!data.years || typeof data.years !== 'object') {
+      throw new Error('Invalid data format: missing years');
+    }
+    return data;
+  },
+
   importData: (file: File): Promise<StudentData> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -114,24 +137,11 @@ export const storageService = {
             return;
           }
           
-          const data = JSON.parse(text) as StudentData;
-          
-          // Basic validation
-          if (!data || typeof data !== 'object') {
-            reject(new Error('Invalid data format'));
-            return;
-          }
-          
-          // Validate required fields
-          if (!data.years || typeof data.years !== 'object') {
-            reject(new Error('Invalid data format: missing years'));
-            return;
-          }
-          
+          const data = storageService.parseImport(text);
           resolve(data);
         } catch (error) {
           console.error('Error parsing imported data:', error);
-          reject(new Error('Failed to parse JSON file'));
+          reject(error);
         }
       };
       

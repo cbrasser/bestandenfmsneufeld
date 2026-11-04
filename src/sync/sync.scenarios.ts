@@ -137,7 +137,7 @@ async function runScenario(steps: Step[]) {
       }
       case 'importFile': {
         const device = deviceFor(step.device);
-        const file = withGrades(fixture(step.fixture ?? 'fms-student'), step.grades);
+        const file = withGrades(fixture('fms-student'), step.grades);
         if ('dataVersion' in step) file.dataVersion = step.dataVersion;
         expect(isNewerData(file) ? 'newer' : 'imported').toBe(step.result ?? 'imported');
         if (isNewerData(file)) {

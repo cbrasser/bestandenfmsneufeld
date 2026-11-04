@@ -545,7 +545,7 @@ export const translations: Record<Language, Translations> = {
     // Data management
     exportSuccess: 'Données exportées avec succès',
     exportError: 'Erreur lors de l\'exportation des données',
-    importConfirm: 'Importer ce fichier ? Il remplace tes données actuelles et, si tu es connecté·e, aussi tes données dans le cloud. Tu pourras ensuite restaurer les données actuelles dans le menu, sous « Données ».',
+    importConfirm: 'Importer ce fichier ? Il remplace tes données actuelles et, avec la synchronisation, aussi tes données dans le cloud. Tu pourras ensuite restaurer les données actuelles dans le menu, sous « Données ».',
     importError: 'Erreur lors de l\'importation des données',
     importInvalidFile: 'Fichier invalide. Veuillez sélectionner un fichier JSON valide.',
     resetConfirm: 'Êtes-vous sûr de vouloir réinitialiser toutes les données? Cette action ne peut pas être annulée.',
@@ -993,7 +993,7 @@ export const translations: Record<Language, Translations> = {
     // Data management
     exportSuccess: 'Dati esportati con successo',
     exportError: 'Errore durante l\'esportazione dei dati',
-    importConfirm: 'Importare questo file? Sostituisce i tuoi dati attuali e, se sei connesso/a, anche i tuoi dati nel cloud. Potrai poi ripristinare i dati attuali dal menu, alla voce «Dati».',
+    importConfirm: 'Importare questo file? Sostituisce i tuoi dati attuali e, con la sincronizzazione attiva, anche i tuoi dati nel cloud. Potrai poi ripristinare i dati attuali dal menu, alla voce «Dati».',
     importError: 'Errore durante l\'importazione dei dati',
     importInvalidFile: 'File non valido. Seleziona un file JSON valido.',
     resetConfirm: 'Sei sicuro di voler reimpostare tutti i dati? Questa azione non può essere annullata.',

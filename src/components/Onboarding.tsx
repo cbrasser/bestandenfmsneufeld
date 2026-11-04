@@ -4,18 +4,13 @@ import { useI18n } from '../i18n/context';
 import { KeyRound, Loader2 } from 'lucide-react';
 import { normalizeCode } from '../sync/code';
 import { syncEngine } from '../sync/cloud';
+import { connectErrors } from '../sync/connectErrors';
 
 // Names of the Bildungsgänge, as Gymnasium Neufeld writes them
 const divisionDescriptions: Record<Division, string> = {
   FMS: 'Fachmittelschule',
   Gymnasium: 'Maturitätsschule',
 };
-
-const connectErrors = {
-  unknown_code: 'cloudUnknownCode',
-  unreachable: 'cloudLoadError',
-  newer_data: 'newerDataRefused',
-} as const;
 
 interface OnboardingProps {
   onComplete: (info: StudentInfo) => void;

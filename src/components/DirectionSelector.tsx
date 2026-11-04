@@ -30,7 +30,7 @@ export const DirectionSelector = ({
               onClick={() => onSelect(direction.id)}
               disabled={readOnly}
               aria-pressed={isChecked}
-              className={`picker-card ${isChecked ? 'is-checked' : ''}`}
+              className={`picker-card ${isChecked ? 'is-checked' : ''} ${readOnly ? 'is-disabled' : ''}`}
             >
               <span className="picker-swatch" aria-hidden="true" />
               <span className="picker-text">

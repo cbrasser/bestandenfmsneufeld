@@ -292,6 +292,8 @@ export function createSyncEngine({ store, remote }: { store: SyncStore; remote: 
 
   // Returns false, with nothing changed, if the cloud data can't be read
   const takeCloudData = (code: string, cloud: CloudSnapshot, options: { keepSelectedYear: boolean }): boolean => {
+    // Another tab may have stored newer data during the load
+    if (readOnlySource()) return false;
     try {
       store.applyCloudData(withName(cloud.data, store.readData()?.studentInfo?.name), options);
     } catch {
@@ -441,9 +443,11 @@ export function createSyncEngine({ store, remote }: { store: SyncStore; remote: 
         fail('newer_data');
         return;
       }
+      let more: boolean;
       // Read-only: only asks whether the cloud's data has become readable, then carries on as usual
-      const step = newerCloud ? async () => (await load(code)) !== null : () => (persisted.unsynced ? push(code, data) : pull(code));
-      if (!(await step())) return;
+      if (newerCloud) more = (await load(code)) !== null;
+      else more = persisted.unsynced ? await push(code, data) : await pull(code);
+      if (!more) return;
     }
   };
 

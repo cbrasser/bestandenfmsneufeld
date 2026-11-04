@@ -17,12 +17,12 @@ of step needs a case in every runner, so reuse the existing ones where you can.
 | --- | --- | --- |
 | `open` | `device`, `fixture`? | Starts or restarts the device, which then syncs. `fixture` sets its local data first. Sync state survives a restart |
 | `createCode` | `device`, `refused`? | Creates a code from the device's local data. Later steps use this code by default. `refused: true` means it must fail and change nothing |
-| `connect` | `device`, `code`?, `result`? | Connects with a code. `result` defaults to `connected`, otherwise `unknown_code`, or `newer_data` when the cloud's data is in a newer format. That is refused, changing nothing |
+| `connect` | `device`, `code`?, `result`? | Connects with a code. `result` defaults to `connected`, otherwise `unknown_code`, or `newer_data` when the device is read-only or the cloud's data is in a newer format. That is refused, changing nothing |
 | `enterName` | `device`, `name` | The student enters a name on this device. Doesn't count as a change the cloud needs |
 | `deleteCloudData` | `device`, `result`? | The student deletes the cloud data. `result` defaults to `deleted`, otherwise `unreachable`, or `out_of_step` when the cloud holds data the device never received. That is refused, and the device syncs instead. `newer_data` when the device is read-only or the cloud's data is in a newer format: that is refused too |
 | `disconnect` | `device` | The student disconnects. Local and cloud data stay. A read-only device stays connected: follow it with `expectDevice` |
 | `addGrade` | `device`, `value`, `counted`? | A student's edit: adds a grade to the subject the fixtures name. `counted` says whether the cloud needs it, and defaults to `true`. It is `false` on a device without a code |
-| `importFile` | `device`, `grades`, `fixture`?, `dataVersion`?, `result`?, `counted`? | The student confirms importing a file made from the fixture (`fms-student` by default) with these grades. `result` defaults to `imported`: the replaced data becomes the backup, and this counts as an edit (`counted` as for `addGrade`). `newer` means the file's `dataVersion` is higher than supported: the file is only shown, and the device is read-only until `closeNewerFile` |
+| `importFile` | `device`, `grades`, `dataVersion`?, `result`?, `counted`? | The student confirms importing a file holding these grades, made from the `fms-student` fixture. `result` defaults to `imported`: the replaced data becomes the backup, and this counts as an edit (`counted` as for `addGrade`). `newer` means the file's `dataVersion` is higher than supported: the file is only shown, and the device is read-only until `closeNewerFile` |
 | `closeNewerFile` | `device` | The student leaves a newer file's read-only view, so the device syncs |
 | `saveDelayElapsed` | `device` | The save delay after an edit has passed, so the device syncs |
 | `focus` | `device` | The student returned to the page or app, so the device syncs |
@@ -53,7 +53,7 @@ A `name` of `null` in `expectDevice` or `expectCloud` means there is none.
 localChangeKnown }`: each side's grade count, and whether the device knows when it last changed. The
 cloud's last change is always known. `conflictPrompt` is `none`, `pending` or `showing`: `showing` when
 `conflict` is set, and `pending` while a connected device has unsynced changes or no version yet, or
-hasn't synced since it opened. `backupGrades` is the backup's grades, or `null` if there is none.
+hasn't synced since it opened, unless the device is read-only, which is `none`. `backupGrades` is the backup's grades, or `null` if there is none.
 
 ## Read-only
 
@@ -61,8 +61,9 @@ A `dataVersion` of 999 stands for a format newer than any client supports, so th
 when the format is raised. A missing `dataVersion` means 1.
 
 `readOnly` is `null`, or says what the device found in a newer format: `cloud`, `local` (already in its
-own storage) or `file`. While it is set, the device writes nothing to its storage or the cloud: edits,
-imports, restores, resets, retries and pushes all stop, and so do `disconnect`, `deleteCloudData` and the
-conflict choices. It still checks the cloud on open, focus and reconnect, unless a file is being shown,
-and carries on normally once the cloud's data is readable again. `shownGrades` is the grades of the newer
+own storage) or `file`. While it is set, the device writes nothing to its storage or the cloud: retries
+and pushes stop, and `disconnect`, `deleteCloudData`, `connect`, `createCode` and the conflict choices are
+refused. The app must also offer no edit, import, restore or reset, which no step checks because they are
+screen behaviour. With `cloud`, it still checks the cloud on open, focus and reconnect, and carries on
+normally once the cloud's data is readable again. With `file` or `local`, it makes no calls at all. `shownGrades` is the grades of the newer
 cloud data on show, or `null`; the device's own data stays in `grades`, untouched.
