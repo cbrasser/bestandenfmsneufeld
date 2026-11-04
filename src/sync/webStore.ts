@@ -1,4 +1,5 @@
 import type { StudentData } from '../types';
+import { countGrades, createDataBackup, type DataBackup } from '../utils/backup';
 import { reconcileAllYears, selectableYear } from '../utils/initializeData';
 import { parseSelectedYear, SELECTED_YEAR_KEY, STORAGE_KEY } from '../utils/storage';
 import type { PersistedSyncState, SyncStore } from './engine';
@@ -6,9 +7,10 @@ import type { PersistedSyncState, SyncStore } from './engine';
 const CODE_KEY = 'cloud-code';
 const VERSION_KEY = 'cloud-version';
 const UNSYNCED_KEY = 'cloud-unsynced';
+const CHANGED_AT_KEY = 'cloud-changed-at';
 
 /** What tabs share: another tab writing any of these concerns this tab's sync. */
-export const SHARED_SYNC_KEYS: readonly string[] = [STORAGE_KEY, CODE_KEY, VERSION_KEY, UNSYNCED_KEY];
+export const SHARED_SYNC_KEYS: readonly string[] = [STORAGE_KEY, CODE_KEY, VERSION_KEY, UNSYNCED_KEY, CHANGED_AT_KEY];
 
 type KeyValueStorage = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;
 
@@ -26,7 +28,10 @@ const sortKeys = (_key: string, value: unknown) =>
     : value;
 
 /** Keeps sync state and student data in localStorage, or anything shaped like it. */
-export function createWebSyncStore(getStorage: () => KeyValueStorage): WebSyncStore {
+export function createWebSyncStore(
+  getStorage: () => KeyValueStorage,
+  backup: DataBackup = createDataBackup(getStorage)
+): WebSyncStore {
   const listeners = new Set<CloudDataListener>();
 
   // Storage can be unavailable, for example with site data blocked
@@ -87,19 +92,32 @@ export function createWebSyncStore(getStorage: () => KeyValueStorage): WebSyncSt
       );
     },
 
+    keepBackup: backup.keep,
+
+    gradeCountOf(data) {
+      try {
+        return countGrades(reconcileAllYears(data));
+      } catch {
+        // Data this version can't reconcile is counted as it is
+        return countGrades(data);
+      }
+    },
+
     readState(): PersistedSyncState {
       const version = Number(read(VERSION_KEY));
       return {
         code: read(CODE_KEY),
         version: Number.isInteger(version) && version > 0 ? version : null,
         unsynced: read(UNSYNCED_KEY) === 'true',
+        changedAt: read(CHANGED_AT_KEY),
       };
     },
 
-    writeState({ code, version, unsynced }) {
+    writeState({ code, version, unsynced, changedAt }) {
       write(CODE_KEY, code);
       write(VERSION_KEY, version === null ? null : String(version));
       write(UNSYNCED_KEY, unsynced ? 'true' : null);
+      write(CHANGED_AT_KEY, changedAt);
     },
 
     onCloudData(listener) {

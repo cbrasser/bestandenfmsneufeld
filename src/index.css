@@ -1172,6 +1172,41 @@ a {
   gap: var(--s-4);
 }
 
+.conflict-sides {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--s-3);
+}
+
+.conflict-side {
+  display: grid;
+  grid-template-rows: subgrid;
+  grid-row: span 3;
+  gap: var(--s-3);
+  min-width: 0;
+}
+
+.conflict-side .btn {
+  padding: var(--s-2);
+  text-align: center;
+  white-space: normal;
+}
+
+.conflict-side dl {
+  display: grid;
+  gap: var(--s-1);
+}
+
+.conflict-side dt {
+  color: var(--ink-2);
+  font-size: var(--t-xs);
+  font-weight: 700;
+}
+
+.conflict-side dd {
+  font-weight: 800;
+}
+
 /* ------------------------------------------------------------ date picker */
 
 .popover {

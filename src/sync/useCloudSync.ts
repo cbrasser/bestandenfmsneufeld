@@ -1,10 +1,25 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useSyncExternalStore } from 'react';
 import type { StudentData } from '../types';
 import { storageService } from '../utils/storage';
 import { onCloudData, syncEngine } from './cloud';
+import type { ConflictPromptState } from './engine';
 import { SHARED_SYNC_KEYS, type CloudDataListener } from './webStore';
 
 const SAVE_DELAY_MS = 1500;
+
+const noSubscription = () => () => {};
+
+/**
+ * Whether the conflict prompt is up or may still come. Anything that must not appear before or
+ * alongside it waits for `none`, and has to give way if it turns to `showing` later: an edit can
+ * always run into newer cloud data.
+ */
+export function useConflictPromptState(): ConflictPromptState {
+  return useSyncExternalStore(
+    syncEngine?.subscribe ?? noSubscription,
+    () => syncEngine?.getSnapshot().conflictPrompt ?? 'none'
+  );
+}
 
 /**
  * Connects the app to its sync: pulls on open and on return to the page, retries when the connection

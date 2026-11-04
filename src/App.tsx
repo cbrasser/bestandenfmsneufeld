@@ -1,7 +1,9 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useSyncExternalStore } from 'react';
 import type { StudentData, Year, Grade, StudentInfo, Subject, GymProfile as GymProfileType } from './types';
 import { isSubject, isCombinedSubject } from './types';
 import { storageService } from './utils/storage';
+import { countGrades, dataBackup } from './utils/backup';
+import { formatDateTime } from './lib/utils';
 import { initializeStudentData, getSubjectsForYear, reconcileAllYears, reconcileSubjectList, selectableYear, subjectsLosingGrades } from './utils/initializeData';
 import { checkPromotionCriteria, promotionVerdict } from './utils/promotion';
 import { endsWithoutPromotion, getCriteria } from './config/criteria';
@@ -18,6 +20,7 @@ import { Menu } from './components/Menu';
 import { YearTabs } from './components/YearTabs';
 import { GymProfile } from './components/GymProfile';
 import { CloudSync } from './components/CloudSync';
+import { ConflictPrompt } from './components/ConflictPrompt';
 import { useCloudSync } from './sync/useCloudSync';
 import { useI18n } from './i18n/context';
 import { CombinedSubjectCard } from './components/CombinedSubjectCard';
@@ -27,8 +30,19 @@ import { BarChart2, BookOpen } from 'lucide-react';
 
 type View = 'grades' | 'stats';
 
+const subscribeToBackup = (listener: () => void) => {
+  const stop = dataBackup.subscribe(listener);
+  window.addEventListener('storage', listener);
+  return () => {
+    stop();
+    window.removeEventListener('storage', listener);
+  };
+};
+const hasBackup = () => dataBackup.read() !== null;
+
 function App() {
-  const { t, tSubject } = useI18n();
+  const { t, tSubject, language } = useI18n();
+  const canRestore = useSyncExternalStore(subscribeToBackup, hasBackup);
   const [view, setView] = useState<View>('grades');
   const [data, setData] = useState<StudentData | null>(null);
   const [currentYear, setCurrentYear] = useState<Year>(1);
@@ -307,6 +321,26 @@ function App() {
       }
     };
 
+    const handleRestore = () => {
+      const kept = dataBackup.read();
+      if (!kept) return;
+      const details = `${t('conflictGrades')}: ${countGrades(kept.data)}\n${formatDateTime(kept.keptAt, language)}`;
+      if (!window.confirm(`${t('restoreConfirm')}\n\n${details}`)) return;
+      try {
+        const restored = dataBackup.swapWith({ ...data, currentYear });
+        if (!restored) return;
+        // Saved and synced like any other edit
+        setData(restored);
+        setCurrentYear(restored.currentYear);
+        storageService.saveSelectedYear(restored.currentYear);
+        alert(t('restoreSuccess'));
+        setIsMenuOpen(false);
+      } catch (error) {
+        alert(t('restoreError'));
+        console.error('Restore error:', error);
+      }
+    };
+
     const handleReset = () => {
       if (window.confirm(t('resetConfirm'))) {
         try {
@@ -359,6 +393,7 @@ function App() {
           onExport={handleExport}
           onImport={handleImport}
           onReset={handleReset}
+          onRestore={canRestore ? handleRestore : undefined}
           cloudSlot={
             <CloudSync onConnected={() => setIsMenuOpen(false)} />
           }
@@ -483,6 +518,8 @@ function App() {
 
       {/* Subjects / Statistics, docked on phones */}
       <nav className="dock">{viewButtons}</nav>
+
+      <ConflictPrompt />
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import { useRef, useEffect, type ReactNode } from 'react';
-import { Menu as MenuIcon, X, Sun, Moon, Monitor, Upload, Download, RotateCcw, Smartphone } from 'lucide-react';
+import { Menu as MenuIcon, X, Sun, Moon, Monitor, Upload, Download, RotateCcw, Smartphone, History } from 'lucide-react';
 import { useI18n } from '../i18n/context';
 import { guideText } from '../i18n/guide';
 import { useTheme } from '../contexts/ThemeContext';
@@ -11,10 +11,12 @@ interface MenuProps {
   onExport: () => void;
   onImport: (file: File) => void;
   onReset: () => void;
+  /** Goes back to the version this device kept. Leave it out when there is none. */
+  onRestore?: () => void;
   cloudSlot?: ReactNode;
 }
 
-export const Menu = ({ isOpen, onToggle, onExport, onImport, onReset, cloudSlot }: MenuProps) => {
+export const Menu = ({ isOpen, onToggle, onExport, onImport, onReset, onRestore, cloudSlot }: MenuProps) => {
   const { language, setLanguage, t } = useI18n();
   const { theme, setTheme } = useTheme();
   const menuRef = useRef<HTMLDivElement>(null);
@@ -173,6 +175,12 @@ export const Menu = ({ isOpen, onToggle, onExport, onImport, onReset, cloudSlot 
               <Download size={16} strokeWidth={2.5} aria-hidden="true" />
               {t('export')}
             </button>
+            {onRestore && (
+              <button onClick={onRestore} className="btn btn-block btn-start">
+                <History size={16} strokeWidth={2.5} aria-hidden="true" />
+                {t('restorePrevious')}
+              </button>
+            )}
             <button onClick={onReset} className="btn btn-block btn-start">
               <RotateCcw size={16} strokeWidth={2.5} aria-hidden="true" />
               {t('reset')}

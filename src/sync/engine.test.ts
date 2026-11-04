@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { isSubject, type StudentData } from '../types';
 import { reconcileAllYears } from '../utils/initializeData';
+import { createDataBackup } from '../utils/backup';
 import { SELECTED_YEAR_KEY } from '../utils/storage';
 import { createSyncEngine, type CloudSnapshot, type SaveResult, type SyncRemote } from './engine';
 import { createMemoryStorage } from './memoryStorage';
@@ -48,7 +49,7 @@ const snapshot = (data: StudentData, version: number): CloudSnapshot => ({ data,
 function setup({ version = 1 as number | null, unsynced = false, code = CODE as string | null, data = student('local') } = {}) {
   const items = createMemoryStorage();
   items.setItem('student-data', JSON.stringify(data));
-  createWebSyncStore(() => items).writeState({ code, version, unsynced });
+  createWebSyncStore(() => items).writeState({ code, version, unsynced, changedAt: null });
   return openTab(items);
 }
 
@@ -212,19 +213,308 @@ describe('sync engine', () => {
     expect(edit('real edit')).toBe(true);
   });
 
-  it('touches nothing on a device connected before versions existed, whichever side is newer', async () => {
-    const { engine, edit, saves, loads, localLabel } = setup({ version: null });
-    const pulled = engine.sync();
-    loads[0].resolve(snapshot(student('cloud'), 5));
-    await pulled;
+  describe('a device connected before versions existed', () => {
+    it('adopts the cloud version silently when the data matches, changing and sending nothing', async () => {
+      const { engine, saves, loads, localLabel } = setup({ version: null, data: student('same') });
+      const pulled = engine.sync();
+      loads[0].resolve(snapshot(student('same', null), 5));
+      await pulled;
 
-    expect(localLabel()).toBe('local');
-    expect(engine.getSnapshot()).toMatchObject({ status: 'error', failure: 'no_version', version: null });
+      expect(localLabel()).toBe('same');
+      expect(saves).toHaveLength(0);
+      expect(engine.getSnapshot()).toMatchObject({ status: 'saved', failure: null, version: 5, unsynced: false, conflict: null });
+    });
 
-    edit('edited');
-    await engine.sync();
-    expect(saves).toHaveLength(0);
-    expect(engine.getSnapshot()).toMatchObject({ status: 'error', failure: 'no_version', unsynced: true });
+    it('asks when the data differs, and touches neither side', async () => {
+      const { engine, saves, loads, localLabel } = setup({ version: null });
+      const pulled = engine.sync();
+      loads[0].resolve(snapshot(student('cloud'), 5));
+      await pulled;
+
+      expect(localLabel()).toBe('local');
+      expect(saves).toHaveLength(0);
+      expect(engine.getSnapshot()).toMatchObject({ status: 'error', failure: 'conflict', version: null });
+      expect(engine.getSnapshot().conflict).toEqual({
+        local: { gradeCount: 1, changedAt: null },
+        cloud: { gradeCount: 1, changedAt: '2026-11-04T12:00:00Z' },
+      });
+    });
+
+    it('compares an edit made before the first answer, rather than sending it blind', async () => {
+      const { engine, edit, saves, loads } = setup({ version: null });
+      edit('edited');
+      const pushed = engine.sync();
+      await settle();
+      expect(saves).toHaveLength(0);
+      loads[0].resolve(snapshot(student('cloud'), 5));
+      await pushed;
+      expect(engine.getSnapshot()).toMatchObject({ failure: 'conflict', unsynced: true, version: null });
+      expect(saves).toHaveLength(0);
+    });
+  });
+
+  describe('a conflict', () => {
+    // An edit whose save the cloud refused, because it holds other data at a newer version
+    async function inConflict(tab = setup(), cloud = student('cloud', null), version = 2) {
+      tab.edit('edited');
+      const running = tab.engine.sync();
+      await settle();
+      tab.saves.at(-1)!.answer.resolve(refused(version));
+      await settle();
+      tab.loads.at(-1)!.resolve(snapshot(cloud, version));
+      await running;
+      return tab;
+    }
+    const backupOf = (tab: ReturnType<typeof setup>) => createDataBackup(() => tab.items).read()?.data;
+
+    it('shows each side\'s grade count and last change, with the local one from the edit', async () => {
+      const tab = setup();
+      const before = Date.now();
+      const { engine } = await inConflict(tab);
+      const { conflict, conflictPrompt } = engine.getSnapshot();
+      expect(conflictPrompt).toBe('showing');
+      expect(conflict?.local.gradeCount).toBe(1);
+      expect(conflict?.cloud).toEqual({ gradeCount: 1, changedAt: '2026-11-04T12:00:00Z' });
+      expect(Date.parse(conflict!.local.changedAt!)).toBeGreaterThanOrEqual(before);
+    });
+
+    it('remembers when the local data last changed across a restart', async () => {
+      const tab = setup();
+      tab.edit('edited');
+      const { changedAt } = tab.engine.getSnapshot();
+      expect(changedAt).not.toBeNull();
+      expect(openTab(tab.items).engine.getSnapshot().changedAt).toBe(changedAt);
+    });
+
+    it('stays up when the cloud cannot be reached on a retry', async () => {
+      const { engine, saves } = await inConflict();
+      const retry = engine.sync();
+      await settle();
+      saves.at(-1)!.answer.reject(new Error('offline'));
+      await retry;
+      expect(engine.getSnapshot()).toMatchObject({ failure: 'unreachable', conflictPrompt: 'showing' });
+      expect(engine.getSnapshot().conflict).not.toBeNull();
+    });
+
+    it('goes away when the cloud data is gone, since there is nothing to choose', async () => {
+      const { engine, saves } = await inConflict();
+      const retry = engine.sync();
+      await settle();
+      saves.at(-1)!.answer.resolve({ status: 'unknown_code' });
+      await retry;
+      expect(engine.getSnapshot()).toMatchObject({ failure: 'unknown_code', conflict: null, conflictPrompt: 'none' });
+    });
+
+    it('goes away when another tab has chosen, and shows that tab\'s state', async () => {
+      const tab = await inConflict();
+      tab.store.writeState({ code: CODE, version: 3, unsynced: false, changedAt: null });
+      tab.engine.noteOtherTabChange();
+      expect(tab.engine.getSnapshot()).toMatchObject({ status: 'saved', failure: null, version: 3, conflict: null });
+    });
+
+    it('goes away when another tab reset the data', async () => {
+      const tab = await inConflict();
+      tab.items.setItem('student-data', JSON.stringify({ ...student('x'), studentInfo: undefined }));
+      tab.engine.noteOtherTabChange();
+      expect(tab.engine.getSnapshot()).toMatchObject({ status: 'idle', conflict: null });
+    });
+
+    it('counts again what another tab stored while it is up', async () => {
+      const tab = await inConflict();
+      const data = student('x');
+      data.years[2].subjects = [{ id: 'a', name: 'A', grades: [{ id: 'y', value: 4, weight: 1 }] }];
+      tab.items.setItem('student-data', JSON.stringify(data));
+      tab.engine.noteOtherTabChange();
+      expect(tab.engine.getSnapshot().conflict?.local.gradeCount).toBe(tab.store.gradeCountOf(data));
+    });
+
+    describe('keeping this device', () => {
+      it('keeps the cloud version as the backup, on this device\'s name, and saves over it', async () => {
+        const tab = await inConflict();
+        const choosing = tab.engine.keepThisDevice();
+        await settle();
+        expect(tab.saves.at(-1)?.expectedVersion).toBe(2);
+        expect(labelOf(tab.saves.at(-1)?.data)).toBe('edited');
+        expect(tab.saves.at(-1)?.data.studentInfo?.name).toBeUndefined();
+        tab.saves.at(-1)!.answer.resolve(saved(3));
+        expect(await choosing).toBe(true);
+
+        expect(labelOf(backupOf(tab))).toBe('cloud');
+        expect(backupOf(tab)?.studentInfo?.name).toBe('Local name');
+        expect(tab.localLabel()).toBe('edited');
+        expect(tab.engine.getSnapshot()).toMatchObject({ status: 'saved', version: 3, unsynced: false, conflict: null, conflictPrompt: 'none' });
+      });
+
+      it('closes the prompt at once and keeps the decision for the retry when the cloud cannot be reached', async () => {
+        const tab = await inConflict();
+        const choosing = tab.engine.keepThisDevice();
+        await settle();
+        expect(tab.engine.getSnapshot().conflict).toBeNull();
+        tab.saves.at(-1)!.answer.reject(new Error('offline'));
+        expect(await choosing).toBe(true);
+        expect(tab.engine.getSnapshot()).toMatchObject({ failure: 'unreachable', version: 2, unsynced: true, conflict: null });
+
+        const reopened = openTab(tab.items);
+        const retry = reopened.engine.sync();
+        await settle();
+        expect(reopened.saves[0].expectedVersion).toBe(2);
+        reopened.saves[0].answer.resolve(saved(3));
+        await retry;
+        expect(reopened.engine.getSnapshot()).toMatchObject({ status: 'saved', version: 3, conflict: null });
+      });
+
+      it('asks again when the cloud moved on before the choice got there', async () => {
+        const tab = await inConflict();
+        const choosing = tab.engine.keepThisDevice();
+        await settle();
+        tab.saves.at(-1)!.answer.resolve(refused(3));
+        await settle();
+        tab.loads.at(-1)!.resolve(snapshot(student('newer', null), 3));
+        await choosing;
+        expect(tab.engine.getSnapshot()).toMatchObject({ failure: 'conflict', conflictPrompt: 'showing', unsynced: true });
+        expect(tab.localLabel()).toBe('edited');
+      });
+    });
+
+    describe('keeping the cloud', () => {
+      it('keeps this device\'s version as the backup and takes the cloud\'s, without a save', async () => {
+        const tab = await inConflict();
+        const saveCount = tab.saves.length;
+        const choosing = tab.engine.keepCloud();
+        await settle();
+        tab.loads.at(-1)!.resolve(snapshot(student('cloud', null), 2));
+        expect(await choosing).toBe(true);
+
+        expect(tab.localLabel()).toBe('cloud');
+        expect(tab.localName()).toBe('Local name');
+        expect(labelOf(backupOf(tab))).toBe('edited');
+        expect(backupOf(tab)?.studentInfo?.name).toBe('Local name');
+        expect(tab.saves).toHaveLength(saveCount);
+        expect(tab.engine.getSnapshot()).toMatchObject({ status: 'saved', version: 2, unsynced: false, conflict: null, conflictPrompt: 'none' });
+      });
+
+      it('does not count what it took as an edit', async () => {
+        const tab = await inConflict();
+        const choosing = tab.engine.keepCloud();
+        await settle();
+        tab.loads.at(-1)!.resolve(snapshot(student('cloud', null), 2));
+        await choosing;
+        expect(tab.engine.noteLocalChange()).toBe(false);
+      });
+
+      it('takes back nothing when the cloud data cannot be read, and leaves the prompt up', async () => {
+        const unreadable = { ...student('cloud', null), years: null } as unknown as StudentData;
+        const tab = await inConflict(setup(), unreadable);
+        expect(await tab.engine.keepCloud()).toBe(false);
+        expect(tab.localLabel()).toBe('edited');
+        expect(tab.engine.getSnapshot()).toMatchObject({ unsynced: true, conflictPrompt: 'showing' });
+      });
+    });
+
+    it.each(['keepThisDevice', 'keepCloud'] as const)('%s changes nothing when the backup cannot be kept', async (choice) => {
+      const tab = await inConflict();
+      const saveCount = tab.saves.length;
+      const setItem = tab.items.setItem;
+      tab.items.setItem = (key, value) => {
+        if (key === 'data-backup') throw new Error('full');
+        setItem(key, value);
+      };
+      expect(await tab.engine[choice]()).toBe(false);
+      expect(tab.localLabel()).toBe('edited');
+      expect(tab.saves).toHaveLength(saveCount);
+      expect(tab.engine.getSnapshot()).toMatchObject({ version: 1, unsynced: true, conflictPrompt: 'showing' });
+    });
+
+    it.each(['keepThisDevice', 'keepCloud'] as const)('%s does nothing without a conflict', async (choice) => {
+      const tab = setup();
+      expect(await tab.engine[choice]()).toBe(false);
+      expect(backupOf(tab)).toBeUndefined();
+      expect(tab.localLabel()).toBe('local');
+    });
+
+    it('waits for a sync under way, so its late answer cannot bring the prompt back', async () => {
+      const tab = await inConflict();
+      const retry = tab.engine.sync();
+      await settle();
+      const choosing = tab.engine.keepCloud();
+      await settle();
+      tab.saves.at(-1)!.answer.resolve(refused(2));
+      await settle();
+      tab.loads.at(-1)!.resolve(snapshot(student('cloud', null), 2));
+      await retry;
+      await settle();
+      tab.loads.at(-1)!.resolve(snapshot(student('cloud', null), 2));
+      await choosing;
+      expect(tab.engine.getSnapshot()).toMatchObject({ status: 'saved', conflict: null, unsynced: false });
+      expect(tab.localLabel()).toBe('cloud');
+    });
+
+    it('keeps everything through a lost answer followed by a new edit', async () => {
+      const tab = setup();
+      tab.edit('first');
+      const failed = tab.engine.sync();
+      await settle();
+      tab.saves[0].answer.reject(new Error('answer lost'));
+      await failed;
+      await inConflict(tab, student('first', null), 2);
+      expect(tab.engine.getSnapshot().conflictPrompt).toBe('showing');
+
+      const choosing = tab.engine.keepCloud();
+      await settle();
+      tab.loads.at(-1)!.resolve(snapshot(student('first', null), 2));
+      await choosing;
+      expect(tab.localLabel()).toBe('first');
+      expect(labelOf(backupOf(tab))).toBe('edited');
+    });
+  });
+
+  describe('whether a conflict prompt may still come', () => {
+    it('is none on a device that isn\'t connected', () => {
+      expect(setup({ code: null, version: null }).engine.getSnapshot().conflictPrompt).toBe('none');
+    });
+
+    it('is pending on a connected device until it has checked, then none', async () => {
+      const { engine, loads } = setup();
+      expect(engine.getSnapshot().conflictPrompt).toBe('pending');
+      const pulled = engine.sync();
+      loads[0].resolve(snapshot(student('local'), 1));
+      await pulled;
+      expect(engine.getSnapshot().conflictPrompt).toBe('none');
+    });
+
+    it('stays pending while changes or a first comparison wait for the cloud', async () => {
+      const edited = setup();
+      edited.edit('edited');
+      const failedSave = edited.engine.sync();
+      await settle();
+      edited.saves[0].answer.reject(new Error('offline'));
+      await failedSave;
+      expect(edited.engine.getSnapshot()).toMatchObject({ failure: 'unreachable', conflictPrompt: 'pending' });
+
+      const first = setup({ version: null });
+      const failedLoad = first.engine.sync();
+      first.loads[0].reject(new Error('offline'));
+      await failedLoad;
+      expect(first.engine.getSnapshot()).toMatchObject({ failure: 'unreachable', conflictPrompt: 'pending' });
+    });
+
+    it('is none when nothing is unsynced and only the cloud cannot be reached', async () => {
+      const { engine, loads } = setup();
+      const pulled = engine.sync();
+      loads[0].reject(new Error('offline'));
+      await pulled;
+      expect(engine.getSnapshot().conflictPrompt).toBe('none');
+    });
+
+    it('is none once the code is gone from the cloud, even with changes waiting', async () => {
+      const { engine, edit, saves } = setup();
+      edit('edited');
+      const pushed = engine.sync();
+      await settle();
+      saves[0].answer.resolve({ status: 'unknown_code' });
+      await pushed;
+      expect(engine.getSnapshot().conflictPrompt).toBe('none');
+    });
   });
 
   it('drops unsynced changes that a reset removed, so the new profile is not pushed by itself', async () => {
@@ -370,8 +660,14 @@ describe('sync engine', () => {
   });
 
   describe('deleting cloud data', () => {
+    // These answer every load with the version the device has seen, unless a test says otherwise
+    const inStep = <T extends ReturnType<typeof setup>>(tab: T, cloud = snapshot(student('local', null), 1)) => {
+      tab.remote.load = async () => cloud;
+      return tab;
+    };
+
     it('disconnects and forgets unsynced changes, while the local data stays', async () => {
-      const { engine, edit, remote, localLabel, localName } = setup();
+      const { engine, edit, remote, localLabel, localName } = inStep(setup());
       edit('edited');
       const deleted: string[] = [];
       remote.delete = async (code) => {
@@ -386,7 +682,7 @@ describe('sync engine', () => {
     });
 
     it('stays connected, with unsynced changes kept, when the cloud cannot be reached', async () => {
-      const { engine, edit, remote } = setup();
+      const { engine, edit, remote } = inStep(setup());
       edit('edited');
       remote.delete = async () => {
         throw new Error('offline');
@@ -396,7 +692,7 @@ describe('sync engine', () => {
     });
 
     it('counts a code that is already gone as deleted', async () => {
-      const { engine, remote } = setup();
+      const { engine, remote } = inStep(setup());
       remote.delete = async () => false;
       expect(await engine.deleteCloudData()).toBe('deleted');
       expect(engine.getSnapshot().code).toBeNull();
@@ -407,6 +703,7 @@ describe('sync engine', () => {
       edit('edited');
       const running = engine.sync();
       await settle();
+      remote.load = async () => snapshot(student('local', null), 1);
       remote.delete = async () => true;
       await engine.deleteCloudData();
       saves[0].answer.resolve({ status: 'unknown_code' });
@@ -423,6 +720,7 @@ describe('sync engine', () => {
       });
       const running = engine.sync();
       await settle();
+      remote.load = async () => snapshot(student('local', null), 1);
       await engine.deleteCloudData();
       failSave(new Error('offline'));
       await running;
@@ -437,6 +735,7 @@ describe('sync engine', () => {
       });
       const running = engine.sync();
       await settle();
+      remote.load = async () => snapshot(student('local', null), 1);
       await engine.deleteCloudData();
       failLoad(new Error('offline'));
       await running;
@@ -444,7 +743,7 @@ describe('sync engine', () => {
     });
 
     it('tells another tab, which then neither restores the code nor pushes', async () => {
-      const { engine, store, remote, edit, saves } = setup();
+      const { engine, store, remote, edit, saves } = inStep(setup());
       const otherTab = createSyncEngine({ store, remote });
       otherTab.noteLocalChange();
       await engine.deleteCloudData();
@@ -459,13 +758,86 @@ describe('sync engine', () => {
     });
 
     it('does not sync after the delete, so a waiting save timer sends nothing', async () => {
-      const { engine, edit, remote, saves, loads } = setup();
+      const { engine, edit, remote, saves, loads } = inStep(setup());
       edit('edited');
       remote.delete = async () => true;
       await engine.deleteCloudData();
       await engine.sync();
       expect(saves).toHaveLength(0);
       expect(loads).toHaveLength(0);
+    });
+
+    describe('when the cloud may hold what this device never received', () => {
+      const countDeletes = (tab: ReturnType<typeof setup>) => {
+        const deleted: string[] = [];
+        tab.remote.delete = async (code) => {
+          deleted.push(code);
+          return true;
+        };
+        return deleted;
+      };
+
+      it('refuses, then takes the cloud data, after which deleting works', async () => {
+        const tab = inStep(setup(), snapshot(student('newer', null), 2));
+        const deleted = countDeletes(tab);
+        expect(await tab.engine.deleteCloudData()).toBe('out_of_step');
+        expect(deleted).toEqual([]);
+        await tab.engine.sync();
+        expect(tab.localLabel()).toBe('newer');
+        expect(await tab.engine.deleteCloudData()).toBe('deleted');
+        expect(deleted).toEqual([CODE]);
+      });
+
+      it('refuses with unsynced changes on an older version, and brings up the prompt', async () => {
+        const tab = setup();
+        const deleted = countDeletes(tab);
+        tab.edit('edited');
+        tab.remote.load = async () => snapshot(student('newer', null), 2);
+        tab.remote.save = async () => refused(2);
+        expect(await tab.engine.deleteCloudData()).toBe('out_of_step');
+        await tab.engine.sync();
+        expect(deleted).toEqual([]);
+        expect(tab.engine.getSnapshot()).toMatchObject({ code: CODE, unsynced: true, conflictPrompt: 'showing' });
+        expect(tab.localLabel()).toBe('edited');
+      });
+
+      it('refuses on a device from before versions whose data differs', async () => {
+        const tab = inStep(setup({ version: null }), snapshot(student('newer', null), 2));
+        const deleted = countDeletes(tab);
+        expect(await tab.engine.deleteCloudData()).toBe('out_of_step');
+        await tab.engine.sync();
+        expect(deleted).toEqual([]);
+        expect(tab.engine.getSnapshot()).toMatchObject({ code: CODE, conflictPrompt: 'showing' });
+      });
+
+      it('deletes nothing when it cannot check', async () => {
+        const tab = setup();
+        const deleted = countDeletes(tab);
+        tab.remote.load = async () => {
+          throw new Error('offline');
+        };
+        expect(await tab.engine.deleteCloudData()).toBe('unreachable');
+        expect(deleted).toEqual([]);
+        expect(tab.engine.getSnapshot().code).toBe(CODE);
+      });
+
+      it('deletes when a newer version holds the same data, as after a lost answer', async () => {
+        const tab = setup();
+        const deleted = countDeletes(tab);
+        tab.edit('edited');
+        tab.remote.load = async () => snapshot(student('edited', null), 2);
+        expect(await tab.engine.deleteCloudData()).toBe('deleted');
+        expect(deleted).toEqual([CODE]);
+      });
+
+      it('deletes when this device has seen the version, even with unsynced changes of its own', async () => {
+        const tab = inStep(setup());
+        const deleted = countDeletes(tab);
+        tab.edit('edited');
+        expect(await tab.engine.deleteCloudData()).toBe('deleted');
+        expect(deleted).toEqual([CODE]);
+        expect(tab.localLabel()).toBe('edited');
+      });
     });
   });
 });
@@ -725,7 +1097,7 @@ describe('two tabs of one browser', () => {
     second.engine.noteOtherTabChange();
     expect(second.engine.getSnapshot()).toMatchObject({ status: 'saving', unsynced: true });
 
-    first.store.writeState({ code: CODE, version: 2, unsynced: false });
+    first.store.writeState({ code: CODE, version: 2, unsynced: false, changedAt: null });
     second.engine.noteOtherTabChange();
     expect(second.engine.getSnapshot()).toMatchObject({ status: 'saved', version: 2, unsynced: false });
   });
