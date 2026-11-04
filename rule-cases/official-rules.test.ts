@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { getCriteria } from '../src/config/criteria';
+import { endsWithoutPromotion, getCriteria } from '../src/config/criteria';
 import { gymSubjectsForYear } from '../src/config/gymnasium';
 import { defaultSubjects, year3Directions } from '../src/config/subjects';
 import { translations } from '../src/i18n/locales';
 import { getTranslatedSubjectName, hasSubjectTranslation } from '../src/i18n/subjectNames';
 import type { CombinedSubject, Division, Subject } from '../src/types';
 import { reconcileAllYears } from '../src/utils/initializeData';
-import { calculateFinalGrade, checkPromotionCriteria, roundToHalf } from '../src/utils/promotion';
+import { calculateFinalGrade, checkPromotionCriteria, promotionVerdict, roundToHalf } from '../src/utils/promotion';
 import { buildRuleCases } from './build';
 
 // Generated cases only record what the code does today. These tests check the
@@ -40,16 +40,14 @@ describe('grades', () => {
   });
 
   it('averages the rounded Teilfach grades, then rounds the Fach', () => {
-    const teilfaecher = (a: number, b: number): CombinedSubject => ({
-      id: 'f',
-      name: 'f',
-      subjects: [
-        { id: 'a', name: 'a', grades: [{ id: 'g', value: a, weight: 1 }] },
-        { id: 'b', name: 'b', grades: [{ id: 'g', value: b, weight: 1 }] },
-      ],
-    });
     // 3.75 rounds to 4 and 4.25 to 4.5, so the Fach is 4.25, then 4.5, not 4
-    expect(calculateFinalGrade(teilfaecher(3.75, 4.25))).toBe(4.5);
+    expect(calculateFinalGrade(fach(3.75, 4.25))).toBe(4.5);
+  });
+
+  it('counts a Teilfach that has grades in its Fach even if it ends at 0', () => {
+    const zero: Subject = { id: 'z', name: 'z', grades: [{ id: 'g', value: 5, weight: 0 }] };
+    const result: CombinedSubject = { id: 'f', name: 'f', subjects: [zero, subject(4)] };
+    expect(calculateFinalGrade(result)).toBe(2);
   });
 });
 
@@ -105,6 +103,25 @@ describe('Gymnasium promotion: at most 4 below 4, twice the deficit at most the 
     const result = status('Gymnasium', [3.5, 4.5]);
     expect(result.criteria.compensation).toEqual({ passed: false, surplus: 0.5, deficit: 1, factor: 2 });
     expect(result.isPassing).toBe(false);
+  });
+});
+
+describe('the verdict', () => {
+  it('says nothing about passing before there are grades, although the Gymnasium conditions hold', () => {
+    expect(status('Gymnasium', []).isPassing).toBe(true);
+    expect(promotionVerdict(status('Gymnasium', []))).toBe('noGrades');
+    expect(promotionVerdict(status('FMS', []))).toBe('noGrades');
+  });
+
+  it('follows the conditions once there are grades', () => {
+    expect(promotionVerdict(status('FMS', [4, 5]))).toBe('passing');
+    expect(promotionVerdict(status('FMS', [3, 3]))).toBe('notPassing');
+  });
+
+  it('has no promotion after the last Gymnasium year only', () => {
+    expect(endsWithoutPromotion('Gymnasium', 4)).toBe(true);
+    expect(endsWithoutPromotion('Gymnasium', 3)).toBe(false);
+    expect(endsWithoutPromotion('FMS', 3)).toBe(false);
   });
 });
 

@@ -1,30 +1,32 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import type { GymProfile } from '../src/types';
 import type { RuleCasesFile } from './build';
+import type { OperationName } from './operations';
 
 // The lists are written out here on purpose: they say what the cases must cover,
 // so they don't shrink along with the code. A new choice in the code that isn't
 // listed here still gets its generated cases.
 const file = JSON.parse(readFileSync(new URL('./rule-cases.json', import.meta.url), 'utf8')) as RuleCasesFile;
 
-const suite = (operation: string) => {
+const suite = (operation: OperationName) => {
   const found = file.suites.find((s) => s.operation === operation);
   if (!found) throw new Error(`No suite for ${operation}`);
   return found;
 };
 
-const inputs = <T>(operation: string) => suite(operation).cases.map((c) => c.input as T);
+const inputs = <T>(operation: OperationName) => suite(operation).cases.map((c) => c.input as T);
 
 type TableInput = {
   year: number;
   direction?: string;
-  profile?: { thirdLanguage?: string; arts?: string; spf?: string; ef?: string };
+  profile?: GymProfile;
 };
 type DataInput = {
   data: {
     studentInfo?: { division: string };
     year3Direction?: string;
-    gymProfile?: TableInput['profile'];
+    gymProfile?: GymProfile;
     years: Record<string, { subjects: { id: string; subjects?: { id: string }[] }[] }>;
   };
 };
@@ -76,15 +78,14 @@ describe('whole students', () => {
     expect(new Set(gym.map((s) => s.gymProfile?.ef)).size).toBeGreaterThan(1);
   });
 
-  it('reach both a passing and a failing verdict in each Bildungsgang', () => {
+  it('reach every verdict in each Bildungsgang', () => {
     const verdicts = (division: string) =>
       suite('studentResult').cases
         .filter((c) => (c.input as DataInput).data.studentInfo?.division === division)
-        .flatMap((c) => (c.expected as { years: { promotion: { hasGrades: boolean; isPassing: boolean } }[] }).years)
-        .filter((y) => y.promotion.hasGrades)
-        .map((y) => y.promotion.isPassing);
+        .flatMap((c) => (c.expected as { years: { verdict: string }[] }).years)
+        .map((y) => y.verdict);
     for (const division of ['FMS', 'Gymnasium']) {
-      expect(verdicts(division)).toEqual(expect.arrayContaining([true, false]));
+      expect(verdicts(division)).toEqual(expect.arrayContaining(['noGrades', 'passing', 'notPassing']));
     }
   });
 });

@@ -153,3 +153,9 @@ export const checkPromotionCriteria = (
   };
 };
 
+export type PromotionVerdict = 'noGrades' | 'passing' | 'notPassing';
+
+export const promotionVerdict = (status: PromotionStatus): PromotionVerdict => {
+  if (!status.hasGrades) return 'noGrades';
+  return status.isPassing ? 'passing' : 'notPassing';
+};

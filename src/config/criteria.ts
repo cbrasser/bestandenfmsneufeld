@@ -1,4 +1,5 @@
-import type { Division, PromotionCriteria } from '../types';
+import type { Division, PromotionCriteria, Year } from '../types';
+import { GYM_YEARS } from './gymnasium';
 
 // FMS: "Promotionsbestimmungen FMS ab 24"
 export const fmsCriteria: PromotionCriteria = {
@@ -18,3 +19,7 @@ export const gymCriteria: PromotionCriteria = {
 // The rules are the same in every year of a Bildungsgang
 export const getCriteria = (division: Division): PromotionCriteria =>
   division === 'Gymnasium' ? gymCriteria : fmsCriteria;
+
+// The last Gymnasium year ends without a promotion
+export const endsWithoutPromotion = (division: Division, year: Year): boolean =>
+  division === 'Gymnasium' && year === GYM_YEARS[GYM_YEARS.length - 1];

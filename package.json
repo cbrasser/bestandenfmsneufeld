@@ -8,7 +8,7 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test": "vitest run --passWithNoTests --exclude '**/.claude/**'",
+    "test": "tsc -p tsconfig.rule-cases.json && vitest run --passWithNoTests --exclude '**/.claude/**'",
     "rule-cases": "node rule-cases/generate.mjs"
   },
   "dependencies": {

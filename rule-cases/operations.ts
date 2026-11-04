@@ -1,6 +1,6 @@
 // Each operation names one rule and calls the website's real code for it. A
 // Kotlin runner implements the same names against its own port, see README.md.
-import { getCriteria } from '../src/config/criteria';
+import { endsWithoutPromotion, getCriteria } from '../src/config/criteria';
 import {
   artsOptions,
   effectiveThirdLanguage,
@@ -27,13 +27,14 @@ import {
   calculateFinalGrade,
   checkPromotionCriteria,
   combinedSubjectHasGrades,
+  promotionVerdict,
   roundToHalf,
   roundToTwoDecimals,
 } from '../src/utils/promotion';
 
 export const LANGUAGES: Language[] = ['de', 'fr', 'en', 'it'];
 
-type AnySubject = Subject | CombinedSubject;
+export type AnySubject = Subject | CombinedSubject;
 
 const FMS_YEARS: Year[] = [1, 2, 3];
 
@@ -74,9 +75,10 @@ export const operations = {
 
   promotionCriteria: ({ division }: { division: Division }) => ({ criteria: getCriteria(division) }),
 
-  checkPromotion: ({ division, subjects }: { division: Division; subjects: PromotionEntity[] }) => ({
-    status: checkPromotionCriteria(subjects, getCriteria(division)),
-  }),
+  checkPromotion: ({ division, subjects }: { division: Division; subjects: PromotionEntity[] }) => {
+    const status = checkPromotionCriteria(subjects, getCriteria(division));
+    return { verdict: promotionVerdict(status), status };
+  },
 
   fmsSubjectTable: ({ year, direction }: { year: Year; direction?: string }) => ({
     subjects: fmsSubjects(year, direction),
@@ -128,10 +130,13 @@ export const operations = {
       data: reconciled,
       years: years.map((year) => {
         const subjects = getSubjectsForYear(reconciled, year);
+        const promotion = checkPromotionCriteria(subjects, getCriteria(division));
         return {
           year,
           subjects: subjects.map(gradeOf),
-          promotion: checkPromotionCriteria(subjects, getCriteria(division)),
+          verdict: promotionVerdict(promotion),
+          endsWithoutPromotion: endsWithoutPromotion(division, year),
+          promotion,
         };
       }),
     };
@@ -151,3 +156,6 @@ export const operations = {
 };
 
 export type OperationName = keyof typeof operations;
+
+export const runOperation = (operation: OperationName, input: unknown): unknown =>
+  (operations[operation] as (input: never) => unknown)(input as never);

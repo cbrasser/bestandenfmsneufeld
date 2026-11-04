@@ -13,7 +13,7 @@ import { defaultSubjects, renamedSubjectIds, splitSubjectIds, year3Directions } 
 import type { CombinedSubject, Division, Grade, GymProfile, StudentData, Subject, Year } from '../src/types';
 import { isCombinedSubject } from '../src/types';
 import { reconcileAllYears } from '../src/utils/initializeData';
-import { LANGUAGES, type OperationName } from './operations';
+import { LANGUAGES, type AnySubject, type OperationName } from './operations';
 
 export type SuiteDefinition = {
   operation: OperationName;
@@ -23,7 +23,6 @@ export type SuiteDefinition = {
   cases: { name: string; input: unknown }[];
 };
 
-type AnySubject = Subject | CombinedSubject;
 type GradeSpec = number | [value: number, weight: number];
 
 const grades = (...specs: GradeSpec[]): Grade[] =>
@@ -96,23 +95,23 @@ const gymStudent = (profile: GymProfile, values: number[]): StudentData =>
 const PASSING = [4.5, 5, 4, 5.5];
 const FAILING = [3, 3.5, 2.5, 4];
 
-const CHOICE_VARIANTS: { name: string; profile: GymProfile }[] = [
+const LANGUAGE_AND_ARTS_VARIANTS: { name: string; profile: GymProfile }[] = [
   ...thirdLanguages.map((thirdLanguage) => ({
     name: `third language ${thirdLanguage}`,
     profile: { ...BASE_PROFILE, thirdLanguage },
   })),
   ...artsOptions.map((arts) => ({ name: `arts ${arts}`, profile: { ...BASE_PROFILE, arts } })),
+];
+
+const CHOICE_VARIANTS = [
+  ...LANGUAGE_AND_ARTS_VARIANTS,
   ...schwerpunktfaecher.map(({ id: spf }) => ({ name: `Schwerpunktfach ${spf}`, profile: { ...BASE_PROFILE, spf } })),
   ...ergaenzungsfaecher.map(({ id: ef }) => ({ name: `Ergänzungsfach ${ef}`, profile: { ...BASE_PROFILE, ef } })),
 ];
 
 // Whole students per kind of choice. The subject tables cover every single value.
-const STUDENT_VARIANTS: { name: string; profile: GymProfile }[] = [
-  ...thirdLanguages.map((thirdLanguage) => ({
-    name: `third language ${thirdLanguage}`,
-    profile: { ...BASE_PROFILE, thirdLanguage },
-  })),
-  ...artsOptions.map((arts) => ({ name: `arts ${arts}`, profile: { ...BASE_PROFILE, arts } })),
+const STUDENT_VARIANTS = [
+  ...LANGUAGE_AND_ARTS_VARIANTS,
   { name: 'language Schwerpunktfach', profile: { ...BASE_PROFILE, spf: 'latein' } },
   { name: 'Schwerpunktfach Spanisch', profile: { ...BASE_PROFILE, spf: 'spanisch' } },
   { name: 'Schwerpunktfach Wirtschaft und Recht', profile: { ...BASE_PROFILE, spf: 'wirtschaft-und-recht' } },
@@ -120,9 +119,7 @@ const STUDENT_VARIANTS: { name: string; profile: GymProfile }[] = [
   { name: 'choices not made yet', profile: {} },
 ];
 
-const values = (list: number[]) => list.map((value) => ({ name: String(value), input: { value } }));
-
-const subjectTree = 'A Subject is { id, name, grades: Grade[], kind?, oralGrade? }. A CombinedSubject (a Fach of Teilfächer) is { id, name, subjects: Subject[], unassignedGrades? }. A Grade is { id, value, weight, label?, semester?, date? }.';
+const valueCases = (list: number[]) => list.map((value) => ({ name: String(value), input: { value } }));
 
 const renamedCases = () =>
   Object.entries(renamedSubjectIds).flatMap(([oldId, newId]) => [
@@ -153,6 +150,10 @@ const splitCases = () =>
       {
         name: `split ${oldId} without grades: no unassigned list appears`,
         input: { existing: [flat(oldId)], defaults },
+      },
+      {
+        name: `split ${oldId}: its oral adjustment is dropped`,
+        input: { existing: [oral(flat(oldId, 5), 0.25)], defaults },
       },
       {
         name: `split ${oldId}: new grades join the ones already unassigned, after them`,
@@ -201,7 +202,7 @@ export const suites = (): SuiteDefinition[] => [
     description: 'Rounds to the nearest 0.5, used for every Fach and Teilfach grade. Ties go towards positive infinity.',
     input: '{ value: number }',
     expected: '{ result: number }',
-    cases: values([
+    cases: valueCases([
       0, 1, 3.74, 3.75, 3.76, 4, 4.24, 4.25, 4.26, 4.5, 4.75, 5.25, 5.75, 6,
       // the doubles just below a tie
       0.24999999999999997, 2.2499999999999996,
@@ -211,14 +212,14 @@ export const suites = (): SuiteDefinition[] => [
   },
   {
     operation: 'roundToTwoDecimals',
-    description: 'Rounds to two decimals, used for the average, deficit and surplus. Works on the double as stored, so 1.005 lands below its tie.',
+    description: 'Rounds to two decimals, used for the average, deficit and surplus. Grade values and weights are rounded this way on entry. Works on the double as stored, so 1.005 lands below its tie.',
     input: '{ value: number }',
     expected: '{ result: number }',
-    cases: values([0, 1.005, 1.015, 2.675, 4.125, 3.8333333333333335, 4.166666666666667, -0.125, -1.005]),
+    cases: valueCases([0, 1.005, 1.015, 2.675, 4.125, 3.8333333333333335, 4.166666666666667, -0.125, -1.005]),
   },
   {
     operation: 'finalGrade',
-    description: `The rounded grade of a Subject or CombinedSubject. The oral adjustment is added before rounding; a Fach averages its rounded Teilfach grades. ${subjectTree}`,
+    description: `The rounded grade of a Subject or CombinedSubject. The oral adjustment is added before rounding; a Fach averages its rounded Teilfach grades.`,
     input: '{ subject: Subject | CombinedSubject }',
     expected: '{ grade: number | null }',
     cases: [
@@ -246,6 +247,9 @@ export const suites = (): SuiteDefinition[] => [
       { name: 'Teilfach oral adjustment counts', input: { subject: fach('f', oral(flat('a', 4.2), 0.05), flat('b', 4)) } },
       { name: 'oral adjustment on an empty Teilfach does not count', input: { subject: fach('f', oral(flat('a'), 0.5), flat('b', 4)) } },
       { name: 'unassigned grades do not count', input: { subject: { ...fach('f', flat('a', 4)), unassignedGrades: grades(6) } } },
+      { name: 'a Teilfach with only zero weights counts as 0 in its Fach', input: { subject: fach('f', flat('a', [5, 0]), flat('b', 4)) } },
+      { name: 'a Teilfach brought to 0 by an oral adjustment counts as 0 in its Fach', input: { subject: fach('f', oral(flat('a', 4), -4), flat('b', 4)) } },
+      { name: 'a Teilfach below 0 lowers its Fach further', input: { subject: fach('f', oral(flat('a', 4), -5), flat('b', 4)) } },
       { name: 'only unassigned grades gives no grade', input: { subject: { ...fach('f', flat('a')), unassignedGrades: grades(6) } } },
     ],
   },
@@ -274,7 +278,7 @@ export const suites = (): SuiteDefinition[] => [
     operation: 'checkPromotion',
     description: 'The verdict and each condition for one year. Subjects without a grade are left out. FMS counts failures per Teilfach, and the average and deficit per Fach. The Gymnasium counts every Fach grade once.',
     input: '{ division: "FMS" | "Gymnasium", subjects: (Subject | CombinedSubject)[] }',
-    expected: '{ status: { isPassing, hasGrades, criteria: { failures: { passed, count, max }, average?: { passed, value, min }, deficit?: { passed, value, max }, compensation?: { passed, surplus, deficit, factor } } } }. FMS has average and deficit, the Gymnasium has compensation.',
+    expected: '{ verdict: PromotionVerdict, status: PromotionStatus }',
     cases: [
       ...(['FMS', 'Gymnasium'] as const).flatMap((division) => [
         { name: `${division}: no subjects`, input: { division, subjects: [] } },
@@ -293,6 +297,7 @@ export const suites = (): SuiteDefinition[] => [
       { name: 'FMS: a Fach with no grades is left out', input: { division: 'FMS', subjects: [fach('f', flat('a')), flat('b', 4)] } },
       { name: 'FMS: an empty Teilfach is left out', input: { division: 'FMS', subjects: [fach('f', flat('a'), flat('b', 3.5))] } },
       { name: 'FMS: a final grade at or below 0 is left out', input: { division: 'FMS', subjects: [oral(flat('a', 1), -2), flat('b', 4)] } },
+      { name: 'FMS: a Teilfach at 0 is no failure, but lowers its Fach', input: { division: 'FMS', subjects: [fach('f', flat('a', [5, 0]), flat('b', 4))] } },
       { name: 'Gymnasium: all at 4', input: { division: 'Gymnasium', subjects: flats(4, 4, 4) } },
       { name: 'Gymnasium: exactly 4 failures, compensated', input: { division: 'Gymnasium', subjects: flats(3.5, 3.5, 3.5, 3.5, 6, 6) } },
       { name: 'Gymnasium: 5 failures, compensated', input: { division: 'Gymnasium', subjects: flats(3.5, 3.5, 3.5, 3.5, 3.5, 6, 6, 6) } },
@@ -319,7 +324,7 @@ export const suites = (): SuiteDefinition[] => [
   {
     operation: 'gymSubjectTable',
     description: 'The Gymnasium subjects of one year, following the choices made. A choice not made yet is left out.',
-    input: '{ year: 1 | 2 | 3 | 4, profile?: { thirdLanguage?, arts?, spf?, ef? } }',
+    input: '{ year: 1 | 2 | 3 | 4, profile?: GymProfile }',
     expected: '{ subjects: Subject[] }, all without grades and in display order',
     cases: GYM_YEARS.flatMap((year) => [
       { name: `year ${year}, no profile`, input: { year } },
@@ -339,7 +344,7 @@ export const suites = (): SuiteDefinition[] => [
   {
     operation: 'effectiveThirdLanguage',
     description: 'The third language after the choices: a language Schwerpunktfach decides it.',
-    input: '{ profile: { thirdLanguage?, arts?, spf?, ef? } }',
+    input: '{ profile: GymProfile }',
     expected: '{ result: string | null }',
     cases: [
       { name: 'nothing chosen', input: { profile: {} } },
@@ -356,7 +361,7 @@ export const suites = (): SuiteDefinition[] => [
   {
     operation: 'isGymProfileComplete',
     description: 'Whether a student has made every choice needed in this year. The Ergänzungsfach is only needed from year 3.',
-    input: '{ year: 1 | 2 | 3 | 4, profile?: { thirdLanguage?, arts?, spf?, ef? } }',
+    input: '{ year: 1 | 2 | 3 | 4, profile?: GymProfile }',
     expected: '{ result: boolean }',
     cases: GYM_YEARS.flatMap((year) => [
       { name: `year ${year}, no profile`, input: { year } },
@@ -377,7 +382,7 @@ export const suites = (): SuiteDefinition[] => [
   },
   {
     operation: 'reconcileSubjectList',
-    description: `Builds a subject list from the current table, carrying over saved grades. Used on load and when the Berufsfeld changes. Follows renamed subjects, and keeps a split subject's grades as unassigned. ${subjectTree}`,
+    description: `Builds a subject list from the current table, carrying over saved grades. Used on load and when the Berufsfeld changes. Follows renamed subjects, and keeps a split subject's grades as unassigned.`,
     input: '{ existing: (Subject | CombinedSubject)[], defaults: (Subject | CombinedSubject)[] }',
     expected: '{ subjects: (Subject | CombinedSubject)[] }',
     cases: [
@@ -462,8 +467,8 @@ export const suites = (): SuiteDefinition[] => [
   },
   {
     operation: 'subjectsLosingGrades',
-    description: 'The subjects whose grades a change of Gymnasium choices would drop, for the warning before saving. newProfile replaces gymProfile and the data is reconciled, then this compares both. A subject lost in several years is listed once per year.',
-    input: '{ data: StudentData, newProfile: { thirdLanguage?, arts?, spf?, ef? } }',
+    description: 'The subjects whose grades a change of Gymnasium choices would drop, for the warning before saving. newProfile replaces gymProfile and the data is reconciled, then this compares both. A subject lost in several years is listed once per year here; the website shows each name once.',
+    input: '{ data: StudentData, newProfile: GymProfile }',
     expected: '{ names: string[] }',
     cases: [
       { name: 'same profile', input: { data: gymStudent(BASE_PROFILE, PASSING), newProfile: BASE_PROFILE } },
@@ -478,9 +483,9 @@ export const suites = (): SuiteDefinition[] => [
   },
   {
     operation: 'studentResult',
-    description: 'The whole rules seam: stored data in; the reconciled data, every grade and the verdict of every year out. Years are 1 to 3 for FMS and 1 to 4 for the Gymnasium. An FMS year 3 with no Berufsfeld has no subjects.',
+    description: 'The whole rules seam: stored data in; the reconciled data, every grade and the verdict of every year out. Years are 1 to 3 for FMS and 1 to 4 for the Gymnasium. An FMS year 3 with no Berufsfeld has no subjects. endsWithoutPromotion marks the year whose result leads to no promotion, which the website notes under the conditions.',
     input: '{ data: StudentData }, with studentInfo.division saying the Bildungsgang',
-    expected: '{ data: StudentData, years: { year, subjects: { id, name, grade: number | null, teilfaecher?: { id, name, grade }[] }[], promotion: PromotionStatus }[] }',
+    expected: '{ data: StudentData, years: { year, subjects: { id, name, grade: number | null, teilfaecher?: { id, name, grade }[] }[], verdict: PromotionVerdict, endsWithoutPromotion: boolean, promotion: PromotionStatus }[] }',
     cases: [
       { name: 'FMS with no grades', input: { data: student('FMS', {}) } },
       { name: 'Gymnasium with no grades', input: { data: student('Gymnasium', {}) } },

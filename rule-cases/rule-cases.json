@@ -7,9 +7,19 @@
     "Numbers are IEEE 754 doubles and must match exactly, with no tolerance.",
     "Rounding sends ties towards positive infinity: 4.25 to the half is 4.5, and -0.25 to the half is 0. Half-even rounding is wrong.",
     "A missing object key means the value is absent. Key order means nothing; array order does.",
-    "A null grade means the Fach has no Teilfach with grades, so it has no grade at all. The website computes NaN here. It is neither shown nor counted.",
-    "A grade of 0 means a Subject without grades. It is neither shown nor counted either."
+    "A null grade means the Fach has no Teilfach with grades, so it has no grade at all. The website computes NaN here.",
+    "A grade of 0 means a Subject with no grades or only zero weights.",
+    "Promotion leaves out null and every grade at or below 0. A Fach average leaves out only Teilfächer with no grades, so a Teilfach with grades that ends at 0 still counts."
   ],
+  "types": {
+    "Grade": "{ id, value, weight, label?, semester?: \"Herbstsemester\" | \"Frühlingssemester\", date? }. On entry, value is 1 to 6 and weight is above 0, both rounded to two decimals; date is an ISO date.",
+    "Subject": "{ id, name, grades: Grade[], kind?: \"spf\" | \"ef\", oralGrade? }. Told apart by its grades key.",
+    "CombinedSubject": "A Fach of Teilfächer: { id, name, subjects: Subject[], unassignedGrades?: Grade[] }. Told apart by its subjects key.",
+    "GymProfile": "{ thirdLanguage?, arts?, spf?, ef? }: names for the first two, ids from subjectChoices for the others.",
+    "StudentData": "{ studentInfo?: { name, division: \"FMS\" | \"Gymnasium\" }, currentYear: the selected year, 1 to 4, year3Direction?: a Berufsfeld id, gymProfile?: GymProfile, years: { \"1\" to \"4\": { subjects: (Subject | CombinedSubject)[] } } }",
+    "PromotionStatus": "{ isPassing, hasGrades, criteria: { failures: { passed, count, max }, average?: { passed, value, min }, deficit?: { passed, value, max }, compensation?: { passed, surplus, deficit, factor } } }. FMS has average and deficit, the Gymnasium has compensation.",
+    "PromotionVerdict": "\"noGrades\" | \"passing\" | \"notPassing\". What the student sees. Decide from this, because isPassing can be true with no grades."
+  },
   "suites": [
     {
       "operation": "roundToHalf",
@@ -40,7 +50,7 @@
     },
     {
       "operation": "roundToTwoDecimals",
-      "description": "Rounds to two decimals, used for the average, deficit and surplus. Works on the double as stored, so 1.005 lands below its tie.",
+      "description": "Rounds to two decimals, used for the average, deficit and surplus. Grade values and weights are rounded this way on entry. Works on the double as stored, so 1.005 lands below its tie.",
       "input": "{ value: number }",
       "expected": "{ result: number }",
       "cases": [
@@ -57,7 +67,7 @@
     },
     {
       "operation": "finalGrade",
-      "description": "The rounded grade of a Subject or CombinedSubject. The oral adjustment is added before rounding; a Fach averages its rounded Teilfach grades. A Subject is { id, name, grades: Grade[], kind?, oralGrade? }. A CombinedSubject (a Fach of Teilfächer) is { id, name, subjects: Subject[], unassignedGrades? }. A Grade is { id, value, weight, label?, semester?, date? }.",
+      "description": "The rounded grade of a Subject or CombinedSubject. The oral adjustment is added before rounding; a Fach averages its rounded Teilfach grades.",
       "input": "{ subject: Subject | CombinedSubject }",
       "expected": "{ grade: number | null }",
       "cases": [
@@ -261,6 +271,48 @@
           "expected": {"grade":4}
         },
         {
+          "name": "a Teilfach with only zero weights counts as 0 in its Fach",
+          "input": {
+            "subject": {
+              "id": "f",
+              "name": "f",
+              "subjects": [
+                {"id":"a","name":"a","grades":[{"id":"g1","value":5,"weight":0}]},
+                {"id":"b","name":"b","grades":[{"id":"g1","value":4,"weight":1}]}
+              ]
+            }
+          },
+          "expected": {"grade":2}
+        },
+        {
+          "name": "a Teilfach brought to 0 by an oral adjustment counts as 0 in its Fach",
+          "input": {
+            "subject": {
+              "id": "f",
+              "name": "f",
+              "subjects": [
+                {"id":"a","name":"a","grades":[{"id":"g1","value":4,"weight":1}],"oralGrade":-4},
+                {"id":"b","name":"b","grades":[{"id":"g1","value":4,"weight":1}]}
+              ]
+            }
+          },
+          "expected": {"grade":2}
+        },
+        {
+          "name": "a Teilfach below 0 lowers its Fach further",
+          "input": {
+            "subject": {
+              "id": "f",
+              "name": "f",
+              "subjects": [
+                {"id":"a","name":"a","grades":[{"id":"g1","value":4,"weight":1}],"oralGrade":-5},
+                {"id":"b","name":"b","grades":[{"id":"g1","value":4,"weight":1}]}
+              ]
+            }
+          },
+          "expected": {"grade":1.5}
+        },
+        {
           "name": "only unassigned grades gives no grade",
           "input": {
             "subject": {
@@ -334,12 +386,13 @@
       "operation": "checkPromotion",
       "description": "The verdict and each condition for one year. Subjects without a grade are left out. FMS counts failures per Teilfach, and the average and deficit per Fach. The Gymnasium counts every Fach grade once.",
       "input": "{ division: \"FMS\" | \"Gymnasium\", subjects: (Subject | CombinedSubject)[] }",
-      "expected": "{ status: { isPassing, hasGrades, criteria: { failures: { passed, count, max }, average?: { passed, value, min }, deficit?: { passed, value, max }, compensation?: { passed, surplus, deficit, factor } } } }. FMS has average and deficit, the Gymnasium has compensation.",
+      "expected": "{ verdict: PromotionVerdict, status: PromotionStatus }",
       "cases": [
         {
           "name": "FMS: no subjects",
           "input": {"division":"FMS","subjects":[]},
           "expected": {
+            "verdict": "noGrades",
             "status": {
               "isPassing": false,
               "hasGrades": false,
@@ -358,6 +411,7 @@
             "subjects": [{"id":"a","name":"a","grades":[]},{"id":"f","name":"f","subjects":[{"id":"b","name":"b","grades":[]}]}]
           },
           "expected": {
+            "verdict": "noGrades",
             "status": {
               "isPassing": false,
               "hasGrades": false,
@@ -373,6 +427,7 @@
           "name": "Gymnasium: no subjects",
           "input": {"division":"Gymnasium","subjects":[]},
           "expected": {
+            "verdict": "noGrades",
             "status": {
               "isPassing": true,
               "hasGrades": false,
@@ -390,6 +445,7 @@
             "subjects": [{"id":"a","name":"a","grades":[]},{"id":"f","name":"f","subjects":[{"id":"b","name":"b","grades":[]}]}]
           },
           "expected": {
+            "verdict": "noGrades",
             "status": {
               "isPassing": true,
               "hasGrades": false,
@@ -411,6 +467,7 @@
             ]
           },
           "expected": {
+            "verdict": "passing",
             "status": {
               "isPassing": true,
               "hasGrades": true,
@@ -436,6 +493,7 @@
             ]
           },
           "expected": {
+            "verdict": "passing",
             "status": {
               "isPassing": true,
               "hasGrades": true,
@@ -463,6 +521,7 @@
             ]
           },
           "expected": {
+            "verdict": "notPassing",
             "status": {
               "isPassing": false,
               "hasGrades": true,
@@ -485,6 +544,7 @@
             ]
           },
           "expected": {
+            "verdict": "notPassing",
             "status": {
               "isPassing": false,
               "hasGrades": true,
@@ -507,6 +567,7 @@
             ]
           },
           "expected": {
+            "verdict": "passing",
             "status": {
               "isPassing": true,
               "hasGrades": true,
@@ -529,6 +590,7 @@
             ]
           },
           "expected": {
+            "verdict": "passing",
             "status": {
               "isPassing": true,
               "hasGrades": true,
@@ -551,6 +613,7 @@
             ]
           },
           "expected": {
+            "verdict": "notPassing",
             "status": {
               "isPassing": false,
               "hasGrades": true,
@@ -574,6 +637,7 @@
             ]
           },
           "expected": {
+            "verdict": "notPassing",
             "status": {
               "isPassing": false,
               "hasGrades": true,
@@ -603,6 +667,7 @@
             ]
           },
           "expected": {
+            "verdict": "passing",
             "status": {
               "isPassing": true,
               "hasGrades": true,
@@ -636,6 +701,7 @@
             ]
           },
           "expected": {
+            "verdict": "notPassing",
             "status": {
               "isPassing": false,
               "hasGrades": true,
@@ -657,6 +723,7 @@
             ]
           },
           "expected": {
+            "verdict": "passing",
             "status": {
               "isPassing": true,
               "hasGrades": true,
@@ -681,6 +748,7 @@
             ]
           },
           "expected": {
+            "verdict": "notPassing",
             "status": {
               "isPassing": false,
               "hasGrades": true,
@@ -702,6 +770,7 @@
             ]
           },
           "expected": {
+            "verdict": "passing",
             "status": {
               "isPassing": true,
               "hasGrades": true,
@@ -709,6 +778,34 @@
                 "failures": {"passed":true,"count":0,"max":3},
                 "average": {"passed":true,"value":4,"min":4},
                 "deficit": {"passed":true,"value":0,"max":2}
+              }
+            }
+          }
+        },
+        {
+          "name": "FMS: a Teilfach at 0 is no failure, but lowers its Fach",
+          "input": {
+            "division": "FMS",
+            "subjects": [
+              {
+                "id": "f",
+                "name": "f",
+                "subjects": [
+                  {"id":"a","name":"a","grades":[{"id":"g1","value":5,"weight":0}]},
+                  {"id":"b","name":"b","grades":[{"id":"g1","value":4,"weight":1}]}
+                ]
+              }
+            ]
+          },
+          "expected": {
+            "verdict": "notPassing",
+            "status": {
+              "isPassing": false,
+              "hasGrades": true,
+              "criteria": {
+                "failures": {"passed":true,"count":0,"max":3},
+                "average": {"passed":false,"value":2,"min":4},
+                "deficit": {"passed":true,"value":2,"max":2}
               }
             }
           }
@@ -724,6 +821,7 @@
             ]
           },
           "expected": {
+            "verdict": "passing",
             "status": {
               "isPassing": true,
               "hasGrades": true,
@@ -748,6 +846,7 @@
             ]
           },
           "expected": {
+            "verdict": "passing",
             "status": {
               "isPassing": true,
               "hasGrades": true,
@@ -774,6 +873,7 @@
             ]
           },
           "expected": {
+            "verdict": "notPassing",
             "status": {
               "isPassing": false,
               "hasGrades": true,
@@ -794,6 +894,7 @@
             ]
           },
           "expected": {
+            "verdict": "passing",
             "status": {
               "isPassing": true,
               "hasGrades": true,
@@ -814,6 +915,7 @@
             ]
           },
           "expected": {
+            "verdict": "notPassing",
             "status": {
               "isPassing": false,
               "hasGrades": true,
@@ -834,6 +936,7 @@
             ]
           },
           "expected": {
+            "verdict": "notPassing",
             "status": {
               "isPassing": false,
               "hasGrades": true,
@@ -860,6 +963,7 @@
             ]
           },
           "expected": {
+            "verdict": "passing",
             "status": {
               "isPassing": true,
               "hasGrades": true,
@@ -1072,7 +1176,7 @@
     {
       "operation": "gymSubjectTable",
       "description": "The Gymnasium subjects of one year, following the choices made. A choice not made yet is left out.",
-      "input": "{ year: 1 | 2 | 3 | 4, profile?: { thirdLanguage?, arts?, spf?, ef? } }",
+      "input": "{ year: 1 | 2 | 3 | 4, profile?: GymProfile }",
       "expected": "{ subjects: Subject[] }, all without grades and in display order",
       "cases": [
         {
@@ -3763,7 +3867,7 @@
     {
       "operation": "effectiveThirdLanguage",
       "description": "The third language after the choices: a language Schwerpunktfach decides it.",
-      "input": "{ profile: { thirdLanguage?, arts?, spf?, ef? } }",
+      "input": "{ profile: GymProfile }",
       "expected": "{ result: string | null }",
       "cases": [
         {"name":"nothing chosen","input":{"profile":{}},"expected":{"result":null}},
@@ -3838,7 +3942,7 @@
     {
       "operation": "isGymProfileComplete",
       "description": "Whether a student has made every choice needed in this year. The Ergänzungsfach is only needed from year 3.",
-      "input": "{ year: 1 | 2 | 3 | 4, profile?: { thirdLanguage?, arts?, spf?, ef? } }",
+      "input": "{ year: 1 | 2 | 3 | 4, profile?: GymProfile }",
       "expected": "{ result: boolean }",
       "cases": [
         {"name":"year 1, no profile","input":{"year":1},"expected":{"result":false}},
@@ -4073,7 +4177,7 @@
     },
     {
       "operation": "reconcileSubjectList",
-      "description": "Builds a subject list from the current table, carrying over saved grades. Used on load and when the Berufsfeld changes. Follows renamed subjects, and keeps a split subject's grades as unassigned. A Subject is { id, name, grades: Grade[], kind?, oralGrade? }. A CombinedSubject (a Fach of Teilfächer) is { id, name, subjects: Subject[], unassignedGrades? }. A Grade is { id, value, weight, label?, semester?, date? }.",
+      "description": "Builds a subject list from the current table, carrying over saved grades. Used on load and when the Berufsfeld changes. Follows renamed subjects, and keeps a split subject's grades as unassigned.",
       "input": "{ existing: (Subject | CombinedSubject)[], defaults: (Subject | CombinedSubject)[] }",
       "expected": "{ subjects: (Subject | CombinedSubject)[] }",
       "cases": [
@@ -4583,6 +4687,42 @@
                   {"id":"teilfach-a","name":"teilfach-a","grades":[]},
                   {"id":"teilfach-b","name":"teilfach-b","grades":[]}
                 ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "split berufseinblicke: its oral adjustment is dropped",
+          "input": {
+            "existing": [
+              {
+                "id": "berufseinblicke",
+                "name": "berufseinblicke",
+                "grades": [{"id":"g1","value":5,"weight":1}],
+                "oralGrade": 0.25
+              }
+            ],
+            "defaults": [
+              {
+                "id": "berufsfeldeinblicke",
+                "name": "berufsfeldeinblicke",
+                "subjects": [
+                  {"id":"teilfach-a","name":"teilfach-a","grades":[]},
+                  {"id":"teilfach-b","name":"teilfach-b","grades":[]}
+                ]
+              }
+            ]
+          },
+          "expected": {
+            "subjects": [
+              {
+                "id": "berufsfeldeinblicke",
+                "name": "berufsfeldeinblicke",
+                "subjects": [
+                  {"id":"teilfach-a","name":"teilfach-a","grades":[]},
+                  {"id":"teilfach-b","name":"teilfach-b","grades":[]}
+                ],
+                "unassignedGrades": [{"id":"g1","value":5,"weight":1}]
               }
             ]
           }
@@ -8291,8 +8431,8 @@
     },
     {
       "operation": "subjectsLosingGrades",
-      "description": "The subjects whose grades a change of Gymnasium choices would drop, for the warning before saving. newProfile replaces gymProfile and the data is reconciled, then this compares both. A subject lost in several years is listed once per year.",
-      "input": "{ data: StudentData, newProfile: { thirdLanguage?, arts?, spf?, ef? } }",
+      "description": "The subjects whose grades a change of Gymnasium choices would drop, for the warning before saving. newProfile replaces gymProfile and the data is reconciled, then this compares both. A subject lost in several years is listed once per year here; the website shows each name once.",
+      "input": "{ data: StudentData, newProfile: GymProfile }",
       "expected": "{ names: string[] }",
       "cases": [
         {
@@ -9156,9 +9296,9 @@
     },
     {
       "operation": "studentResult",
-      "description": "The whole rules seam: stored data in; the reconciled data, every grade and the verdict of every year out. Years are 1 to 3 for FMS and 1 to 4 for the Gymnasium. An FMS year 3 with no Berufsfeld has no subjects.",
+      "description": "The whole rules seam: stored data in; the reconciled data, every grade and the verdict of every year out. Years are 1 to 3 for FMS and 1 to 4 for the Gymnasium. An FMS year 3 with no Berufsfeld has no subjects. endsWithoutPromotion marks the year whose result leads to no promotion, which the website notes under the conditions.",
       "input": "{ data: StudentData }, with studentInfo.division saying the Bildungsgang",
-      "expected": "{ data: StudentData, years: { year, subjects: { id, name, grade: number | null, teilfaecher?: { id, name, grade }[] }[], promotion: PromotionStatus }[] }",
+      "expected": "{ data: StudentData, years: { year, subjects: { id, name, grade: number | null, teilfaecher?: { id, name, grade }[] }[], verdict: PromotionVerdict, endsWithoutPromotion: boolean, promotion: PromotionStatus }[] }",
       "cases": [
         {
           "name": "FMS with no grades",
@@ -9301,6 +9441,8 @@
                     ]
                   }
                 ],
+                "verdict": "noGrades",
+                "endsWithoutPromotion": false,
                 "promotion": {
                   "isPassing": false,
                   "hasGrades": false,
@@ -9358,6 +9500,8 @@
                     ]
                   }
                 ],
+                "verdict": "noGrades",
+                "endsWithoutPromotion": false,
                 "promotion": {
                   "isPassing": false,
                   "hasGrades": false,
@@ -9371,6 +9515,8 @@
               {
                 "year": 3,
                 "subjects": [],
+                "verdict": "noGrades",
+                "endsWithoutPromotion": false,
                 "promotion": {
                   "isPassing": false,
                   "hasGrades": false,
@@ -9460,6 +9606,8 @@
                   {"id":"geografie","name":"Geografie","grade":0},
                   {"id":"geschichte","name":"Geschichte","grade":0}
                 ],
+                "verdict": "noGrades",
+                "endsWithoutPromotion": false,
                 "promotion": {
                   "isPassing": true,
                   "hasGrades": false,
@@ -9483,6 +9631,8 @@
                   {"id":"geschichte","name":"Geschichte","grade":0},
                   {"id":"einführung-in-wirtschaft-und-recht","name":"Einführung in Wirtschaft und Recht","grade":0}
                 ],
+                "verdict": "noGrades",
+                "endsWithoutPromotion": false,
                 "promotion": {
                   "isPassing": true,
                   "hasGrades": false,
@@ -9503,6 +9653,8 @@
                   {"id":"physik","name":"Physik","grade":0},
                   {"id":"geschichte","name":"Geschichte","grade":0}
                 ],
+                "verdict": "noGrades",
+                "endsWithoutPromotion": false,
                 "promotion": {
                   "isPassing": true,
                   "hasGrades": false,
@@ -9522,6 +9674,8 @@
                   {"id":"geografie","name":"Geografie","grade":0},
                   {"id":"geschichte","name":"Geschichte","grade":0}
                 ],
+                "verdict": "noGrades",
+                "endsWithoutPromotion": true,
                 "promotion": {
                   "isPassing": true,
                   "hasGrades": false,
@@ -9889,6 +10043,8 @@
                     ]
                   }
                 ],
+                "verdict": "passing",
+                "endsWithoutPromotion": false,
                 "promotion": {
                   "isPassing": true,
                   "hasGrades": true,
@@ -9946,6 +10102,8 @@
                     ]
                   }
                 ],
+                "verdict": "passing",
+                "endsWithoutPromotion": false,
                 "promotion": {
                   "isPassing": true,
                   "hasGrades": true,
@@ -9983,6 +10141,8 @@
                     ]
                   }
                 ],
+                "verdict": "passing",
+                "endsWithoutPromotion": false,
                 "promotion": {
                   "isPassing": true,
                   "hasGrades": true,
@@ -10367,6 +10527,8 @@
                     ]
                   }
                 ],
+                "verdict": "notPassing",
+                "endsWithoutPromotion": false,
                 "promotion": {
                   "isPassing": false,
                   "hasGrades": true,
@@ -10424,6 +10586,8 @@
                     ]
                   }
                 ],
+                "verdict": "notPassing",
+                "endsWithoutPromotion": false,
                 "promotion": {
                   "isPassing": false,
                   "hasGrades": true,
@@ -10461,6 +10625,8 @@
                     ]
                   }
                 ],
+                "verdict": "notPassing",
+                "endsWithoutPromotion": false,
                 "promotion": {
                   "isPassing": false,
                   "hasGrades": true,
@@ -10837,6 +11003,8 @@
                     ]
                   }
                 ],
+                "verdict": "passing",
+                "endsWithoutPromotion": false,
                 "promotion": {
                   "isPassing": true,
                   "hasGrades": true,
@@ -10894,6 +11062,8 @@
                     ]
                   }
                 ],
+                "verdict": "passing",
+                "endsWithoutPromotion": false,
                 "promotion": {
                   "isPassing": true,
                   "hasGrades": true,
@@ -10934,6 +11104,8 @@
                     ]
                   }
                 ],
+                "verdict": "passing",
+                "endsWithoutPromotion": false,
                 "promotion": {
                   "isPassing": true,
                   "hasGrades": true,
@@ -11326,6 +11498,8 @@
                     ]
                   }
                 ],
+                "verdict": "notPassing",
+                "endsWithoutPromotion": false,
                 "promotion": {
                   "isPassing": false,
                   "hasGrades": true,
@@ -11383,6 +11557,8 @@
                     ]
                   }
                 ],
+                "verdict": "notPassing",
+                "endsWithoutPromotion": false,
                 "promotion": {
                   "isPassing": false,
                   "hasGrades": true,
@@ -11423,6 +11599,8 @@
                     ]
                   }
                 ],
+                "verdict": "notPassing",
+                "endsWithoutPromotion": false,
                 "promotion": {
                   "isPassing": false,
                   "hasGrades": true,
@@ -11803,6 +11981,8 @@
                     ]
                   }
                 ],
+                "verdict": "passing",
+                "endsWithoutPromotion": false,
                 "promotion": {
                   "isPassing": true,
                   "hasGrades": true,
@@ -11860,6 +12040,8 @@
                     ]
                   }
                 ],
+                "verdict": "passing",
+                "endsWithoutPromotion": false,
                 "promotion": {
                   "isPassing": true,
                   "hasGrades": true,
@@ -11911,6 +12093,8 @@
                     ]
                   }
                 ],
+                "verdict": "passing",
+                "endsWithoutPromotion": false,
                 "promotion": {
                   "isPassing": true,
                   "hasGrades": true,
@@ -12307,6 +12491,8 @@
                     ]
                   }
                 ],
+                "verdict": "notPassing",
+                "endsWithoutPromotion": false,
                 "promotion": {
                   "isPassing": false,
                   "hasGrades": true,
@@ -12364,6 +12550,8 @@
                     ]
                   }
                 ],
+                "verdict": "notPassing",
+                "endsWithoutPromotion": false,
                 "promotion": {
                   "isPassing": false,
                   "hasGrades": true,
@@ -12415,6 +12603,8 @@
                     ]
                   }
                 ],
+                "verdict": "notPassing",
+                "endsWithoutPromotion": false,
                 "promotion": {
                   "isPassing": false,
                   "hasGrades": true,
@@ -12599,6 +12789,8 @@
                     ]
                   }
                 ],
+                "verdict": "passing",
+                "endsWithoutPromotion": false,
                 "promotion": {
                   "isPassing": true,
                   "hasGrades": true,
@@ -12656,6 +12848,8 @@
                     ]
                   }
                 ],
+                "verdict": "passing",
+                "endsWithoutPromotion": false,
                 "promotion": {
                   "isPassing": true,
                   "hasGrades": true,
@@ -12669,6 +12863,8 @@
               {
                 "year": 3,
                 "subjects": [],
+                "verdict": "noGrades",
+                "endsWithoutPromotion": false,
                 "promotion": {
                   "isPassing": false,
                   "hasGrades": false,
@@ -12907,6 +13103,8 @@
                   {"id":"musik","name":"Musik","grade":5},
                   {"id":"spf-biologie-chemie","name":"Biologie und Chemie","grade":4}
                 ],
+                "verdict": "passing",
+                "endsWithoutPromotion": false,
                 "promotion": {
                   "isPassing": true,
                   "hasGrades": true,
@@ -12933,6 +13131,8 @@
                   {"id":"musik","name":"Musik","grade":5.5},
                   {"id":"spf-biologie-chemie","name":"Biologie und Chemie","grade":4.5}
                 ],
+                "verdict": "passing",
+                "endsWithoutPromotion": false,
                 "promotion": {
                   "isPassing": true,
                   "hasGrades": true,
@@ -12957,6 +13157,8 @@
                   {"id":"spf-biologie-chemie","name":"Biologie und Chemie","grade":5},
                   {"id":"ef-informatik","name":"Informatik","grade":4}
                 ],
+                "verdict": "passing",
+                "endsWithoutPromotion": false,
                 "promotion": {
                   "isPassing": true,
                   "hasGrades": true,
@@ -12980,6 +13182,8 @@
                   {"id":"spf-biologie-chemie","name":"Biologie und Chemie","grade":4.5},
                   {"id":"ef-informatik","name":"Informatik","grade":5}
                 ],
+                "verdict": "passing",
+                "endsWithoutPromotion": true,
                 "promotion": {
                   "isPassing": true,
                   "hasGrades": true,
@@ -13217,6 +13421,8 @@
                   {"id":"musik","name":"Musik","grade":3.5},
                   {"id":"spf-biologie-chemie","name":"Biologie und Chemie","grade":2.5}
                 ],
+                "verdict": "notPassing",
+                "endsWithoutPromotion": false,
                 "promotion": {
                   "isPassing": false,
                   "hasGrades": true,
@@ -13243,6 +13449,8 @@
                   {"id":"musik","name":"Musik","grade":4},
                   {"id":"spf-biologie-chemie","name":"Biologie und Chemie","grade":3}
                 ],
+                "verdict": "notPassing",
+                "endsWithoutPromotion": false,
                 "promotion": {
                   "isPassing": false,
                   "hasGrades": true,
@@ -13267,6 +13475,8 @@
                   {"id":"spf-biologie-chemie","name":"Biologie und Chemie","grade":3.5},
                   {"id":"ef-informatik","name":"Informatik","grade":2.5}
                 ],
+                "verdict": "notPassing",
+                "endsWithoutPromotion": false,
                 "promotion": {
                   "isPassing": false,
                   "hasGrades": true,
@@ -13290,6 +13500,8 @@
                   {"id":"spf-biologie-chemie","name":"Biologie und Chemie","grade":3},
                   {"id":"ef-informatik","name":"Informatik","grade":3.5}
                 ],
+                "verdict": "notPassing",
+                "endsWithoutPromotion": true,
                 "promotion": {
                   "isPassing": false,
                   "hasGrades": true,
@@ -13527,6 +13739,8 @@
                   {"id":"musik","name":"Musik","grade":5},
                   {"id":"spf-biologie-chemie","name":"Biologie und Chemie","grade":4}
                 ],
+                "verdict": "passing",
+                "endsWithoutPromotion": false,
                 "promotion": {
                   "isPassing": true,
                   "hasGrades": true,
@@ -13553,6 +13767,8 @@
                   {"id":"musik","name":"Musik","grade":5.5},
                   {"id":"spf-biologie-chemie","name":"Biologie und Chemie","grade":4.5}
                 ],
+                "verdict": "passing",
+                "endsWithoutPromotion": false,
                 "promotion": {
                   "isPassing": true,
                   "hasGrades": true,
@@ -13577,6 +13793,8 @@
                   {"id":"spf-biologie-chemie","name":"Biologie und Chemie","grade":5},
                   {"id":"ef-informatik","name":"Informatik","grade":4}
                 ],
+                "verdict": "passing",
+                "endsWithoutPromotion": false,
                 "promotion": {
                   "isPassing": true,
                   "hasGrades": true,
@@ -13600,6 +13818,8 @@
                   {"id":"spf-biologie-chemie","name":"Biologie und Chemie","grade":4.5},
                   {"id":"ef-informatik","name":"Informatik","grade":5}
                 ],
+                "verdict": "passing",
+                "endsWithoutPromotion": true,
                 "promotion": {
                   "isPassing": true,
                   "hasGrades": true,
@@ -13837,6 +14057,8 @@
                   {"id":"musik","name":"Musik","grade":5},
                   {"id":"spf-biologie-chemie","name":"Biologie und Chemie","grade":4}
                 ],
+                "verdict": "passing",
+                "endsWithoutPromotion": false,
                 "promotion": {
                   "isPassing": true,
                   "hasGrades": true,
@@ -13863,6 +14085,8 @@
                   {"id":"musik","name":"Musik","grade":5.5},
                   {"id":"spf-biologie-chemie","name":"Biologie und Chemie","grade":4.5}
                 ],
+                "verdict": "passing",
+                "endsWithoutPromotion": false,
                 "promotion": {
                   "isPassing": true,
                   "hasGrades": true,
@@ -13887,6 +14111,8 @@
                   {"id":"spf-biologie-chemie","name":"Biologie und Chemie","grade":5},
                   {"id":"ef-informatik","name":"Informatik","grade":4}
                 ],
+                "verdict": "passing",
+                "endsWithoutPromotion": false,
                 "promotion": {
                   "isPassing": true,
                   "hasGrades": true,
@@ -13910,6 +14136,8 @@
                   {"id":"spf-biologie-chemie","name":"Biologie und Chemie","grade":4.5},
                   {"id":"ef-informatik","name":"Informatik","grade":5}
                 ],
+                "verdict": "passing",
+                "endsWithoutPromotion": true,
                 "promotion": {
                   "isPassing": true,
                   "hasGrades": true,
@@ -14147,6 +14375,8 @@
                   {"id":"musik","name":"Musik","grade":5},
                   {"id":"spf-biologie-chemie","name":"Biologie und Chemie","grade":4}
                 ],
+                "verdict": "passing",
+                "endsWithoutPromotion": false,
                 "promotion": {
                   "isPassing": true,
                   "hasGrades": true,
@@ -14173,6 +14403,8 @@
                   {"id":"musik","name":"Musik","grade":5.5},
                   {"id":"spf-biologie-chemie","name":"Biologie und Chemie","grade":4.5}
                 ],
+                "verdict": "passing",
+                "endsWithoutPromotion": false,
                 "promotion": {
                   "isPassing": true,
                   "hasGrades": true,
@@ -14197,6 +14429,8 @@
                   {"id":"spf-biologie-chemie","name":"Biologie und Chemie","grade":5},
                   {"id":"ef-informatik","name":"Informatik","grade":4}
                 ],
+                "verdict": "passing",
+                "endsWithoutPromotion": false,
                 "promotion": {
                   "isPassing": true,
                   "hasGrades": true,
@@ -14220,6 +14454,8 @@
                   {"id":"spf-biologie-chemie","name":"Biologie und Chemie","grade":4.5},
                   {"id":"ef-informatik","name":"Informatik","grade":5}
                 ],
+                "verdict": "passing",
+                "endsWithoutPromotion": true,
                 "promotion": {
                   "isPassing": true,
                   "hasGrades": true,
@@ -14489,6 +14725,8 @@
                   {"id":"bildnerisches-gestalten","name":"Bildnerisches Gestalten","grade":5},
                   {"id":"spf-biologie-chemie","name":"Biologie und Chemie","grade":4}
                 ],
+                "verdict": "passing",
+                "endsWithoutPromotion": false,
                 "promotion": {
                   "isPassing": true,
                   "hasGrades": true,
@@ -14515,6 +14753,8 @@
                   {"id":"bildnerisches-gestalten","name":"Bildnerisches Gestalten","grade":5.5},
                   {"id":"spf-biologie-chemie","name":"Biologie und Chemie","grade":4.5}
                 ],
+                "verdict": "passing",
+                "endsWithoutPromotion": false,
                 "promotion": {
                   "isPassing": true,
                   "hasGrades": true,
@@ -14539,6 +14779,8 @@
                   {"id":"spf-biologie-chemie","name":"Biologie und Chemie","grade":5},
                   {"id":"ef-informatik","name":"Informatik","grade":4}
                 ],
+                "verdict": "passing",
+                "endsWithoutPromotion": false,
                 "promotion": {
                   "isPassing": true,
                   "hasGrades": true,
@@ -14562,6 +14804,8 @@
                   {"id":"spf-biologie-chemie","name":"Biologie und Chemie","grade":4.5},
                   {"id":"ef-informatik","name":"Informatik","grade":5}
                 ],
+                "verdict": "passing",
+                "endsWithoutPromotion": true,
                 "promotion": {
                   "isPassing": true,
                   "hasGrades": true,
@@ -14799,6 +15043,8 @@
                   {"id":"musik","name":"Musik","grade":5},
                   {"id":"spf-biologie-chemie","name":"Biologie und Chemie","grade":4}
                 ],
+                "verdict": "passing",
+                "endsWithoutPromotion": false,
                 "promotion": {
                   "isPassing": true,
                   "hasGrades": true,
@@ -14825,6 +15071,8 @@
                   {"id":"musik","name":"Musik","grade":5.5},
                   {"id":"spf-biologie-chemie","name":"Biologie und Chemie","grade":4.5}
                 ],
+                "verdict": "passing",
+                "endsWithoutPromotion": false,
                 "promotion": {
                   "isPassing": true,
                   "hasGrades": true,
@@ -14849,6 +15097,8 @@
                   {"id":"spf-biologie-chemie","name":"Biologie und Chemie","grade":5},
                   {"id":"ef-informatik","name":"Informatik","grade":4}
                 ],
+                "verdict": "passing",
+                "endsWithoutPromotion": false,
                 "promotion": {
                   "isPassing": true,
                   "hasGrades": true,
@@ -14872,6 +15122,8 @@
                   {"id":"spf-biologie-chemie","name":"Biologie und Chemie","grade":4.5},
                   {"id":"ef-informatik","name":"Informatik","grade":5}
                 ],
+                "verdict": "passing",
+                "endsWithoutPromotion": true,
                 "promotion": {
                   "isPassing": true,
                   "hasGrades": true,
@@ -15080,6 +15332,8 @@
                   {"id":"geschichte","name":"Geschichte","grade":4.5},
                   {"id":"musik","name":"Musik","grade":5}
                 ],
+                "verdict": "passing",
+                "endsWithoutPromotion": false,
                 "promotion": {
                   "isPassing": true,
                   "hasGrades": true,
@@ -15105,6 +15359,8 @@
                   {"id":"einführung-in-wirtschaft-und-recht","name":"Einführung in Wirtschaft und Recht","grade":4},
                   {"id":"musik","name":"Musik","grade":5.5}
                 ],
+                "verdict": "passing",
+                "endsWithoutPromotion": false,
                 "promotion": {
                   "isPassing": true,
                   "hasGrades": true,
@@ -15128,6 +15384,8 @@
                   {"id":"spf-latein","name":"Latein","grade":4.5},
                   {"id":"ef-informatik","name":"Informatik","grade":5}
                 ],
+                "verdict": "passing",
+                "endsWithoutPromotion": false,
                 "promotion": {
                   "isPassing": true,
                   "hasGrades": true,
@@ -15150,6 +15408,8 @@
                   {"id":"spf-latein","name":"Latein","grade":5.5},
                   {"id":"ef-informatik","name":"Informatik","grade":4.5}
                 ],
+                "verdict": "passing",
+                "endsWithoutPromotion": true,
                 "promotion": {
                   "isPassing": true,
                   "hasGrades": true,
@@ -15387,6 +15647,8 @@
                   {"id":"musik","name":"Musik","grade":5},
                   {"id":"spf-spanisch","name":"Spanisch","grade":4}
                 ],
+                "verdict": "passing",
+                "endsWithoutPromotion": false,
                 "promotion": {
                   "isPassing": true,
                   "hasGrades": true,
@@ -15413,6 +15675,8 @@
                   {"id":"musik","name":"Musik","grade":5.5},
                   {"id":"spf-spanisch","name":"Spanisch","grade":4.5}
                 ],
+                "verdict": "passing",
+                "endsWithoutPromotion": false,
                 "promotion": {
                   "isPassing": true,
                   "hasGrades": true,
@@ -15437,6 +15701,8 @@
                   {"id":"spf-spanisch","name":"Spanisch","grade":5},
                   {"id":"ef-informatik","name":"Informatik","grade":4}
                 ],
+                "verdict": "passing",
+                "endsWithoutPromotion": false,
                 "promotion": {
                   "isPassing": true,
                   "hasGrades": true,
@@ -15460,6 +15726,8 @@
                   {"id":"spf-spanisch","name":"Spanisch","grade":4.5},
                   {"id":"ef-informatik","name":"Informatik","grade":5}
                 ],
+                "verdict": "passing",
+                "endsWithoutPromotion": true,
                 "promotion": {
                   "isPassing": true,
                   "hasGrades": true,
@@ -15687,6 +15955,8 @@
                   {"id":"musik","name":"Musik","grade":5},
                   {"id":"spf-wirtschaft-und-recht","name":"Wirtschaft und Recht","grade":4}
                 ],
+                "verdict": "passing",
+                "endsWithoutPromotion": false,
                 "promotion": {
                   "isPassing": true,
                   "hasGrades": true,
@@ -15712,6 +15982,8 @@
                   {"id":"musik","name":"Musik","grade":4},
                   {"id":"spf-wirtschaft-und-recht","name":"Wirtschaft und Recht","grade":5.5}
                 ],
+                "verdict": "passing",
+                "endsWithoutPromotion": false,
                 "promotion": {
                   "isPassing": true,
                   "hasGrades": true,
@@ -15736,6 +16008,8 @@
                   {"id":"spf-wirtschaft-und-recht","name":"Wirtschaft und Recht","grade":5},
                   {"id":"ef-informatik","name":"Informatik","grade":4}
                 ],
+                "verdict": "passing",
+                "endsWithoutPromotion": false,
                 "promotion": {
                   "isPassing": true,
                   "hasGrades": true,
@@ -15759,6 +16033,8 @@
                   {"id":"spf-wirtschaft-und-recht","name":"Wirtschaft und Recht","grade":4.5},
                   {"id":"ef-informatik","name":"Informatik","grade":5}
                 ],
+                "verdict": "passing",
+                "endsWithoutPromotion": true,
                 "promotion": {
                   "isPassing": true,
                   "hasGrades": true,
@@ -15976,6 +16252,8 @@
                   {"id":"musik","name":"Musik","grade":5},
                   {"id":"spf-biologie-chemie","name":"Biologie und Chemie","grade":4}
                 ],
+                "verdict": "passing",
+                "endsWithoutPromotion": false,
                 "promotion": {
                   "isPassing": true,
                   "hasGrades": true,
@@ -16002,6 +16280,8 @@
                   {"id":"musik","name":"Musik","grade":5.5},
                   {"id":"spf-biologie-chemie","name":"Biologie und Chemie","grade":4.5}
                 ],
+                "verdict": "passing",
+                "endsWithoutPromotion": false,
                 "promotion": {
                   "isPassing": true,
                   "hasGrades": true,
@@ -16026,6 +16306,8 @@
                   {"id":"spf-biologie-chemie","name":"Biologie und Chemie","grade":5},
                   {"id":"ef-sport","name":"Sport","grade":4}
                 ],
+                "verdict": "passing",
+                "endsWithoutPromotion": false,
                 "promotion": {
                   "isPassing": true,
                   "hasGrades": true,
@@ -16049,6 +16331,8 @@
                   {"id":"spf-biologie-chemie","name":"Biologie und Chemie","grade":4.5},
                   {"id":"ef-sport","name":"Sport","grade":5}
                 ],
+                "verdict": "passing",
+                "endsWithoutPromotion": true,
                 "promotion": {
                   "isPassing": true,
                   "hasGrades": true,
@@ -16195,6 +16479,8 @@
                   {"id":"geografie","name":"Geografie","grade":4},
                   {"id":"geschichte","name":"Geschichte","grade":5.5}
                 ],
+                "verdict": "passing",
+                "endsWithoutPromotion": false,
                 "promotion": {
                   "isPassing": true,
                   "hasGrades": true,
@@ -16218,6 +16504,8 @@
                   {"id":"geschichte","name":"Geschichte","grade":4.5},
                   {"id":"einführung-in-wirtschaft-und-recht","name":"Einführung in Wirtschaft und Recht","grade":5}
                 ],
+                "verdict": "passing",
+                "endsWithoutPromotion": false,
                 "promotion": {
                   "isPassing": true,
                   "hasGrades": true,
@@ -16238,6 +16526,8 @@
                   {"id":"physik","name":"Physik","grade":5},
                   {"id":"geschichte","name":"Geschichte","grade":4}
                 ],
+                "verdict": "passing",
+                "endsWithoutPromotion": false,
                 "promotion": {
                   "isPassing": true,
                   "hasGrades": true,
@@ -16257,6 +16547,8 @@
                   {"id":"geografie","name":"Geografie","grade":4.5},
                   {"id":"geschichte","name":"Geschichte","grade":5}
                 ],
+                "verdict": "passing",
+                "endsWithoutPromotion": true,
                 "promotion": {
                   "isPassing": true,
                   "hasGrades": true,

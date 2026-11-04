@@ -10,7 +10,7 @@ npm run rule-cases
 
 Run this after any change to the rules, then read the diff: it shows exactly what changed for students. The output contains no dates or random values, so running it twice with no code change gives identical bytes. `npm test` fails if the file is out of date.
 
-The app repository holds a copy, and its release script refuses to release on a mismatch. A change to the cases therefore needs an app release.
+The app repository will hold a copy, and its release script will refuse to release on a mismatch (tickets #9 and #16). A change to the cases therefore needs an app release.
 
 ## Format
 
@@ -22,6 +22,7 @@ Plain JSON, with no dependency on TypeScript or the website.
   "formatVersion": 1,
   "regenerate": "how to regenerate the file",
   "conventions": ["rules for reading the cases"],
+  "types": { "Grade": "the data shapes that the suites name" },
   "suites": [
     {
       "operation": "roundToHalf",
@@ -43,7 +44,7 @@ Plain JSON, with no dependency on TypeScript or the website.
 For each suite, call the rule named by `operation` with each case's `input` and compare the result with `expected`. The `conventions` array in the file says how to compare; these are the traps for a port:
 
 - Numbers match exactly, as doubles. Accumulate in array order, because a different order can change the last bits.
-- Ties round towards positive infinity. In Kotlin, `roundToLong` does this; `kotlin.math.round` rounds ties to even and is wrong.
+- Ties round towards positive infinity. In Kotlin, `roundToLong` does this; `kotlin.math.round` rounds ties to even and is wrong. `roundToLong` throws on NaN, so handle a Fach with no graded Teilfach before rounding.
 - A missing key means the value is absent, and key order means nothing. `null` appears only as a grade or a `result`: for a grade it means the Fach has no graded Teilfach (NaN on the website).
 - `uiTranslations` checks the interface text of whichever implementation runs it, over that implementation's own keys. Each side has text the other doesn't, so the file doesn't list keys. Its expected lists are empty on both sides.
 
