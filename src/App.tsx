@@ -57,15 +57,12 @@ function App() {
     }
   }, [data]);
 
-  const handleCloudData = useCallback((cloudData: StudentData) => {
-    setData(cloudData);
-    setCurrentYear(cloudData.currentYear);
-  }, []);
-  const handleOtherTabData = useCallback((stored: StudentData) => {
+  // Data from the cloud or another tab: this tab stays on its year, if the new data has it
+  const handleDataFromElsewhere = useCallback((stored: StudentData, { keepSelectedYear }: { keepSelectedYear: boolean }) => {
     setData((current) => (JSON.stringify(current) === JSON.stringify(stored) ? current : stored));
-    setCurrentYear((year) => selectableYear(stored, year));
+    setCurrentYear((year) => (keepSelectedYear ? selectableYear(stored, year) : stored.currentYear));
   }, []);
-  useCloudSync(data, handleCloudData, handleOtherTabData);
+  useCloudSync(data, handleDataFromElsewhere);
 
   // The year's hue is the page: bind it on <html> so the body and portals follow
   const hasProfile = Boolean(data?.studentInfo);

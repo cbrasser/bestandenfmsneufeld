@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import type { StudentData } from '../types';
 import { storageService } from '../utils/storage';
 import { onCloudData, syncEngine } from './cloud';
-import { SHARED_SYNC_KEYS } from './webStore';
+import { SHARED_SYNC_KEYS, type CloudDataListener } from './webStore';
 
 const SAVE_DELAY_MS = 1500;
 
@@ -12,14 +12,10 @@ const SAVE_DELAY_MS = 1500;
  * share their storage, so what another tab stores is shown here too. Call it after the effect that
  * writes data to storage: effects run in order, and the sync reads what is stored.
  */
-export function useCloudSync(
-  data: StudentData | null,
-  onCloudDataTaken: (data: StudentData) => void,
-  onOtherTabData: (data: StudentData) => void
-) {
+export function useCloudSync(data: StudentData | null, onDataFromElsewhere: CloudDataListener) {
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  useEffect(() => onCloudData(onCloudDataTaken), [onCloudDataTaken]);
+  useEffect(() => onCloudData(onDataFromElsewhere), [onDataFromElsewhere]);
 
   useEffect(() => {
     if (!syncEngine || !data || !syncEngine.noteLocalChange()) return;
@@ -42,7 +38,7 @@ export function useCloudSync(
     const takeOtherTabData = () => {
       engine.noteOtherTabChange();
       const stored = storageService.getData();
-      if (stored) onOtherTabData(stored);
+      if (stored) onDataFromElsewhere(stored, { keepSelectedYear: true });
     };
     const onStorage = ({ key }: StorageEvent) => {
       if (key === null || SHARED_SYNC_KEYS.includes(key)) takeOtherTabData();
@@ -61,7 +57,11 @@ export function useCloudSync(
       saveTimer.current = null;
       void engine.sync();
     };
-    const syncOnReconnect = () => void engine.sync();
+    // A save already under way when the connection returned may still fail, so that one doesn't count
+    const syncOnReconnect = async () => {
+      await engine.sync();
+      if (engine.getSnapshot().failure === 'unreachable') void engine.sync();
+    };
 
     window.addEventListener('storage', onStorage);
     window.addEventListener('focus', syncOnReturn);
@@ -75,7 +75,7 @@ export function useCloudSync(
       document.removeEventListener('visibilitychange', syncOnReturn);
       document.removeEventListener('visibilitychange', saveOnLeave);
     };
-  }, [onOtherTabData]);
+  }, [onDataFromElsewhere]);
 
   useEffect(
     () => () => {

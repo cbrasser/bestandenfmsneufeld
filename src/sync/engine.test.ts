@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { isSubject, type StudentData } from '../types';
 import { reconcileAllYears } from '../utils/initializeData';
-import { createSyncEngine, type CloudSnapshot, type SaveResult, type SyncRemote } from './engine';
 import { SELECTED_YEAR_KEY } from '../utils/storage';
+import { createSyncEngine, type CloudSnapshot, type SaveResult, type SyncRemote } from './engine';
 import { createMemoryStorage } from './memoryStorage';
 import { createWebSyncStore } from './webStore';
 
@@ -242,6 +242,27 @@ describe('sync engine', () => {
     await done;
   });
 
+  it('does not mark or push a new profile after a reset during a save', async () => {
+    const { engine, items, edit, saves, loads } = setup();
+    edit('edited');
+    const done = engine.sync();
+    await settle();
+
+    items.setItem('student-data', JSON.stringify({ ...student('x'), studentInfo: undefined }));
+    engine.noteLocalChange();
+    saves[0].answer.resolve(saved(2));
+    await done;
+    expect(engine.getSnapshot()).toMatchObject({ version: 2, unsynced: false });
+
+    items.setItem('student-data', JSON.stringify(student('new profile')));
+    expect(engine.noteLocalChange()).toBe(false);
+    const after = engine.sync();
+    await settle();
+    expect(saves).toHaveLength(1);
+    loads[0].resolve(snapshot(student('edited'), 2));
+    await after;
+  });
+
   it('reports cloud data it cannot read on connect, and stays disconnected', async () => {
     const { engine, loads, localLabel } = setup({ code: null, version: null });
     const result = engine.connect(CODE);
@@ -309,8 +330,8 @@ describe('selected year', () => {
 
   it('keeps its own year when it takes cloud data on a pull', async () => {
     const { engine, store, items, loads } = setup();
-    const taken: number[] = [];
-    store.onCloudData((data) => taken.push(data.currentYear));
+    const taken: [number, boolean][] = [];
+    store.onCloudData((data, { keepSelectedYear }) => taken.push([data.currentYear, keepSelectedYear]));
     items.setItem(SELECTED_YEAR_KEY, '2');
 
     const done = engine.sync();
@@ -319,7 +340,7 @@ describe('selected year', () => {
 
     expect(labelOf(store.readData())).toBe('cloud');
     expect(store.readData()?.currentYear).toBe(2);
-    expect(taken).toEqual([2]);
+    expect(taken).toEqual([[2, true]]);
     expect(items.getItem(SELECTED_YEAR_KEY)).toBe('2');
   });
 
@@ -344,12 +365,15 @@ describe('selected year', () => {
 
   it('starts on the cloud year when connecting, replacing whatever it was on', async () => {
     const { engine, store, items, loads } = setup({ code: null, version: null });
+    const taken: [number, boolean][] = [];
+    store.onCloudData((data, { keepSelectedYear }) => taken.push([data.currentYear, keepSelectedYear]));
     items.setItem(SELECTED_YEAR_KEY, '1');
     const result = engine.connect(CODE);
     loads[0].resolve(snapshot({ ...student('cloud'), currentYear: 3 }, 1));
     await result;
 
     expect(store.readData()?.currentYear).toBe(3);
+    expect(taken).toEqual([[3, false]]);
     expect(items.getItem(SELECTED_YEAR_KEY)).toBe('3');
   });
 });
@@ -456,6 +480,48 @@ describe('two tabs of one browser', () => {
     expect(first.engine.getSnapshot()).toMatchObject({ status: 'saved', version: 2, unsynced: false });
     expect(second.engine.getSnapshot()).toMatchObject({ status: 'saved', failure: null, version: 2, unsynced: false });
     expect(first.store.readState()).toMatchObject({ version: 2, unsynced: false });
+  });
+
+  it('does not take back another tab\'s save when an older answer to a pull arrives', async () => {
+    const { first, second } = twoTabs();
+    const done = first.engine.sync();
+    await settle();
+
+    second.edit('edited');
+    const saving = second.engine.sync();
+    await settle();
+    second.saves[0].answer.resolve(saved(2));
+    await saving;
+    first.engine.noteOtherTabChange();
+
+    first.loads[0].resolve(snapshot(student('local'), 1));
+    await settle();
+    expect(first.localLabel()).toBe('edited');
+    expect(first.store.readState()).toMatchObject({ version: 2, unsynced: false });
+
+    first.loads[1].resolve(snapshot(student('edited'), 2));
+    await done;
+    expect(first.engine.getSnapshot()).toMatchObject({ status: 'saved', version: 2, unsynced: false });
+  });
+
+  it('does not take back another tab\'s save that it has not heard of yet', async () => {
+    const { first, second } = twoTabs();
+    const done = first.engine.sync();
+    await settle();
+
+    second.edit('edited');
+    const saving = second.engine.sync();
+    await settle();
+    second.saves[0].answer.resolve(saved(2));
+    await saving;
+
+    first.loads[0].resolve(snapshot(student('local'), 1));
+    await settle();
+    expect(first.localLabel()).toBe('edited');
+
+    first.loads[1].resolve(snapshot(student('edited'), 2));
+    await done;
+    expect(first.engine.getSnapshot()).toMatchObject({ status: 'saved', version: 2, unsynced: false });
   });
 
   it('does not count what another tab stored as an edit of its own', () => {

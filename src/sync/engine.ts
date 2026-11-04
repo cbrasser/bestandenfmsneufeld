@@ -40,7 +40,8 @@ export interface SyncStore {
   applyCloudData(data: StudentData, options: { keepSelectedYear: boolean }): void;
   /**
    * A form of the data that differs only when the student's data really does: it leaves out the
-   * selected year and the name, which stay on the device, and whatever reconciling alone would change.
+   * selected year and the name, which stay on the device, the data format's version, and whatever
+   * reconciling alone would change.
    */
   contentOf(data: StudentData): string;
   readState(): PersistedSyncState;
@@ -157,9 +158,25 @@ export function createSyncEngine({ store, remote }: { store: SyncStore; remote: 
     return true;
   };
 
+  // Returns null, with the outcome set, if there is no cloud data to go on
+  const load = async (code: string): Promise<CloudSnapshot | null> => {
+    let cloud: CloudSnapshot | null;
+    try {
+      cloud = await remote.load(code);
+    } catch {
+      fail('unreachable');
+      return null;
+    }
+    if (persisted.code !== code) return null;
+    if (!cloud) fail('unknown_code');
+    return cloud;
+  };
+
   // The cloud has what was sent, at this version. Returns true if there is more to send.
   const settleSaved = (version: number, sent: string): boolean => {
-    const editedMeanwhile = storedContent() !== sent;
+    const content = storedContent();
+    // No content means a reset removed what was sent: that, and the new profile after it, isn't an edit
+    const editedMeanwhile = content !== null && content !== sent;
     persist({ version, unsynced: editedMeanwhile });
     if (editedMeanwhile) return true;
     setOutcome('saved');
@@ -184,32 +201,22 @@ export function createSyncEngine({ store, remote }: { store: SyncStore; remote: 
     if (result.status === 'unknown_code') return fail('unknown_code');
     if (result.status === 'saved') return settleSaved(result.version, sent);
 
-    let cloud: CloudSnapshot | null;
-    try {
-      cloud = await remote.load(code);
-    } catch {
-      return fail('unreachable');
-    }
-    if (persisted.code !== code) return false;
-
-    if (!cloud) return fail('unknown_code');
+    const cloud = await load(code);
+    if (!cloud) return false;
     if (store.contentOf(cloud.data) !== sent) return fail('conflict');
     return settleSaved(cloud.version, sent);
   };
 
   const pull = async (code: string): Promise<boolean> => {
-    let cloud: CloudSnapshot | null;
-    try {
-      cloud = await remote.load(code);
-    } catch {
-      return fail('unreachable');
-    }
-    if (persisted.code !== code) return false;
+    const versionAsked = persisted.version;
+    const cloud = await load(code);
+    if (!cloud) return false;
 
-    if (!cloud) return fail('unknown_code');
     if (persisted.unsynced) return true; // edited during the load, so the cloud data must not replace it
-    if (store.readState().unsynced) {
-      // Another tab has an edit waiting for its save delay, or closed before it was over
+    const shared = store.readState();
+    if (shared.unsynced || shared.version !== versionAsked) {
+      // Another tab has an edit waiting for its save delay, or closed before it was over. Or it saved
+      // during the load, so this answer may be older than what is stored and must not replace it.
       takeStoredState();
       return true;
     }

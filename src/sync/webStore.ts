@@ -12,9 +12,11 @@ export const SHARED_SYNC_KEYS: readonly string[] = [STORAGE_KEY, CODE_KEY, VERSI
 
 type KeyValueStorage = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;
 
+export type CloudDataListener = (data: StudentData, options: { keepSelectedYear: boolean }) => void;
+
 export interface WebSyncStore extends SyncStore {
   /** Listens for cloud data replacing the local data, in the form readData then returns. */
-  onCloudData(listener: (data: StudentData) => void): () => void;
+  onCloudData(listener: CloudDataListener): () => void;
 }
 
 // Object keys in a fixed order: the database doesn't return them in the order they were sent
@@ -25,7 +27,7 @@ const sortKeys = (_key: string, value: unknown) =>
 
 /** Keeps sync state and student data in localStorage, or anything shaped like it. */
 export function createWebSyncStore(getStorage: () => KeyValueStorage): WebSyncStore {
-  const listeners = new Set<(data: StudentData) => void>();
+  const listeners = new Set<CloudDataListener>();
 
   // Storage can be unavailable, for example with site data blocked
   const read = (key: string): string | null => {
@@ -64,7 +66,7 @@ export function createWebSyncStore(getStorage: () => KeyValueStorage): WebSyncSt
       const stored = { ...reconciled, currentYear: selectableYear(reconciled, year) };
       write(STORAGE_KEY, JSON.stringify(stored));
       write(SELECTED_YEAR_KEY, String(stored.currentYear));
-      listeners.forEach((listener) => listener(stored));
+      listeners.forEach((listener) => listener(stored, { keepSelectedYear }));
     },
 
     contentOf(data) {
