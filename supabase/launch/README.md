@@ -74,7 +74,7 @@ Do these within minutes, in this order. Have the APK, the guide and the website 
 
 **2.1 Back up the database.** See [Taking a backup](#taking-a-backup). Note the folder it prints, because that's the launch backup.
 
-**2.2 Publish the APK and guide. Needs your go-ahead.** Run the app repo's release script.
+**2.2 Publish the APK and guide. Needs your go-ahead.** In the app repo, run `./scripts/release.sh` to build the APK, then `./scripts/publish-release.sh` to make it public. The first time, create `cbrasser/bestanden-releases` first, with the app repo's `docs/release-guide/README.md` as its `README.md`. The app repo's `RELEASING.md` has the details.
 
 **It worked if** the release page of `cbrasser/bestanden-releases` shows the new version and its APK downloads.
 
