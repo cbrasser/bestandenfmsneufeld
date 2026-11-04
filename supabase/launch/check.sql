@@ -10,7 +10,7 @@
 --                        restore what was there
 --   version_trigger      enabled, or disabled, which is wrong outside the launch migration itself
 
-with named as (
+with student_rows as (
   select
     id,
     version,
@@ -19,17 +19,17 @@ with named as (
     data
   from public.students
 )
-select 'students' as fact, count(*)::text as value from named
+select 'students' as fact, count(*)::text as value from student_rows
 union all
-select 'students_with_name', count(*) filter (where has_name)::text from named
+select 'students_with_name', count(*) filter (where has_name)::text from student_rows
 union all
 select 'content_fingerprint', md5(coalesce(string_agg(
   id::text || ':' || (case when has_name then data #- '{studentInfo,name}' else data end)::text, ',' order by id
-), '')) from named
+), '')) from student_rows
 union all
-select 'version_total', coalesce(sum(version), 0)::text from named
+select 'version_total', coalesce(sum(version), 0)::text from student_rows
 union all
-select 'last_change', max(updated_at)::text from named
+select 'last_change', max(updated_at)::text from student_rows
 union all
 select 'save_data', case
     when trim(regexp_replace(prosrc, '\s+', ' ', 'g')) =

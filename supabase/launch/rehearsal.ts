@@ -17,12 +17,12 @@ const dbUrl = process.env.SUPABASE_DB_URL;
 const isLocal = (address: string | undefined) =>
   !!address && ['127.0.0.1', 'localhost'].includes(new URL(address).hostname);
 if (!anonKey || !isLocal(url) || !isLocal(dbUrl)) {
-  throw new Error(`The rehearsal only runs against local Supabase, not ${url}. Use: npm run rehearse:launch`);
+  throw new Error(`The rehearsal only runs against local Supabase, not ${url} and ${dbUrl}. Use: npm run rehearse:launch`);
 }
 
 const client = createClient(url!, anonKey, { auth: { persistSession: false, autoRefreshToken: false } });
 const SUPABASE_DIR = path.resolve(import.meta.dirname, '..');
-const DB_CONTAINER = 'supabase_db_bestanden';
+const DB_CONTAINER = 'supabase_db_bestanden'; // from project_id in config.toml
 
 const sqlFile = (relativePath: string) => readFileSync(path.join(SUPABASE_DIR, relativePath), 'utf8');
 
@@ -46,7 +46,7 @@ function rowsOf<T>(query: string): T[] {
 async function reloadApi(expectedFunction: string) {
   psql(`notify pgrst, 'reload schema'`);
   for (let tries = 0; tries < 60; tries += 1) {
-    const { error } = await client.rpc(expectedFunction, { p_code: 'NOSUCHCODE000000' });
+    const { error } = await client.rpc(expectedFunction, { p_code: UNKNOWN_CODE });
     if (error?.code !== 'PGRST202') return;
     await new Promise((resolve) => setTimeout(resolve, 500));
   }
@@ -125,6 +125,8 @@ const ROWS: { code: string; when: typeof RECENT; data: string; afterLaunch: stri
 ];
 
 const STALE_TAB = 'STALETAB00000001';
+const UNKNOWN_CODE = 'NOSUCHCODE000000';
+const OLD_COPY_SAVE = { studentInfo: { name: 'Stale Tab' }, years: { 1: { subjects: [] } } };
 
 type Row = { code_hash: string; data: unknown; data_text: string; version: number; created_at: string; updated_at: string };
 
@@ -132,6 +134,11 @@ const rowsNow = () =>
   rowsOf<Row>(`select code_hash, data, data::text as data_text, version, created_at, updated_at from public.students order by code_hash`);
 
 const hashOf = (code: string) => psql(`select public.hash_code('${code}')`).trim();
+
+const rowOf = (code: string, rows = rowsNow()) => rows.find((r) => r.code_hash === hashOf(code))!;
+
+/** What must be left of a made-up row after the launch. */
+const afterLaunchOf = (code: string) => JSON.parse(ROWS.find((row) => row.code === code)!.afterLaunch);
 
 /** Where the additive scripts have run, every row knows its version; the launch must not move these. */
 let beforeLaunch: Row[];
@@ -142,12 +149,12 @@ let originalSaveData: unknown[];
 const backupDir = mkdtempSync(path.join(tmpdir(), 'bestanden-rehearsal-'));
 afterAll(() => rmSync(backupDir, { recursive: true, force: true }));
 
-/** Runs a command as README.md gives it to the owner. */
+/** Runs a command the way README.md gives it to the owner. The text is repeated here, not read from there. */
 const sh = (command: string) =>
   execFileSync('sh', ['-c', command], {
     encoding: 'utf8',
     stdio: ['ignore', 'pipe', 'pipe'],
-    env: { ...process.env, DB_URL: dbUrl, BACKUP_DIR: backupDir },
+    env: { ...process.env, DB_URL: dbUrl, BACKUP_DIR: backupDir, RESTORE_FROM: backupDir },
   });
 
 describe('a database shaped like production', () => {
@@ -212,8 +219,7 @@ describe('the additive migrations', () => {
     expect(error).toBeNull();
     expect(data).toBe(true);
 
-    const [row] = rowsNow().filter((r) => r.code_hash === hashOf(STALE_TAB));
-    expect(row.version).toBe(2);
+    expect(rowOf(STALE_TAB).version).toBe(2);
   });
 
   it('are confirmed by check.sql, which also says save_data is as the rollback will restore it', () => {
@@ -263,7 +269,7 @@ describe('the launch migration', () => {
     const after = rowsNow();
     expect(after).toHaveLength(ROWS.length);
     for (const { code, afterLaunch } of ROWS) {
-      const row = after.find((r) => r.code_hash === hashOf(code));
+      const row = rowOf(code, after);
       // Compared as database text, because numbers lose digits in JavaScript
       const expected = psql(`select $json$${afterLaunch}$json$::jsonb::text`).trim();
       expect(row?.data_text, code).toBe(expected);
@@ -287,22 +293,20 @@ describe('the launch migration', () => {
 
   it('gives an old website copy an error from save_data, which it shows as "sync failed", and writes nothing', async () => {
     const before = rowsNow();
-    for (const code of [STALE_TAB, 'NOSUCHCODE000000']) {
-      const { error } = await client.rpc('save_data', {
-        p_code: code,
-        p_data: { studentInfo: { name: 'Stale Tab' }, years: { 1: { subjects: [] } } },
-      });
+    for (const code of [STALE_TAB, UNKNOWN_CODE]) {
+      const { error } = await client.rpc('save_data', { p_code: code, p_data: OLD_COPY_SAVE });
       expect(error, code).not.toBeNull();
     }
     expect(rowsNow()).toEqual(before);
   });
 
   it('keeps load_data working for old copies, without the name', async () => {
-    const { data, error } = await client.rpc('load_data', { p_code: 'INACTIVEGYM00001' });
+    const code = 'INACTIVEGYM00001';
+    const { data, error } = await client.rpc('load_data', { p_code: code });
     expect(error).toBeNull();
-    expect(data).toEqual(JSON.parse(ROWS.find((row) => row.code === 'INACTIVEGYM00001')!.afterLaunch));
+    expect(data).toEqual(afterLaunchOf(code));
 
-    const unknown = await client.rpc('load_data', { p_code: 'NOSUCHCODE000000' });
+    const unknown = await client.rpc('load_data', { p_code: UNKNOWN_CODE });
     expect(unknown.error).toBeNull();
     expect(unknown.data).toBeNull();
   });
@@ -313,7 +317,7 @@ describe('the launch migration', () => {
 
   it('causes no false conflict: a device that saw the version before the launch can still save', async () => {
     const code = 'NONAME0000000001';
-    const version = beforeLaunch.find((r) => r.code_hash === hashOf(code))!.version;
+    const { version } = rowOf(code, beforeLaunch);
 
     const loaded = await client.rpc('load_student', { p_code: code });
     expect(loaded.error).toBeNull();
@@ -328,14 +332,13 @@ describe('the launch migration', () => {
     expect(data.status).toBe('saved');
     // The trigger is back on, and the server still keeps names out
     expect(data.version).toBe(version + 1);
-    const [row] = rowsNow().filter((r) => r.code_hash === hashOf(code));
-    expect(row.data).toEqual({ studentInfo: { division: 'FMS' }, years: {} });
+    expect(rowOf(code).data).toEqual({ studentInfo: { division: 'FMS' }, years: {} });
   });
 
   it('gives new clients the same grades through load_student', async () => {
     const code = 'ORDINARYFMS00001';
     const { data } = await client.rpc('load_student', { p_code: code });
-    expect(data.data).toEqual(JSON.parse(ROWS.find((row) => row.code === code)!.afterLaunch));
+    expect(data.data).toEqual(afterLaunchOf(code));
   });
 });
 
@@ -354,17 +357,14 @@ describe('the rollback', () => {
   });
 
   it('lets an old website copy save again', async () => {
-    const before = rowsNow().find((r) => r.code_hash === hashOf(STALE_TAB))!;
-    const { data, error } = await client.rpc('save_data', {
-      p_code: STALE_TAB,
-      p_data: { studentInfo: { name: 'Stale Tab' }, years: { 1: { subjects: [] } } },
-    });
+    const before = rowOf(STALE_TAB);
+    const { data, error } = await client.rpc('save_data', { p_code: STALE_TAB, p_data: OLD_COPY_SAVE });
     expect(error).toBeNull();
     expect(data).toBe(true);
 
-    const after = rowsNow().find((r) => r.code_hash === hashOf(STALE_TAB))!;
+    const after = rowOf(STALE_TAB);
     expect(after.version).toBe(before.version + 1);
-    expect(after.data).toEqual({ studentInfo: { name: 'Stale Tab' }, years: { 1: { subjects: [] } } });
+    expect(after.data).toEqual(OLD_COPY_SAVE);
   });
 
   it('keeps load_data, admin_stats and the new calls working', async () => {
@@ -397,8 +397,9 @@ describe('check.sql', () => {
 
 describe('restoring the backup, the last resort in README.md', () => {
   it('brings back every row as it was at backup time, names included', () => {
+    // README.md starts psql with docker run, against production. Here the stack's own psql does it.
     sh(
-      `(echo 'begin; truncate public.students, public.admin_keys;'; cat "$BACKUP_DIR/data.sql"; echo 'commit;') | ` +
+      `(echo 'begin; truncate public.students, public.admin_keys;'; cat "$RESTORE_FROM/data.sql"; echo 'commit;') | ` +
         `docker exec -i ${DB_CONTAINER} psql -U postgres -d postgres -X -q -v ON_ERROR_STOP=1 -f -`
     );
 

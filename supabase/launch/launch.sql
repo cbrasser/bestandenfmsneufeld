@@ -3,8 +3,9 @@
 -- again. Undo with rollback.sql, except for the names, which return only from the backup.
 
 -- ---------------------------------------------------------------------
--- Part 1: save_data stops writing. It is committed before part 2 starts, so that an old copy's save
--- can't slip in behind the name removal and bring a name back.
+-- First, save_data stops writing. This commits before the names go, so that an old copy's save can't
+-- wait behind the name removal and bring a name back. Only a save already under way at this moment
+-- still could, which leaves a window of milliseconds. check.sql shows it, and running this again fixes it.
 --
 -- It raises an error rather than returning false: an old copy shows "sync failed" for both, but the
 -- error makes it plain in the logs that the call was refused. Signature, attributes and grants stay
@@ -26,7 +27,7 @@ $$;
 commit;
 
 -- ---------------------------------------------------------------------
--- Part 2: names go, and nothing else changes. All or nothing.
+-- Second, names go, and nothing else changes. All or nothing.
 --
 -- The version trigger is off for this update, so neither version nor updated_at moves. Removing a name
 -- is not a change a student made, and clients ignore names when comparing data:
