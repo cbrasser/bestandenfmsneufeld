@@ -10,9 +10,11 @@ import { createWebSyncStore } from './webStore';
 
 const CODE = 'ABCDEFGHJKMNPQRS';
 
-function student(label: string): StudentData {
+// The label tells versions of the data apart. It can't be the name, which is no edit.
+function student(label: string, name: string | null = 'Local name'): StudentData {
   return {
-    studentInfo: { name: label, division: 'FMS' },
+    studentInfo: { ...(name && { name }), division: 'FMS' },
+    gymProfile: { spf: label },
     currentYear: 1,
     years: { 1: { subjects: [] }, 2: { subjects: [] }, 3: { subjects: [] }, 4: { subjects: [] } },
   };
@@ -39,6 +41,7 @@ function setup({ version = 1 as number | null, unsynced = false, code = CODE as 
   const loads: ReturnType<typeof deferred<CloudSnapshot | null>>[] = [];
   const remote: SyncRemote = {
     createAccount: async () => {},
+    delete: async () => true,
     load: () => {
       const answer = deferred<CloudSnapshot | null>();
       loads.push(answer);
@@ -57,8 +60,9 @@ function setup({ version = 1 as number | null, unsynced = false, code = CODE as 
     items.setItem('student-data', JSON.stringify(student(label)));
     return engine.noteLocalChange();
   };
+  const localLabel = () => store.readData()?.gymProfile?.spf;
   const localName = () => store.readData()?.studentInfo?.name;
-  return { engine, store, items, saves, loads, edit, localName };
+  return { engine, store, items, remote, saves, loads, edit, localLabel, localName };
 }
 
 // Lets a run get past the awaits it can already get past
@@ -92,7 +96,7 @@ describe('sync engine', () => {
 
     expect(saves).toHaveLength(2);
     expect(saves[1].expectedVersion).toBe(2);
-    expect(saves[1].data.studentInfo?.name).toBe('second');
+    expect(saves[1].data.gymProfile?.spf).toBe('second');
 
     saves[1].answer.resolve(saved(3));
     await done;
@@ -100,7 +104,7 @@ describe('sync engine', () => {
   });
 
   it('keeps an edit made during a pull instead of replacing it with the cloud data', async () => {
-    const { engine, edit, saves, loads, localName } = setup();
+    const { engine, edit, saves, loads, localLabel } = setup();
     const done = engine.sync();
     await settle();
 
@@ -108,7 +112,7 @@ describe('sync engine', () => {
     loads[0].resolve(snapshot(student('cloud'), 2));
     await settle();
 
-    expect(localName()).toBe('edited');
+    expect(localLabel()).toBe('edited');
     expect(saves).toHaveLength(1);
     saves[0].answer.resolve({ status: 'conflict', version: 2, updatedAt: '2026-11-04T12:00:00Z' });
     await done;
@@ -116,18 +120,18 @@ describe('sync engine', () => {
   });
 
   it('does not count cloud data as a local edit, so it is never pushed back', async () => {
-    const { engine, loads, localName } = setup();
+    const { engine, loads, localLabel } = setup();
     const done = engine.sync();
     loads[0].resolve(snapshot(student('cloud'), 2));
     await done;
 
-    expect(localName()).toBe('cloud');
+    expect(localLabel()).toBe('cloud');
     expect(engine.noteLocalChange()).toBe(false);
     expect(engine.getSnapshot()).toMatchObject({ status: 'saved', version: 2, unsynced: false });
   });
 
   it('ignores the answer to a save when the device disconnected meanwhile', async () => {
-    const { engine, edit, saves, localName } = setup();
+    const { engine, edit, saves, localLabel } = setup();
     edit('edited');
     const done = engine.sync();
     await settle();
@@ -137,7 +141,7 @@ describe('sync engine', () => {
     await done;
 
     expect(engine.getSnapshot()).toMatchObject({ code: null, version: null, unsynced: false, status: 'idle' });
-    expect(localName()).toBe('edited');
+    expect(localLabel()).toBe('edited');
   });
 
   it('never syncs a device without a profile, such as one in onboarding after a reset', async () => {
@@ -161,12 +165,12 @@ describe('sync engine', () => {
   });
 
   it('touches nothing on a device connected before versions existed, whichever side is newer', async () => {
-    const { engine, edit, saves, loads, localName } = setup({ version: null });
+    const { engine, edit, saves, loads, localLabel } = setup({ version: null });
     const pulled = engine.sync();
     loads[0].resolve(snapshot(student('cloud'), 5));
     await pulled;
 
-    expect(localName()).toBe('local');
+    expect(localLabel()).toBe('local');
     expect(engine.getSnapshot()).toMatchObject({ status: 'error', failure: 'no_version', version: null });
 
     edit('edited');
@@ -193,23 +197,23 @@ describe('sync engine', () => {
   });
 
   it('reports cloud data it cannot read on connect, and stays disconnected', async () => {
-    const { engine, loads, localName } = setup({ code: null, version: null });
+    const { engine, loads, localLabel } = setup({ code: null, version: null });
     const result = engine.connect(CODE);
     loads[0].resolve(snapshot({} as StudentData, 1));
 
     await expect(result).resolves.toBe('unreachable');
     expect(engine.getSnapshot()).toMatchObject({ code: null, version: null });
-    expect(localName()).toBe('local');
+    expect(localLabel()).toBe('local');
   });
 
   it('shows a failed status for cloud data it cannot read on a pull, and keeps local data', async () => {
-    const { engine, loads, localName } = setup();
+    const { engine, loads, localLabel } = setup();
     const done = engine.sync();
     loads[0].resolve(snapshot({} as StudentData, 2));
     await done;
 
     expect(engine.getSnapshot()).toMatchObject({ status: 'error', failure: 'unreachable', version: 1 });
-    expect(localName()).toBe('local');
+    expect(localLabel()).toBe('local');
   });
 
   it('only marks data unsynced while connected', () => {
@@ -223,9 +227,161 @@ describe('sync engine', () => {
     edit('edited');
     expect(engine.getSnapshot().unsynced).toBe(true);
 
-    const restarted = createSyncEngine({ store, remote: { createAccount: async () => {}, load: async () => null, save: async () => saved(2) } });
+    const restarted = createSyncEngine({ store, remote: { createAccount: async () => {}, delete: async () => true, load: async () => null, save: async () => saved(2) } });
     expect(restarted.getSnapshot()).toMatchObject({ code: CODE, version: 1, unsynced: true });
     await restarted.sync();
     expect(restarted.getSnapshot()).toMatchObject({ status: 'saved', version: 2, unsynced: false });
+  });
+
+  describe('the name stays on the device', () => {
+    it('leaves the name out of what a save sends', async () => {
+      const { engine, edit, saves } = setup();
+      edit('edited');
+      void engine.sync();
+      await settle();
+      expect(JSON.stringify(saves[0].data)).not.toContain('Local name');
+      expect(saves[0].data.studentInfo?.division).toBe('FMS');
+    });
+
+    it('leaves the name out of what a new account sends', async () => {
+      const { engine, store, remote } = setup({ code: null, version: null });
+      let sent = '';
+      remote.createAccount = async (_code, data) => {
+        sent = JSON.stringify(data);
+      };
+      await engine.createAccount();
+      expect(sent).not.toContain('Local name');
+      expect(store.readData()?.studentInfo?.name).toBe('Local name');
+    });
+
+    it('keeps the local name when it takes cloud data without one', async () => {
+      const { engine, loads, localLabel, localName } = setup();
+      void engine.sync();
+      await settle();
+      loads[0].resolve(snapshot(student('cloud', null), 2));
+      await settle();
+      expect(localLabel()).toBe('cloud');
+      expect(localName()).toBe('Local name');
+    });
+
+    it('never takes a name from the cloud, so an old upload can neither replace nor supply one', async () => {
+      const existing = setup();
+      void existing.engine.sync();
+      await settle();
+      existing.loads[0].resolve(snapshot(student('cloud', 'Uploaded name'), 2));
+      await settle();
+      expect(existing.localName()).toBe('Local name');
+
+      const { engine, items, remote, localName } = setup({ code: null, version: null });
+      items.removeItem('student-data');
+      remote.load = async () => snapshot(student('cloud', 'Uploaded name'), 2);
+      expect(await engine.connect(CODE)).toBe('connected');
+      expect(localName()).toBeUndefined();
+    });
+
+    it('does not count entering a name as an edit, so the cloud is not written for it', () => {
+      const { engine, items } = setup({ data: student('same', null) });
+      items.setItem('student-data', JSON.stringify(student('same', 'Entered name')));
+      expect(engine.noteLocalChange()).toBe(false);
+      expect(engine.getSnapshot().unsynced).toBe(false);
+    });
+
+    it('does not see a name entered during a save as an edit made meanwhile', async () => {
+      const { engine, edit, items, saves } = setup({ data: student('old', null) });
+      edit('edited');
+      const done = engine.sync();
+      await settle();
+      items.setItem('student-data', JSON.stringify(student('edited', 'Entered name')));
+      engine.noteLocalChange();
+      saves[0].answer.resolve(saved(2));
+      await done;
+      expect(saves).toHaveLength(1);
+      expect(engine.getSnapshot()).toMatchObject({ status: 'saved', unsynced: false });
+    });
+  });
+
+  describe('deleting cloud data', () => {
+    it('disconnects and forgets unsynced changes, while the local data stays', async () => {
+      const { engine, edit, remote, localLabel, localName } = setup();
+      edit('edited');
+      const deleted: string[] = [];
+      remote.delete = async (code) => {
+        deleted.push(code);
+        return true;
+      };
+      expect(await engine.deleteCloudData()).toBe('deleted');
+      expect(deleted).toEqual([CODE]);
+      expect(engine.getSnapshot()).toMatchObject({ code: null, version: null, unsynced: false, status: 'idle', failure: null });
+      expect(localLabel()).toBe('edited');
+      expect(localName()).toBe('Local name');
+    });
+
+    it('stays connected, with unsynced changes kept, when the cloud cannot be reached', async () => {
+      const { engine, edit, remote } = setup();
+      edit('edited');
+      remote.delete = async () => {
+        throw new Error('offline');
+      };
+      expect(await engine.deleteCloudData()).toBe('unreachable');
+      expect(engine.getSnapshot()).toMatchObject({ code: CODE, version: 1, unsynced: true });
+    });
+
+    it('counts a code that is already gone as deleted', async () => {
+      const { engine, remote } = setup();
+      remote.delete = async () => false;
+      expect(await engine.deleteCloudData()).toBe('deleted');
+      expect(engine.getSnapshot().code).toBeNull();
+    });
+
+    it('ignores the answer to a save that was on its way during the delete', async () => {
+      const { engine, edit, remote, saves } = setup();
+      edit('edited');
+      const running = engine.sync();
+      await settle();
+      remote.delete = async () => true;
+      await engine.deleteCloudData();
+      saves[0].answer.resolve({ status: 'unknown_code' });
+      await running;
+      expect(engine.getSnapshot()).toMatchObject({ code: null, status: 'idle', failure: null, unsynced: false });
+    });
+
+    it('ignores a save that fails after the delete, so a disconnected device shows no error', async () => {
+      const { engine, edit, remote } = setup();
+      edit('edited');
+      let failSave!: (reason: Error) => void;
+      remote.save = () => new Promise((_resolve, reject) => {
+        failSave = reject;
+      });
+      const running = engine.sync();
+      await settle();
+      await engine.deleteCloudData();
+      failSave(new Error('offline'));
+      await running;
+      expect(engine.getSnapshot()).toMatchObject({ code: null, status: 'idle', failure: null });
+    });
+
+    it('ignores a load that fails after the delete', async () => {
+      const { engine, remote } = setup();
+      let failLoad!: (reason: Error) => void;
+      remote.load = () => new Promise((_resolve, reject) => {
+        failLoad = reject;
+      });
+      const running = engine.sync();
+      await settle();
+      await engine.deleteCloudData();
+      failLoad(new Error('offline'));
+      await running;
+      expect(engine.getSnapshot()).toMatchObject({ code: null, status: 'idle', failure: null });
+    });
+
+    it('does not sync after the delete, so a waiting save timer sends nothing', async () => {
+      const { engine, edit, remote, saves, loads } = setup();
+      edit('edited');
+      remote.delete = async () => true;
+      await engine.deleteCloudData();
+      await engine.sync();
+      expect(saves).toHaveLength(0);
+      expect(loads).toHaveLength(0);
+    });
   });
 });
