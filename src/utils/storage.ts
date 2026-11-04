@@ -1,4 +1,5 @@
 import type { StudentData, Year } from '../types';
+import { isNewerData } from './dataVersion';
 
 export const STORAGE_KEY = 'student-data';
 /** The year this device shows. It belongs to the device: other devices never see or move it. */
@@ -24,8 +25,11 @@ export const storageService = {
     }
   },
 
+  /** Never stores data in a newer format, and never replaces it: this version would lose what it doesn't know. */
   saveData: (data: StudentData): void => {
     try {
+      const stored = storageService.getData();
+      if (isNewerData(data) || (stored && isNewerData(stored))) return;
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     } catch (error) {
       console.error('Error saving to localStorage:', error);
@@ -59,13 +63,19 @@ export const storageService = {
     }
   },
 
+  /** What is stored, with this device's selected year. */
+  getDataWithSelectedYear: (): StudentData | null => {
+    const data = storageService.getData();
+    return data && { ...data, currentYear: storageService.getSelectedYear() ?? data.currentYear };
+  },
+
   /** The text of an export file. Files keep the selected year, in the field they always had it in. */
   exportText: (): string => {
-    const data = storageService.getData();
+    const data = storageService.getDataWithSelectedYear();
     if (!data) {
       throw new Error('No data to export');
     }
-    return JSON.stringify({ ...data, currentYear: storageService.getSelectedYear() ?? data.currentYear }, null, 2);
+    return JSON.stringify(data, null, 2);
   },
 
   exportData: (): void => {

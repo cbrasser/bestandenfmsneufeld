@@ -13,9 +13,21 @@ interface CloudSyncProps {
 export const CloudSync = ({ onConnected }: CloudSyncProps) =>
   syncEngine ? <CloudSyncPanel engine={syncEngine} onConnected={onConnected} /> : null;
 
+const connectErrors = {
+  unknown_code: 'cloudUnknownCode',
+  unreachable: 'cloudLoadError',
+  newer_data: 'newerDataRefused',
+} as const;
+
+const deleteErrors = {
+  out_of_step: 'cloudDeleteOutOfStep',
+  unreachable: 'cloudDeleteError',
+  newer_data: 'newerDataRefused',
+} as const;
+
 const CloudSyncPanel = ({ engine, onConnected }: CloudSyncProps & { engine: SyncEngine }) => {
   const { t } = useI18n();
-  const { code, status, failure } = useSyncExternalStore(engine.subscribe, engine.getSnapshot);
+  const { code, status, failure, readOnly } = useSyncExternalStore(engine.subscribe, engine.getSnapshot);
 
   // Modal-Zustände
   const [showCreated, setShowCreated] = useState(false);
@@ -57,7 +69,7 @@ const CloudSyncPanel = ({ engine, onConnected }: CloudSyncProps & { engine: Sync
     const result = await engine.connect(canonical);
     setBusy(false);
     if (result !== 'connected') {
-      setError(t(result === 'unknown_code' ? 'cloudUnknownCode' : 'cloudLoadError'));
+      setError(t(connectErrors[result]));
       return;
     }
     setShowEnter(false);
@@ -78,7 +90,7 @@ const CloudSyncPanel = ({ engine, onConnected }: CloudSyncProps & { engine: Sync
     const result = await engine.deleteCloudData();
     setBusy(false);
     if (result !== 'deleted') {
-      setError(t(result === 'out_of_step' ? 'cloudDeleteOutOfStep' : 'cloudDeleteError'));
+      setError(t(deleteErrors[result]));
       return;
     }
     setShowDelete(false);
@@ -121,25 +133,29 @@ const CloudSyncPanel = ({ engine, onConnected }: CloudSyncProps & { engine: Sync
       {!connected ? (
         <div className="stack">
           <p className="lede text-sm">{t('cloudSyncDescription')}</p>
-          <button onClick={handleCreate} disabled={busy} className="btn btn-block btn-start">
-            {busy ? (
-              <Loader2 size={16} strokeWidth={2.5} className="animate-spin" aria-hidden="true" />
-            ) : (
-              <KeyRound size={16} strokeWidth={2.5} aria-hidden="true" />
-            )}
-            {t('cloudCreateCode')}
-          </button>
-          <button
-            onClick={() => {
-              setShowEnter(true);
-              setError(null);
-              setDeleted(false);
-            }}
-            className="btn btn-block btn-start"
-          >
-            <LogIn size={16} strokeWidth={2.5} aria-hidden="true" />
-            {t('cloudLoginWithCode')}
-          </button>
+          {!readOnly && (
+            <>
+              <button onClick={handleCreate} disabled={busy} className="btn btn-block btn-start">
+                {busy ? (
+                  <Loader2 size={16} strokeWidth={2.5} className="animate-spin" aria-hidden="true" />
+                ) : (
+                  <KeyRound size={16} strokeWidth={2.5} aria-hidden="true" />
+                )}
+                {t('cloudCreateCode')}
+              </button>
+              <button
+                onClick={() => {
+                  setShowEnter(true);
+                  setError(null);
+                  setDeleted(false);
+                }}
+                className="btn btn-block btn-start"
+              >
+                <LogIn size={16} strokeWidth={2.5} aria-hidden="true" />
+                {t('cloudLoginWithCode')}
+              </button>
+            </>
+          )}
           {error && <p className="form-error">{error}</p>}
           {deleted && <p className="note text-sm" role="status">{t('cloudDeleted')}</p>}
         </div>
@@ -160,6 +176,7 @@ const CloudSyncPanel = ({ engine, onConnected }: CloudSyncProps & { engine: Sync
             </div>
             <div className="code mt-1 text-sm">{code ? formatCode(code) : ''}</div>
             {failure === 'unknown_code' && <p className="mt-1 text-sm text-danger">{t('cloudUnknownCode')}</p>}
+            {failure === 'newer_data' && <p className="mt-1 text-sm text-danger">{t('newerDataRefused')}</p>}
           </div>
           <button onClick={handleCopy} className="btn btn-block btn-start">
             {copied ? (
@@ -169,22 +186,26 @@ const CloudSyncPanel = ({ engine, onConnected }: CloudSyncProps & { engine: Sync
             )}
             {copied ? t('cloudCopied') : t('cloudCopyCode')}
           </button>
-          <button onClick={handleDisconnect} className="btn btn-block btn-start">
-            <CloudOff size={16} strokeWidth={2.5} aria-hidden="true" />
-            {t('cloudDisconnect')}
-          </button>
-          <button
-            onClick={() => {
-              setShowDelete(true);
-              setError(null);
-              // So that what gets deleted is, if possible, no newer than what this device keeps
-              void engine.sync();
-            }}
-            className="btn btn-block btn-start"
-          >
-            <Trash2 size={16} strokeWidth={2.5} aria-hidden="true" />
-            {t('cloudDeleteData')}
-          </button>
+          {!readOnly && (
+            <>
+              <button onClick={handleDisconnect} className="btn btn-block btn-start">
+                <CloudOff size={16} strokeWidth={2.5} aria-hidden="true" />
+                {t('cloudDisconnect')}
+              </button>
+              <button
+                onClick={() => {
+                  setShowDelete(true);
+                  setError(null);
+                  // So that what gets deleted is, if possible, no newer than what this device keeps
+                  void engine.sync();
+                }}
+                className="btn btn-block btn-start"
+              >
+                <Trash2 size={16} strokeWidth={2.5} aria-hidden="true" />
+                {t('cloudDeleteData')}
+              </button>
+            </>
+          )}
         </div>
       )}
 
@@ -216,7 +237,7 @@ const CloudSyncPanel = ({ engine, onConnected }: CloudSyncProps & { engine: Sync
       )}
 
       {/* Modal: Cloud-Daten löschen */}
-      {showDelete && (
+      {showDelete && !readOnly && (
         <div className="scrim">
           <div className="leaf dialog" role="alertdialog" aria-modal="true" aria-labelledby="cloud-delete-title">
             <h4 id="cloud-delete-title" className="leaf-title">
@@ -239,7 +260,7 @@ const CloudSyncPanel = ({ engine, onConnected }: CloudSyncProps & { engine: Sync
       )}
 
       {/* Modal: Mit Code anmelden */}
-      {showEnter && (
+      {showEnter && !readOnly && (
         <div className="scrim">
           <div className="leaf dialog" role="dialog" aria-modal="true" aria-labelledby="cloud-enter-title">
             <div className="dialog-head">

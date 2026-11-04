@@ -9,8 +9,10 @@ interface MenuProps {
   isOpen: boolean;
   onToggle: () => void;
   onExport: () => void;
-  onImport: (file: File) => void;
-  onReset: () => void;
+  /** Leave it out while the data can't be replaced. */
+  onImport?: (file: File) => void;
+  /** Leave it out while the data can't be replaced. */
+  onReset?: () => void;
   /** Goes back to the version this device kept. Leave it out when there is none. */
   onRestore?: () => void;
   cloudSlot?: ReactNode;
@@ -156,21 +158,23 @@ export const Menu = ({ isOpen, onToggle, onExport, onImport, onReset, onRestore,
               onChange={(e) => {
                 const file = e.target.files?.[0];
                 if (file) {
-                  onImport(file);
+                  onImport?.(file);
                   // Reset input so the same file can be selected again
                   e.target.value = '';
                 }
               }}
             />
-            <button
-              onClick={() => {
-                fileInputRef.current?.click();
-              }}
-              className="btn btn-block btn-start"
-            >
-              <Upload size={16} strokeWidth={2.5} aria-hidden="true" />
-              {t('import')}
-            </button>
+            {onImport && (
+              <button
+                onClick={() => {
+                  fileInputRef.current?.click();
+                }}
+                className="btn btn-block btn-start"
+              >
+                <Upload size={16} strokeWidth={2.5} aria-hidden="true" />
+                {t('import')}
+              </button>
+            )}
             <button onClick={onExport} className="btn btn-block btn-start">
               <Download size={16} strokeWidth={2.5} aria-hidden="true" />
               {t('export')}
@@ -181,10 +185,12 @@ export const Menu = ({ isOpen, onToggle, onExport, onImport, onReset, onRestore,
                 {t('restorePrevious')}
               </button>
             )}
-            <button onClick={onReset} className="btn btn-block btn-start">
-              <RotateCcw size={16} strokeWidth={2.5} aria-hidden="true" />
-              {t('reset')}
-            </button>
+            {onReset && (
+              <button onClick={onReset} className="btn btn-block btn-start">
+                <RotateCcw size={16} strokeWidth={2.5} aria-hidden="true" />
+                {t('reset')}
+              </button>
+            )}
           </div>
         </section>
       </div>

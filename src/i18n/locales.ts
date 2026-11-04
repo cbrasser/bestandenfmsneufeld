@@ -90,7 +90,7 @@ export interface Translations {
   // Data management
   exportSuccess: string;
   exportError: string;
-  importSuccess: string;
+  importConfirm: string;
   importError: string;
   importInvalidFile: string;
   resetConfirm: string;
@@ -220,6 +220,14 @@ export interface Translations {
   restorePrevious: string;
   restoreConfirm: string;
   restoreError: string;
+
+  // Data in a newer format
+  readOnlyTitle: string;
+  readOnlyData: string;
+  readOnlyFile: string;
+  readOnlyReload: string;
+  readOnlyCloseFile: string;
+  newerDataRefused: string;
 }
 
 export const translations: Record<Language, Translations> = {
@@ -313,7 +321,7 @@ export const translations: Record<Language, Translations> = {
     // Data management
     exportSuccess: 'Daten erfolgreich exportiert',
     exportError: 'Fehler beim Exportieren der Daten',
-    importSuccess: 'Daten erfolgreich importiert',
+    importConfirm: 'Diese Datei importieren? Sie ersetzt deine aktuellen Daten und, wenn du verbunden bist, auch deine Daten in der Cloud. Die aktuellen Daten lassen sich danach im Menü unter «Daten» wiederherstellen.',
     importError: 'Fehler beim Importieren der Daten',
     importInvalidFile: 'Ungültige Datei. Bitte wählen Sie eine gültige JSON-Datei.',
     resetConfirm: 'Möchten Sie wirklich alle Daten zurücksetzen? Diese Aktion kann nicht rückgängig gemacht werden.',
@@ -439,6 +447,13 @@ export const translations: Record<Language, Translations> = {
     restorePrevious: 'Vorherige Version wiederherstellen',
     restoreConfirm: 'Vorherige Version wiederherstellen? Sie ersetzt deine aktuellen Daten, und diese lassen sich danach auf demselben Weg zurückholen.',
     restoreError: 'Wiederherstellen fehlgeschlagen',
+
+    readOnlyTitle: 'Bitte aktualisieren.',
+    readOnlyData: 'Deine Daten stammen aus einer neueren Version von Bestanden. Du kannst sie hier nur ansehen, bis du aktualisiert hast. Auf diesem Gerät geht nichts verloren.',
+    readOnlyFile: 'Diese Datei stammt aus einer neueren Version von Bestanden. Du kannst sie hier nur ansehen: Nichts wurde importiert oder geändert. Bitte aktualisiere und importiere sie danach nochmals.',
+    readOnlyReload: 'Jetzt aktualisieren',
+    readOnlyCloseFile: 'Zurück zu meinen Daten',
+    newerDataRefused: 'Diese Daten stammen aus einer neueren Version von Bestanden. Nichts wurde geändert. Bitte aktualisiere und versuche es nochmals.',
   },
   fr: {
     // General
@@ -530,7 +545,7 @@ export const translations: Record<Language, Translations> = {
     // Data management
     exportSuccess: 'Données exportées avec succès',
     exportError: 'Erreur lors de l\'exportation des données',
-    importSuccess: 'Données importées avec succès',
+    importConfirm: 'Importer ce fichier ? Il remplace tes données actuelles et, si tu es connecté·e, aussi tes données dans le cloud. Tu pourras ensuite restaurer les données actuelles dans le menu, sous « Données ».',
     importError: 'Erreur lors de l\'importation des données',
     importInvalidFile: 'Fichier invalide. Veuillez sélectionner un fichier JSON valide.',
     resetConfirm: 'Êtes-vous sûr de vouloir réinitialiser toutes les données? Cette action ne peut pas être annulée.',
@@ -656,6 +671,13 @@ export const translations: Record<Language, Translations> = {
     restorePrevious: 'Restaurer la version précédente',
     restoreConfirm: 'Restaurer la version précédente ? Elle remplace tes données actuelles, que tu pourras ensuite récupérer de la même manière.',
     restoreError: 'La restauration a échoué',
+
+    readOnlyTitle: 'Merci de mettre à jour.',
+    readOnlyData: 'Tes données proviennent d\'une version plus récente de Bestanden. Tu peux seulement les consulter ici jusqu\'à la mise à jour. Rien n\'est perdu sur cet appareil.',
+    readOnlyFile: 'Ce fichier provient d\'une version plus récente de Bestanden. Tu peux seulement le consulter ici : rien n\'a été importé ni modifié. Mets à jour, puis importe-le à nouveau.',
+    readOnlyReload: 'Mettre à jour',
+    readOnlyCloseFile: 'Retour à mes données',
+    newerDataRefused: 'Ces données proviennent d\'une version plus récente de Bestanden. Rien n\'a été modifié. Mets à jour et réessaie.',
   },
   en: {
     // General
@@ -747,7 +769,7 @@ export const translations: Record<Language, Translations> = {
     // Data management
     exportSuccess: 'Data exported successfully',
     exportError: 'Error exporting data',
-    importSuccess: 'Data imported successfully',
+    importConfirm: 'Import this file? It replaces your current data and, if you\'re connected, your data in the cloud too. You can then restore your current data from the menu, under "Data".',
     importError: 'Error importing data',
     importInvalidFile: 'Invalid file. Please select a valid JSON file.',
     resetConfirm: 'Are you sure you want to reset all data? This action cannot be undone.',
@@ -873,6 +895,13 @@ export const translations: Record<Language, Translations> = {
     restorePrevious: 'Restore previous version',
     restoreConfirm: 'Restore the previous version? It replaces your current data, which you can then get back the same way.',
     restoreError: 'Restoring failed',
+
+    readOnlyTitle: 'Please update.',
+    readOnlyData: 'Your data comes from a newer version of Bestanden. You can only view it here until you update. Nothing on this device is lost.',
+    readOnlyFile: 'This file comes from a newer version of Bestanden. You can only view it here: nothing was imported or changed. Please update, then import it again.',
+    readOnlyReload: 'Update now',
+    readOnlyCloseFile: 'Back to my data',
+    newerDataRefused: 'This data comes from a newer version of Bestanden. Nothing was changed. Please update and try again.',
   },
   it: {
     // General
@@ -964,7 +993,7 @@ export const translations: Record<Language, Translations> = {
     // Data management
     exportSuccess: 'Dati esportati con successo',
     exportError: 'Errore durante l\'esportazione dei dati',
-    importSuccess: 'Dati importati con successo',
+    importConfirm: 'Importare questo file? Sostituisce i tuoi dati attuali e, se sei connesso/a, anche i tuoi dati nel cloud. Potrai poi ripristinare i dati attuali dal menu, alla voce «Dati».',
     importError: 'Errore durante l\'importazione dei dati',
     importInvalidFile: 'File non valido. Seleziona un file JSON valido.',
     resetConfirm: 'Sei sicuro di voler reimpostare tutti i dati? Questa azione non può essere annullata.',
@@ -1090,6 +1119,13 @@ export const translations: Record<Language, Translations> = {
     restorePrevious: 'Ripristina la versione precedente',
     restoreConfirm: 'Ripristinare la versione precedente? Sostituisce i tuoi dati attuali, che potrai poi recuperare allo stesso modo.',
     restoreError: 'Ripristino non riuscito',
+
+    readOnlyTitle: 'Aggiorna, per favore.',
+    readOnlyData: 'I tuoi dati provengono da una versione più recente di Bestanden. Puoi solo consultarli qui finché non aggiorni. Su questo dispositivo non si perde nulla.',
+    readOnlyFile: 'Questo file proviene da una versione più recente di Bestanden. Puoi solo consultarlo qui: non è stato importato né modificato nulla. Aggiorna, poi importalo di nuovo.',
+    readOnlyReload: 'Aggiorna ora',
+    readOnlyCloseFile: 'Torna ai miei dati',
+    newerDataRefused: 'Questi dati provengono da una versione più recente di Bestanden. Non è stato modificato nulla. Aggiorna e riprova.',
   },
 };
 

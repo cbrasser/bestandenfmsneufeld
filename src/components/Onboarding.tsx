@@ -11,6 +11,12 @@ const divisionDescriptions: Record<Division, string> = {
   Gymnasium: 'Maturitätsschule',
 };
 
+const connectErrors = {
+  unknown_code: 'cloudUnknownCode',
+  unreachable: 'cloudLoadError',
+  newer_data: 'newerDataRefused',
+} as const;
+
 interface OnboardingProps {
   onComplete: (info: StudentInfo) => void;
 }
@@ -40,7 +46,7 @@ export const Onboarding = ({ onComplete }: OnboardingProps) => {
     const result = await syncEngine.connect(canonical);
     setCodeBusy(false);
     if (result !== 'connected') {
-      setCodeError(t(result === 'unknown_code' ? 'cloudUnknownCode' : 'cloudLoadError'));
+      setCodeError(t(connectErrors[result]));
     }
   };
 

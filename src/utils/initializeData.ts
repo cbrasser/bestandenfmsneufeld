@@ -2,9 +2,11 @@ import type { StudentData, Year, CombinedSubject, Subject } from '../types';
 import { isSubject, isCombinedSubject } from '../types';
 import { defaultSubjects, renamedSubjectIds, splitSubjectIds, year3Directions } from '../config/subjects';
 import { GYM_YEARS, gymSubjectsForYear } from '../config/gymnasium';
+import { DATA_VERSION, isNewerData } from './dataVersion';
 
 export const initializeStudentData = (): StudentData => {
   return {
+    dataVersion: DATA_VERSION,
     currentYear: 1,
     years: {
       1: {
@@ -68,19 +70,23 @@ export const selectableYear = (data: StudentData, year: Year): Year =>
 export const reconcileAllYears = (data: StudentData): StudentData => {
   // Data saved before the Gymnasium existed has no year 4
   const existing = (year: Year) => data.years[year]?.subjects ?? [];
+  // Reconciled data is in this version's format. Newer data must never get here, and if it does it
+  // must go on saying what it is.
+  const dataVersion = isNewerData(data) ? data.dataVersion : DATA_VERSION;
 
   if (data.studentInfo?.division === 'Gymnasium') {
     const years = { ...data.years };
     GYM_YEARS.forEach((year) => {
       years[year] = { subjects: reconcileSubjectList(existing(year), gymSubjectsForYear(year, data.gymProfile)) };
     });
-    return { ...data, years };
+    return { ...data, dataVersion, years };
   }
 
   const direction = year3Directions.find((d) => d.id === data.year3Direction);
 
   return {
     ...data,
+    dataVersion,
     currentYear: selectableYear(data, data.currentYear),
     // An unknown direction (e.g. a former placeholder) is cleared so the user picks a real one
     year3Direction: direction?.id,

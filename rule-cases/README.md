@@ -61,4 +61,6 @@ A runner fails on an operation it doesn't know, so that a new suite can't be ski
 | `coverage.test.ts` | The cases reach both Bildungsgänge, all Berufsfelder and choices, renamed and split subjects, and all languages. |
 | `official-rules.test.ts` | The rules against values worked out by hand from the official documents, because generated cases only record what the code does. |
 
+`DATA_VERSION` in `src/utils/dataVersion.ts` is the data format this release supports, and the cases that use it follow it. Raising it needs an app release even if no other case changes, as the app must support the same version. A client that finds a higher value shows the data read-only and never writes it back.
+
 When adding a rule, add its operation and suite here. If it's an official rule, also add a hand-worked test.

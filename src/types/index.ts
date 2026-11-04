@@ -59,6 +59,7 @@ export type GymProfile = {
 };
 
 export type StudentData = {
+  dataVersion?: number; // the data format, see utils/dataVersion.ts; missing means 1
   studentInfo?: StudentInfo;
   currentYear: Year;
   year3Direction?: string; // direction ID for year 3

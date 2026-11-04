@@ -14,10 +14,11 @@ interface GymProfileProps {
   year: Year;
   profile: GymProfileType;
   onChange: (profile: GymProfileType) => void;
+  readOnly?: boolean;
 }
 
 // The subjects a Gymnasium student chooses; everything else follows from the year
-export const GymProfile = ({ year, profile, onChange }: GymProfileProps) => {
+export const GymProfile = ({ year, profile, onChange, readOnly = false }: GymProfileProps) => {
   const { t, tSubject } = useI18n();
   const spfIsLanguage = isLanguageSpf(profile.spf);
 
@@ -68,7 +69,7 @@ export const GymProfile = ({ year, profile, onChange }: GymProfileProps) => {
             <select
               id={`gym-${key}`}
               value={value ?? profile[key] ?? ''}
-              disabled={disabled}
+              disabled={disabled || readOnly}
               onChange={(e) => onChange({ ...profile, [key]: e.target.value || undefined })}
               className="select"
             >

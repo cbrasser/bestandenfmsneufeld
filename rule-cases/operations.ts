@@ -15,6 +15,7 @@ import { defaultSubjects, year3Directions } from '../src/config/subjects';
 import { translations, type Language } from '../src/i18n/locales';
 import { getTranslatedSubjectName } from '../src/i18n/subjectNames';
 import type { CombinedSubject, Division, GymProfile, PromotionEntity, StudentData, Subject, Year } from '../src/types';
+import { isNewerData } from '../src/utils/dataVersion';
 import { isCombinedSubject } from '../src/types';
 import {
   getSubjectsForYear,
@@ -105,6 +106,11 @@ export const operations = {
   }),
 
   initialData: () => ({ data: initializeStudentData() }),
+
+  // Whether data can only be shown, and never written: reconciling would lose what a version doesn't know
+  dataVersionIsNewer: ({ dataVersion }: { dataVersion?: unknown }) => ({
+    result: isNewerData({ dataVersion: dataVersion as number | undefined }),
+  }),
 
   reconcileSubjectList: ({ existing, defaults }: { existing: AnySubject[]; defaults: AnySubject[] }) => ({
     subjects: reconcileSubjectList(existing, defaults),

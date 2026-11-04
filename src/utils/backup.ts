@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from 'react';
 import type { StudentData } from '../types';
+import { isNewerData } from './dataVersion';
 import { reconcileAllYears, selectableYear } from './initializeData';
 import { BACKUP_KEY, type KeyValueStorage } from './storage';
 
@@ -20,7 +21,8 @@ export interface DataBackup {
   keep(data: StudentData): void;
   /**
    * Keeps `current` in place of the kept version, and returns the kept version to replace it with,
-   * ready to use, on this device's name and year. Returns null, changing nothing, if none is kept.
+   * ready to use, on this device's name and year. Returns null, changing nothing, if none is kept or
+   * the kept version is in a newer format, which this version would damage by reconciling it.
    * Throws, changing nothing, if `current` can't be kept.
    */
   swapWith(current: StudentData): StudentData | null;
@@ -51,7 +53,7 @@ export function createDataBackup(getStorage: () => KeyValueStorage): DataBackup 
 
     swapWith(current) {
       const kept = read();
-      if (!kept) return null;
+      if (!kept || isNewerData(kept.data)) return null;
       const reconciled = reconcileAllYears(kept.data);
       keep(current);
       const name = current.studentInfo?.name ?? reconciled.studentInfo?.name;

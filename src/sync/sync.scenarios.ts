@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest';
 import table from '../../sync-scenarios/scenarios.json';
 import { isSubject, type StudentData } from '../types';
 import { createDataBackup } from '../utils/backup';
+import { isNewerData } from '../utils/dataVersion';
 import { reconcileAllYears } from '../utils/initializeData';
 import { SELECTED_YEAR_KEY, STORAGE_KEY } from '../utils/storage';
 import { generateCode } from './code';
@@ -117,7 +118,8 @@ async function runScenario(steps: Step[]) {
         break;
       }
       case 'createCode':
-        code = await engineOf(step.device).createAccount();
+        if (step.refused) await expect(engineOf(step.device).createAccount()).rejects.toThrow();
+        else code = await engineOf(step.device).createAccount();
         break;
       case 'connect': {
         const device = deviceFor(step.device);
@@ -130,9 +132,31 @@ async function runScenario(steps: Step[]) {
         const device = deviceFor(step.device);
         const data = device.store.readData()!;
         device.setData(withGrades(data, [...gradesOf(data), step.value]));
-        expect(engineOf(step.device).noteLocalChange()).toBe(true);
+        expect(engineOf(step.device).noteLocalChange()).toBe(step.counted ?? true);
         break;
       }
+      case 'importFile': {
+        const device = deviceFor(step.device);
+        const file = withGrades(fixture(step.fixture ?? 'fms-student'), step.grades);
+        if ('dataVersion' in step) file.dataVersion = step.dataVersion;
+        expect(isNewerData(file) ? 'newer' : 'imported').toBe(step.result ?? 'imported');
+        if (isNewerData(file)) {
+          engineOf(step.device).setViewingNewerFile(true);
+          break;
+        }
+        const imported = reconcileAllYears(file);
+        device.backup.keep(device.store.readData()!);
+        device.setData(imported);
+        expect(engineOf(step.device).noteLocalChange()).toBe(step.counted ?? true);
+        break;
+      }
+      case 'closeNewerFile':
+        engineOf(step.device).setViewingNewerFile(false);
+        await engineOf(step.device).sync();
+        break;
+      case 'disconnect':
+        engineOf(step.device).disconnect();
+        break;
       case 'enterName': {
         const device = deviceFor(step.device);
         device.setData(withName(device.store.readData()!, step.name));
@@ -170,10 +194,10 @@ async function runScenario(steps: Step[]) {
         deviceFor(step.device).store.writeState({ code, version: null, unsynced: false, changedAt: null });
         break;
       case 'keepThisDevice':
-        expect(await engineOf(step.device).keepThisDevice()).toBe(true);
+        expect(await engineOf(step.device).keepThisDevice()).toBe(step.result ?? true);
         break;
       case 'keepCloud':
-        expect(await engineOf(step.device).keepCloud()).toBe(true);
+        expect(await engineOf(step.device).keepCloud()).toBe(step.result ?? true);
         break;
       case 'restoreBackup': {
         const device = deviceFor(step.device);
@@ -185,7 +209,7 @@ async function runScenario(steps: Step[]) {
       }
       case 'expectDevice': {
         const snapshot = engineOf(step.device).getSnapshot();
-        const { code: connectedCode, status, failure, version, unsynced, conflict, conflictPrompt } = snapshot;
+        const { code: connectedCode, status, failure, version, unsynced, conflict, conflictPrompt, readOnly, newerCloudData } = snapshot;
         const kept = deviceFor(step.device).backup.read();
         const local = deviceFor(step.device).store.readData();
         const actual: Step = {
@@ -204,6 +228,8 @@ async function runScenario(steps: Step[]) {
             localChangeKnown: conflict.local.changedAt !== null,
           },
           backupGrades: kept && gradesOf(kept.data),
+          readOnly,
+          shownGrades: newerCloudData && gradesOf(newerCloudData),
         };
         for (const key of Object.keys(actual)) {
           if (key in step) expect(actual[key], key).toEqual(step[key]);
@@ -221,6 +247,7 @@ async function runScenario(steps: Step[]) {
         if ('grades' in step) expect(gradesOf(row!.data)).toEqual(step.grades);
         if ('name' in step) expect(row!.data.studentInfo?.name ?? null).toBe(step.name);
         if ('division' in step) expect(row!.data.studentInfo?.division).toBe(step.division);
+        if ('dataVersion' in step) expect(row!.data.dataVersion).toBe(step.dataVersion);
         break;
       }
       case 'createCall':
@@ -228,6 +255,8 @@ async function runScenario(steps: Step[]) {
         break;
       case 'saveCall': {
         const data = withName(withGrades(await baseData(), step.grades), step.name);
+        // Each save states its format, as a real client does; without one the data counts as version 1
+        data.dataVersion = step.dataVersion;
         const result = await cloud.save(step.code ?? code, data, step.expectedVersion);
         expect(result).toMatchObject(step.result);
         break;
