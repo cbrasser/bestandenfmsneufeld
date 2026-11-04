@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import type { Division, StudentData, StudentInfo } from '../types';
+import type { Division, StudentInfo } from '../types';
 import { useI18n } from '../i18n/context';
 import { KeyRound, Loader2 } from 'lucide-react';
-import { cloudSync, normalizeCode, setStoredCode } from '../utils/cloudSync';
+import { normalizeCode } from '../sync/code';
+import { syncEngine } from '../sync/cloud';
 
 // Names of the Bildungsgänge, as Gymnasium Neufeld writes them
 const divisionDescriptions: Record<Division, string> = {
@@ -12,10 +13,9 @@ const divisionDescriptions: Record<Division, string> = {
 
 interface OnboardingProps {
   onComplete: (info: StudentInfo) => void;
-  onLoadFromCode: (data: StudentData) => void;
 }
 
-export const Onboarding = ({ onComplete, onLoadFromCode }: OnboardingProps) => {
+export const Onboarding = ({ onComplete }: OnboardingProps) => {
   const { t } = useI18n();
   const [name, setName] = useState('');
   const [division, setDivision] = useState<Division | ''>('');
@@ -33,20 +33,14 @@ export const Onboarding = ({ onComplete, onLoadFromCode }: OnboardingProps) => {
       setCodeError(t('cloudInvalidCode'));
       return;
     }
+    if (!syncEngine) return;
     setCodeBusy(true);
     setCodeError(null);
-    try {
-      const remote = await cloudSync.load(canonical);
-      if (!remote) {
-        setCodeError(t('cloudUnknownCode'));
-        return;
-      }
-      setStoredCode(canonical);
-      onLoadFromCode(remote);
-    } catch {
-      setCodeError(t('cloudLoadError'));
-    } finally {
-      setCodeBusy(false);
+    // On success the taken data reaches the app, and onboarding ends
+    const result = await syncEngine.connect(canonical);
+    setCodeBusy(false);
+    if (result !== 'connected') {
+      setCodeError(t(result === 'unknown_code' ? 'cloudUnknownCode' : 'cloudLoadError'));
     }
   };
 
@@ -137,7 +131,7 @@ export const Onboarding = ({ onComplete, onLoadFromCode }: OnboardingProps) => {
         </form>
 
         {/* Code-Login */}
-        {cloudSync.isConfigured && (
+        {syncEngine && (
           <>
             <hr className="rule" />
             {!showCode ? (

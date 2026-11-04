@@ -1,6 +1,6 @@
 import type { StudentData } from '../types';
 
-const STORAGE_KEY = 'student-data';
+export const STORAGE_KEY = 'student-data';
 
 export const storageService = {
   getData: (): StudentData | null => {

@@ -1,0 +1,49 @@
+# Local Supabase for developing and testing cloud sync. See "Local Supabase" in README.md.
+# Only the database, its API and Auth run. The app doesn't use Auth, but the CLI only issues the anon
+# key while it is enabled.
+#
+# The project id is fixed so that every worktree shares one stack. Ports sit outside the ranges of
+# other local projects on this machine.
+project_id = "bestanden"
+
+[api]
+enabled = true
+port = 57421
+schemas = ["public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 57422
+shadow_port = 57420
+major_version = 17
+
+[db.pooler]
+enabled = false
+
+[db.migrations]
+enabled = true
+
+[db.seed]
+enabled = false
+
+[realtime]
+enabled = false
+
+[studio]
+enabled = false
+
+[local_smtp]
+enabled = false
+
+[storage]
+enabled = false
+
+[auth]
+enabled = true
+
+[edge_runtime]
+enabled = false
+
+[analytics]
+enabled = false

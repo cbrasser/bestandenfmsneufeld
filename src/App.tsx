@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import type { StudentData, Year, Grade, StudentInfo, Subject, GymProfile as GymProfileType } from './types';
 import { isSubject, isCombinedSubject } from './types';
 import { storageService } from './utils/storage';
@@ -17,6 +17,7 @@ import { Menu } from './components/Menu';
 import { YearTabs } from './components/YearTabs';
 import { GymProfile } from './components/GymProfile';
 import { CloudSync } from './components/CloudSync';
+import { useCloudSync } from './sync/useCloudSync';
 import { useI18n } from './i18n/context';
 import { CombinedSubjectCard } from './components/CombinedSubjectCard';
 import { Footer } from './components/Footer';
@@ -56,6 +57,12 @@ function App() {
     }
   }, [data]);
 
+  const handleCloudData = useCallback((cloudData: StudentData) => {
+    setData(cloudData);
+    setCurrentYear(cloudData.currentYear);
+  }, []);
+  useCloudSync(data, handleCloudData);
+
   // The year's hue is the page: bind it on <html> so the body and portals follow
   const hasProfile = Boolean(data?.studentInfo);
   useEffect(() => {
@@ -84,11 +91,6 @@ function App() {
           const updatedData = reconcileAllYears({ ...data, studentInfo: info });
           setData(updatedData);
           storageService.saveData(updatedData);
-        }}
-        onLoadFromCode={(loaded) => {
-          const reconciled = reconcileAllYears(loaded);
-          setData(reconciled);
-          setCurrentYear(reconciled.currentYear);
         }}
       />
     );
@@ -351,15 +353,7 @@ function App() {
           onImport={handleImport}
           onReset={handleReset}
           cloudSlot={
-            <CloudSync
-              data={data}
-              onLoaded={(loaded) => {
-                const reconciled = reconcileAllYears(loaded);
-                setData(reconciled);
-                setCurrentYear(reconciled.currentYear);
-                setIsMenuOpen(false);
-              }}
-            />
+            <CloudSync onConnected={() => setIsMenuOpen(false)} />
           }
         />
       </header>
