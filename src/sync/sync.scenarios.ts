@@ -43,6 +43,12 @@ function withGrades(data: StudentData, values: number[]): StudentData {
   return next;
 }
 
+function withName(data: StudentData, name: string | undefined): StudentData {
+  return name === undefined || !data.studentInfo
+    ? data
+    : { ...data, studentInfo: { ...data.studentInfo, name } };
+}
+
 /** One browser: its own storage and sync engine, with a switch to cut it off from the cloud. */
 function createDevice() {
   const storage = createMemoryStorage();
@@ -51,6 +57,7 @@ function createDevice() {
     device.offline ? Promise.reject(new Error('offline')) : call();
   const remote: SyncRemote = {
     createAccount: (code, data) => offlineGuard(() => cloud.createAccount(code, data)),
+    delete: (code) => offlineGuard(() => cloud.delete(code)),
     load: (code) => offlineGuard(() => cloud.load(code)),
     save: (code, data, version) =>
       offlineGuard(async () => {
@@ -123,6 +130,15 @@ async function runScenario(steps: Step[]) {
         expect(engineOf(step.device).noteLocalChange()).toBe(true);
         break;
       }
+      case 'enterName': {
+        const device = deviceFor(step.device);
+        device.setData(withName(device.store.readData()!, step.name));
+        expect(engineOf(step.device).noteLocalChange()).toBe(false);
+        break;
+      }
+      case 'deleteCloudData':
+        expect(await engineOf(step.device).deleteCloudData()).toBe(step.result ?? 'deleted');
+        break;
       case 'saveDelayElapsed':
       case 'focus':
         await engineOf(step.device).sync();
@@ -158,6 +174,7 @@ async function runScenario(steps: Step[]) {
           unsynced,
           grades: gradesOf(local),
           selectedYear: local?.currentYear,
+          name: local?.studentInfo?.name ?? null,
         };
         for (const key of Object.keys(actual)) {
           if (key in step) expect(actual[key], key).toEqual(step[key]);
@@ -173,14 +190,22 @@ async function runScenario(steps: Step[]) {
         expect(row).not.toBeNull();
         if ('version' in step) expect(row!.version).toBe(step.version);
         if ('grades' in step) expect(gradesOf(row!.data)).toEqual(step.grades);
+        if ('name' in step) expect(row!.data.studentInfo?.name ?? null).toBe(step.name);
+        if ('division' in step) expect(row!.data.studentInfo?.division).toBe(step.division);
         break;
       }
+      case 'createCall':
+        await cloud.createAccount(code, fixture(step.fixture));
+        break;
       case 'saveCall': {
-        const data = withGrades(await baseData(), step.grades);
+        const data = withName(withGrades(await baseData(), step.grades), step.name);
         const result = await cloud.save(step.code ?? code, data, step.expectedVersion);
         expect(result).toMatchObject(step.result);
         break;
       }
+      case 'deleteCall':
+        expect(await cloud.delete(step.code ?? code)).toBe(step.result);
+        break;
       case 'parallelSaveCalls': {
         const base = await baseData();
         const results = await Promise.all(
@@ -190,7 +215,7 @@ async function runScenario(steps: Step[]) {
         break;
       }
       case 'legacySave': {
-        const data = withGrades(await baseData(), step.grades);
+        const data = withName(withGrades(await baseData(), step.grades), step.name);
         const { data: ok, error } = await client.rpc('save_data', { p_code: step.code ?? code, p_data: data });
         expect(error).toBeNull();
         expect(ok).toBe(step.result);

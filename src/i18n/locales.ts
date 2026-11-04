@@ -14,6 +14,8 @@ export interface Translations {
   division: string;
   continue: string;
   pleaseEnterName: string;
+  namePromptTitle: string;
+  namePromptDescription: string;
   pleaseSelectDivision: string;
   
   // Navigation
@@ -164,6 +166,12 @@ export interface Translations {
   cloudUnknownCode: string;
   cloudCreateError: string;
   cloudLoadError: string;
+  cloudDeleteData: string;
+  cloudDeleteWarning: string;
+  cloudDeleteKeepsLocal: string;
+  cloudDeleteConfirm: string;
+  cloudDeleteError: string;
+  cloudDeleted: string;
   cloudHaveCode: string;
   cloudOr: string;
 
@@ -212,6 +220,8 @@ export const translations: Record<Language, Translations> = {
     division: 'Abteilung',
     continue: 'Weiter',
     pleaseEnterName: 'Bitte gib deinen Namen ein',
+    namePromptTitle: 'Wie heisst du?',
+    namePromptDescription: 'Dein Name bleibt nur auf diesem Gerät und wird nicht in die Cloud geladen.',
     pleaseSelectDivision: 'Bitte wähle eine Abteilung',
     
     // Navigation
@@ -358,6 +368,12 @@ export const translations: Record<Language, Translations> = {
     cloudUnknownCode: 'Dieser Code ist unbekannt.',
     cloudCreateError: 'Fehler beim Anlegen.',
     cloudLoadError: 'Fehler beim Laden.',
+    cloudDeleteData: 'Meine Cloud-Daten löschen',
+    cloudDeleteWarning: 'Deine Noten werden aus der Cloud gelöscht und dieser Code funktioniert danach auf keinem Gerät mehr. Das lässt sich nicht rückgängig machen.',
+    cloudDeleteKeepsLocal: 'Die Noten auf diesem Gerät bleiben erhalten. Dieses Gerät wird abgemeldet.',
+    cloudDeleteConfirm: 'Endgültig löschen',
+    cloudDeleteError: 'Löschen fehlgeschlagen. Prüfe deine Verbindung und versuche es nochmals.',
+    cloudDeleted: 'Deine Cloud-Daten wurden gelöscht. Die Noten auf diesem Gerät bleiben erhalten.',
     cloudHaveCode: 'Schon einen Zugangscode? Hier anmelden',
     cloudOr: 'oder',
 
@@ -404,6 +420,8 @@ export const translations: Record<Language, Translations> = {
     division: 'Division',
     continue: 'Continuer',
     pleaseEnterName: 'Veuillez entrer votre nom',
+    namePromptTitle: 'Quel est votre nom ?',
+    namePromptDescription: 'Votre nom reste uniquement sur cet appareil et n\'est pas envoyé dans le cloud.',
     pleaseSelectDivision: 'Veuillez sélectionner une division',
     
     // Navigation
@@ -550,6 +568,12 @@ export const translations: Record<Language, Translations> = {
     cloudUnknownCode: 'Ce code est inconnu.',
     cloudCreateError: 'Erreur lors de la création.',
     cloudLoadError: 'Erreur lors du chargement.',
+    cloudDeleteData: 'Supprimer mes données cloud',
+    cloudDeleteWarning: 'Tes notes seront supprimées du cloud et ce code ne fonctionnera plus sur aucun appareil. Cette action est irréversible.',
+    cloudDeleteKeepsLocal: 'Les notes sur cet appareil sont conservées. Cet appareil sera déconnecté.',
+    cloudDeleteConfirm: 'Supprimer définitivement',
+    cloudDeleteError: 'La suppression a échoué. Vérifie ta connexion et réessaie.',
+    cloudDeleted: 'Tes données cloud ont été supprimées. Les notes sur cet appareil sont conservées.',
     cloudHaveCode: 'Tu as déjà un code d\'accès ? Connecte-toi ici',
     cloudOr: 'ou',
 
@@ -596,6 +620,8 @@ export const translations: Record<Language, Translations> = {
     division: 'Division',
     continue: 'Continue',
     pleaseEnterName: 'Please enter your name',
+    namePromptTitle: 'What\'s your name?',
+    namePromptDescription: 'Your name stays on this device only and isn\'t uploaded to the cloud.',
     pleaseSelectDivision: 'Please select a division',
     
     // Navigation
@@ -742,6 +768,12 @@ export const translations: Record<Language, Translations> = {
     cloudUnknownCode: 'This code is unknown.',
     cloudCreateError: 'Error creating account.',
     cloudLoadError: 'Error loading data.',
+    cloudDeleteData: 'Delete my cloud data',
+    cloudDeleteWarning: 'Your grades will be deleted from the cloud and this code will stop working on every device. This can\'t be undone.',
+    cloudDeleteKeepsLocal: 'The grades on this device stay. This device will be logged out.',
+    cloudDeleteConfirm: 'Delete permanently',
+    cloudDeleteError: 'Deleting failed. Check your connection and try again.',
+    cloudDeleted: 'Your cloud data has been deleted. The grades on this device stay.',
     cloudHaveCode: 'Already have an access code? Log in here',
     cloudOr: 'or',
 
@@ -788,6 +820,8 @@ export const translations: Record<Language, Translations> = {
     division: 'Divisione',
     continue: 'Continua',
     pleaseEnterName: 'Inserisci il tuo nome',
+    namePromptTitle: 'Come ti chiami?',
+    namePromptDescription: 'Il tuo nome resta solo su questo dispositivo e non viene caricato nel cloud.',
     pleaseSelectDivision: 'Seleziona una divisione',
     
     // Navigation
@@ -934,6 +968,12 @@ export const translations: Record<Language, Translations> = {
     cloudUnknownCode: 'Questo codice è sconosciuto.',
     cloudCreateError: 'Errore durante la creazione.',
     cloudLoadError: 'Errore durante il caricamento.',
+    cloudDeleteData: 'Elimina i miei dati cloud',
+    cloudDeleteWarning: 'I tuoi voti verranno eliminati dal cloud e questo codice non funzionerà più su nessun dispositivo. L\'operazione è irreversibile.',
+    cloudDeleteKeepsLocal: 'I voti su questo dispositivo restano. Questo dispositivo verrà disconnesso.',
+    cloudDeleteConfirm: 'Elimina definitivamente',
+    cloudDeleteError: 'Eliminazione non riuscita. Controlla la connessione e riprova.',
+    cloudDeleted: 'I tuoi dati cloud sono stati eliminati. I voti su questo dispositivo restano.',
     cloudHaveCode: 'Hai già un codice di accesso? Accedi qui',
     cloudOr: 'oppure',
 

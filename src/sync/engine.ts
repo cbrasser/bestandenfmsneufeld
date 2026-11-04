@@ -16,6 +16,8 @@ export type SaveResult =
 /** The database calls. Rejecting means the cloud couldn't be reached. */
 export interface SyncRemote {
   createAccount(code: string, data: StudentData): Promise<void>;
+  /** Removes the code and its data. Resolves to false if the code didn't exist. */
+  delete(code: string): Promise<boolean>;
   load(code: string): Promise<CloudSnapshot | null>;
   save(code: string, data: StudentData, expectedVersion: number): Promise<SaveResult>;
 }
@@ -65,6 +67,8 @@ export interface SyncSnapshot extends PersistedSyncState {
 
 export type ConnectResult = 'connected' | 'unknown_code' | 'unreachable';
 
+export type DeleteResult = 'deleted' | 'unreachable';
+
 export interface SyncEngine {
   getSnapshot(): SyncSnapshot;
   subscribe(listener: () => void): () => void;
@@ -74,6 +78,8 @@ export interface SyncEngine {
   connect(code: string): Promise<ConnectResult>;
   /** Disconnects this device. Local and cloud data both stay. */
   disconnect(): void;
+  /** Removes this code and its cloud data, then disconnects. Local data stays. */
+  deleteCloudData(): Promise<DeleteResult>;
   /**
    * Call after the local data may have changed. Returns true if this was a real change that the
    * cloud needs, so the caller should call sync() after the save delay.
@@ -90,6 +96,12 @@ export interface SyncEngine {
 
 // Rows start at this version; the database's trigger raises it on every write
 const FIRST_VERSION = 1;
+
+// A student's name stays on the device: it is never sent, and cloud data never brings one. Checked
+// because cloud data can be anything.
+function withName(data: StudentData, name?: string): StudentData {
+  return data?.studentInfo ? { ...data, studentInfo: { ...data.studentInfo, name } } : data;
+}
 
 /**
  * The sync rules, independent of the UI, the browser and the database.
@@ -149,7 +161,7 @@ export function createSyncEngine({ store, remote }: { store: SyncStore; remote: 
   // Returns false, with nothing changed, if the cloud data can't be read
   const takeCloudData = (code: string, cloud: CloudSnapshot, options: { keepSelectedYear: boolean }): boolean => {
     try {
-      store.applyCloudData(cloud.data, options);
+      store.applyCloudData(withName(cloud.data, store.readData()?.studentInfo?.name), options);
     } catch {
       return false;
     }
@@ -164,7 +176,7 @@ export function createSyncEngine({ store, remote }: { store: SyncStore; remote: 
     try {
       cloud = await remote.load(code);
     } catch {
-      fail('unreachable');
+      if (persisted.code === code) fail('unreachable');
       return null;
     }
     if (persisted.code !== code) return null;
@@ -192,9 +204,9 @@ export function createSyncEngine({ store, remote }: { store: SyncStore; remote: 
     const sent = store.contentOf(data);
     let result: SaveResult;
     try {
-      result = await remote.save(code, data, expectedVersion);
+      result = await remote.save(code, withName(data), expectedVersion);
     } catch {
-      return fail('unreachable');
+      return persisted.code === code && fail('unreachable');
     }
     if (persisted.code !== code) return false;
 
@@ -229,6 +241,11 @@ export function createSyncEngine({ store, remote }: { store: SyncStore; remote: 
     return false;
   };
 
+  const forgetCode = () => {
+    persist({ code: null, version: null, unsynced: false });
+    setOutcome('idle');
+  };
+
   const run = async () => {
     for (;;) {
       const code = persisted.code;
@@ -253,7 +270,7 @@ export function createSyncEngine({ store, remote }: { store: SyncStore; remote: 
       const data = store.readData();
       if (!data) throw new Error('No local data to create an account from');
       const code = generateCode();
-      await remote.createAccount(code, data);
+      await remote.createAccount(code, withName(data));
       baseline = store.contentOf(data);
       persist({ code, version: FIRST_VERSION, unsynced: false });
       setOutcome('saved');
@@ -275,9 +292,19 @@ export function createSyncEngine({ store, remote }: { store: SyncStore; remote: 
       return 'connected';
     },
 
-    disconnect() {
-      persist({ code: null, version: null, unsynced: false });
-      setOutcome('idle');
+    disconnect: forgetCode,
+
+    async deleteCloudData() {
+      const code = persisted.code;
+      if (!code) return 'deleted';
+      try {
+        await remote.delete(code);
+      } catch {
+        return 'unreachable';
+      }
+      // Whether this call removed the row or it was already gone, the code no longer exists
+      if (persisted.code === code) forgetCode();
+      return 'deleted';
     },
 
     noteLocalChange() {

@@ -297,6 +297,166 @@
         { "action": "focus", "device": "A" },
         { "action": "expectDevice", "device": "A", "status": "saved", "unsynced": false, "version": 2, "grades": [3] }
       ]
+    },
+    {
+      "name": "the server removes a name sent to create_account or the save call",
+      "steps": [
+        { "action": "createCall", "fixture": "fms-student" },
+        { "action": "expectCloud", "version": 1, "name": null, "division": "FMS" },
+        { "action": "saveCall", "expectedVersion": 1, "grades": [5], "name": "Test", "result": { "status": "saved", "version": 2 } },
+        { "action": "expectCloud", "version": 2, "grades": [5], "name": null, "division": "FMS" }
+      ]
+    },
+    {
+      "name": "a new code's cloud data has no name, and the creating device keeps its own",
+      "steps": [
+        { "action": "open", "device": "A", "fixture": "fms-student" },
+        { "action": "createCode", "device": "A" },
+        { "action": "expectCloud", "version": 1, "name": null, "division": "FMS" },
+        { "action": "expectDevice", "device": "A", "name": "Test" }
+      ]
+    },
+    {
+      "name": "a device connecting with a code has no name until the student enters it, which stays local",
+      "steps": [
+        { "action": "open", "device": "A", "fixture": "fms-student" },
+        { "action": "createCode", "device": "A" },
+        { "action": "connect", "device": "B" },
+        { "action": "expectDevice", "device": "B", "connected": true, "name": null },
+
+        { "action": "enterName", "device": "B", "name": "Second device" },
+        { "action": "expectDevice", "device": "B", "name": "Second device", "unsynced": false },
+        { "action": "focus", "device": "B" },
+        { "action": "expectDevice", "device": "B", "name": "Second device", "version": 1, "unsynced": false },
+        { "action": "expectCloud", "version": 1, "name": null }
+      ]
+    },
+    {
+      "name": "each device keeps its own name while edits go back and forth, and the cloud never gets one",
+      "steps": [
+        { "action": "open", "device": "A", "fixture": "fms-student" },
+        { "action": "createCode", "device": "A" },
+        { "action": "connect", "device": "B" },
+        { "action": "enterName", "device": "B", "name": "Second device" },
+
+        { "action": "addGrade", "device": "B", "value": 5 },
+        { "action": "saveDelayElapsed", "device": "B" },
+        { "action": "expectCloud", "version": 2, "grades": [5], "name": null },
+        { "action": "focus", "device": "A" },
+        { "action": "expectDevice", "device": "A", "version": 2, "grades": [5], "name": "Test", "unsynced": false },
+
+        { "action": "addGrade", "device": "A", "value": 4 },
+        { "action": "saveDelayElapsed", "device": "A" },
+        { "action": "expectCloud", "version": 3, "grades": [5, 4], "name": null },
+        { "action": "open", "device": "B" },
+        { "action": "expectDevice", "device": "B", "version": 3, "grades": [5, 4], "name": "Second device", "unsynced": false }
+      ]
+    },
+    {
+      "name": "a device that already has a name keeps it when it connects with a code",
+      "steps": [
+        { "action": "open", "device": "A", "fixture": "fms-student" },
+        { "action": "createCode", "device": "A" },
+        { "action": "open", "device": "B", "fixture": "fms-student" },
+        { "action": "enterName", "device": "B", "name": "Already here" },
+        { "action": "connect", "device": "B" },
+        { "action": "expectDevice", "device": "B", "connected": true, "name": "Already here" }
+      ]
+    },
+    {
+      "name": "a name an old website copy uploads stays out of every device, and the next save removes it",
+      "steps": [
+        { "action": "open", "device": "A", "fixture": "fms-student" },
+        { "action": "createCode", "device": "A" },
+        { "action": "legacySave", "grades": [5], "name": "Uploaded", "result": true },
+        { "action": "expectCloud", "version": 2, "name": "Uploaded" },
+
+        { "action": "focus", "device": "A" },
+        { "action": "expectDevice", "device": "A", "version": 2, "grades": [5], "name": "Test" },
+        { "action": "connect", "device": "B" },
+        { "action": "expectDevice", "device": "B", "grades": [5], "name": null },
+
+        { "action": "addGrade", "device": "A", "value": 4 },
+        { "action": "saveDelayElapsed", "device": "A" },
+        { "action": "expectCloud", "version": 3, "grades": [5, 4], "name": null }
+      ]
+    },
+    {
+      "name": "deleting cloud data removes the code, disconnects the device and keeps its local data",
+      "steps": [
+        { "action": "open", "device": "A", "fixture": "fms-student" },
+        { "action": "createCode", "device": "A" },
+        { "action": "addGrade", "device": "A", "value": 5 },
+        { "action": "saveDelayElapsed", "device": "A" },
+        { "action": "deleteCloudData", "device": "A" },
+        { "action": "expectDevice", "device": "A", "connected": false, "status": "idle", "failure": null, "version": null, "unsynced": false, "grades": [5], "name": "Test" },
+        { "action": "expectCloud", "exists": false },
+        { "action": "legacyLoad", "exists": false },
+        { "action": "saveCall", "expectedVersion": 2, "grades": [5], "result": { "status": "unknown_code" } },
+        { "action": "legacySave", "grades": [5], "result": false },
+        { "action": "connect", "device": "B", "result": "unknown_code" },
+        { "action": "expectDevice", "device": "B", "connected": false },
+
+        { "action": "open", "device": "A" },
+        { "action": "expectDevice", "device": "A", "connected": false, "status": "idle", "grades": [5] },
+        { "action": "expectCloud", "exists": false }
+      ]
+    },
+    {
+      "name": "unsynced changes are not uploaded by a delete, and stay on the device",
+      "steps": [
+        { "action": "open", "device": "A", "fixture": "fms-student" },
+        { "action": "createCode", "device": "A" },
+        { "action": "addGrade", "device": "A", "value": 5 },
+        { "action": "deleteCloudData", "device": "A" },
+        { "action": "saveDelayElapsed", "device": "A" },
+        { "action": "expectDevice", "device": "A", "connected": false, "unsynced": false, "grades": [5] },
+        { "action": "expectCloud", "exists": false }
+      ]
+    },
+    {
+      "name": "a delete that can't reach the cloud changes nothing",
+      "steps": [
+        { "action": "open", "device": "A", "fixture": "fms-student" },
+        { "action": "createCode", "device": "A" },
+        { "action": "setOffline", "device": "A", "offline": true },
+        { "action": "deleteCloudData", "device": "A", "result": "unreachable" },
+        { "action": "expectDevice", "device": "A", "connected": true, "version": 1 },
+        { "action": "expectCloud", "version": 1 }
+      ]
+    },
+    {
+      "name": "another device keeps its grades after a delete, reports it, and never brings the row back",
+      "steps": [
+        { "action": "open", "device": "A", "fixture": "fms-student" },
+        { "action": "createCode", "device": "A" },
+        { "action": "connect", "device": "B" },
+        { "action": "addGrade", "device": "B", "value": 5 },
+        { "action": "saveDelayElapsed", "device": "B" },
+        { "action": "focus", "device": "A" },
+        { "action": "deleteCloudData", "device": "A" },
+
+        { "action": "focus", "device": "B" },
+        { "action": "expectDevice", "device": "B", "connected": true, "status": "error", "failure": "unknown_code", "grades": [5] },
+        { "action": "addGrade", "device": "B", "value": 4 },
+        { "action": "saveDelayElapsed", "device": "B" },
+        { "action": "expectDevice", "device": "B", "status": "error", "failure": "unknown_code", "unsynced": true, "grades": [5, 4] },
+        { "action": "open", "device": "B" },
+        { "action": "expectDevice", "device": "B", "status": "error", "failure": "unknown_code", "unsynced": true, "grades": [5, 4] },
+        { "action": "expectCloud", "exists": false }
+      ]
+    },
+    {
+      "name": "the delete call says whether it removed a row",
+      "steps": [
+        { "action": "open", "device": "A", "fixture": "fms-student" },
+        { "action": "createCode", "device": "A" },
+        { "action": "deleteCall", "code": "UNKNOWNCODE23456", "result": false },
+        { "action": "expectCloud", "version": 1 },
+        { "action": "deleteCall", "result": true },
+        { "action": "expectCloud", "exists": false },
+        { "action": "deleteCall", "result": false }
+      ]
     }
   ]
 }

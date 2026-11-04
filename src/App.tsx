@@ -13,6 +13,7 @@ import { GradeModal } from './components/GradeModal';
 import { AssignGradesModal } from './components/AssignGradesModal';
 import { DirectionSelector } from './components/DirectionSelector';
 import { Onboarding } from './components/Onboarding';
+import { NamePrompt } from './components/NamePrompt';
 import { Menu } from './components/Menu';
 import { YearTabs } from './components/YearTabs';
 import { GymProfile } from './components/GymProfile';
@@ -95,6 +96,12 @@ function App() {
         }}
       />
     );
+  }
+
+  // Cloud data comes without the name, so a device that got its data with a code asks for it
+  if (!data.studentInfo.name) {
+    const studentInfo = data.studentInfo;
+    return <NamePrompt onComplete={(name) => setData({ ...data, studentInfo: { ...studentInfo, name } })} />;
   }
 
   const isGym = data.studentInfo.division === 'Gymnasium';

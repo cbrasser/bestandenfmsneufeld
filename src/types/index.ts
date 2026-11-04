@@ -46,7 +46,7 @@ export type Direction = {
 export type Division = 'FMS' | 'Gymnasium';
 
 export type StudentInfo = {
-  name: string;
+  name?: string; // kept on the device only, so cloud data arrives without it
   division: Division;
 };
 

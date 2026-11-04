@@ -1,5 +1,5 @@
 import { useState, useSyncExternalStore } from 'react';
-import { CloudOff, Copy, Check, KeyRound, LogIn, Loader2, AlertTriangle, X } from 'lucide-react';
+import { CloudOff, Copy, Check, KeyRound, LogIn, Loader2, AlertTriangle, Trash2, X } from 'lucide-react';
 import { useI18n } from '../i18n/context';
 import { formatCode, normalizeCode } from '../sync/code';
 import { syncEngine } from '../sync/cloud';
@@ -15,11 +15,13 @@ export const CloudSync = ({ onConnected }: CloudSyncProps) =>
 
 const CloudSyncPanel = ({ engine, onConnected }: CloudSyncProps & { engine: SyncEngine }) => {
   const { t } = useI18n();
-  const { code, status } = useSyncExternalStore(engine.subscribe, engine.getSnapshot);
+  const { code, status, failure } = useSyncExternalStore(engine.subscribe, engine.getSnapshot);
 
   // Modal-Zustände
   const [showCreated, setShowCreated] = useState(false);
   const [showEnter, setShowEnter] = useState(false);
+  const [showDelete, setShowDelete] = useState(false);
+  const [deleted, setDeleted] = useState(false);
   const [enteredCode, setEnteredCode] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -30,6 +32,7 @@ const CloudSyncPanel = ({ engine, onConnected }: CloudSyncProps & { engine: Sync
   const handleCreate = async () => {
     setBusy(true);
     setError(null);
+    setDeleted(false);
     try {
       await engine.createAccount();
       setShowCreated(true);
@@ -67,6 +70,24 @@ const CloudSyncPanel = ({ engine, onConnected }: CloudSyncProps & { engine: Sync
       return;
     }
     engine.disconnect();
+  };
+
+  const handleDelete = async () => {
+    setBusy(true);
+    setError(null);
+    const result = await engine.deleteCloudData();
+    setBusy(false);
+    if (result !== 'deleted') {
+      setError(t('cloudDeleteError'));
+      return;
+    }
+    setShowDelete(false);
+    setDeleted(true);
+  };
+
+  const closeDelete = () => {
+    setShowDelete(false);
+    setError(null);
   };
 
   const handleCopy = async () => {
@@ -112,6 +133,7 @@ const CloudSyncPanel = ({ engine, onConnected }: CloudSyncProps & { engine: Sync
             onClick={() => {
               setShowEnter(true);
               setError(null);
+              setDeleted(false);
             }}
             className="btn btn-block btn-start"
           >
@@ -119,6 +141,7 @@ const CloudSyncPanel = ({ engine, onConnected }: CloudSyncProps & { engine: Sync
             {t('cloudLoginWithCode')}
           </button>
           {error && <p className="form-error">{error}</p>}
+          {deleted && <p className="note text-sm" role="status">{t('cloudDeleted')}</p>}
         </div>
       ) : (
         <div className="stack">
@@ -136,6 +159,7 @@ const CloudSyncPanel = ({ engine, onConnected }: CloudSyncProps & { engine: Sync
               </span>
             </div>
             <div className="code mt-1 text-sm">{code ? formatCode(code) : ''}</div>
+            {failure === 'unknown_code' && <p className="mt-1 text-sm text-danger">{t('cloudUnknownCode')}</p>}
           </div>
           <button onClick={handleCopy} className="btn btn-block btn-start">
             {copied ? (
@@ -148,6 +172,18 @@ const CloudSyncPanel = ({ engine, onConnected }: CloudSyncProps & { engine: Sync
           <button onClick={handleDisconnect} className="btn btn-block btn-start">
             <CloudOff size={16} strokeWidth={2.5} aria-hidden="true" />
             {t('cloudDisconnect')}
+          </button>
+          <button
+            onClick={() => {
+              setShowDelete(true);
+              setError(null);
+              // So that what gets deleted is, if possible, no newer than what this device keeps
+              void engine.sync();
+            }}
+            className="btn btn-block btn-start"
+          >
+            <Trash2 size={16} strokeWidth={2.5} aria-hidden="true" />
+            {t('cloudDeleteData')}
           </button>
         </div>
       )}
@@ -173,6 +209,29 @@ const CloudSyncPanel = ({ engine, onConnected }: CloudSyncProps & { engine: Sync
               </button>
               <button onClick={() => setShowCreated(false)} className="btn btn-primary">
                 {t('cloudUnderstood')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Cloud-Daten löschen */}
+      {showDelete && (
+        <div className="scrim">
+          <div className="leaf dialog" role="alertdialog" aria-modal="true" aria-labelledby="cloud-delete-title">
+            <h4 id="cloud-delete-title" className="leaf-title">
+              {t('cloudDeleteData')}
+            </h4>
+            <p className="form-error">{t('cloudDeleteWarning')}</p>
+            <p className="lede text-sm">{t('cloudDeleteKeepsLocal')}</p>
+            {error && <p className="form-error">{error}</p>}
+            <div className="dialog-actions">
+              <button onClick={closeDelete} disabled={busy} autoFocus className="btn btn-quiet">
+                {t('cancel')}
+              </button>
+              <button onClick={handleDelete} disabled={busy} className="btn btn-primary">
+                {busy && <Loader2 size={16} strokeWidth={2.5} className="animate-spin" aria-hidden="true" />}
+                {t('cloudDeleteConfirm')}
               </button>
             </div>
           </div>

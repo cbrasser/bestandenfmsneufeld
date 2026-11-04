@@ -16,6 +16,12 @@ export function createSupabaseRemote(client: SupabaseClient): SyncRemote {
       if (error) throw error;
     },
 
+    async delete(code) {
+      const { data, error } = await client.rpc('delete_student', { p_code: code });
+      if (error) throw error;
+      return data as boolean;
+    },
+
     async load(code): Promise<CloudSnapshot | null> {
       const { data, error } = await client.rpc('load_student', { p_code: code });
       if (error) throw error;
