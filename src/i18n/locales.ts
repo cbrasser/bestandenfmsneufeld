@@ -172,6 +172,7 @@ export interface Translations {
   cloudDeleteConfirm: string;
   cloudDeleteError: string;
   cloudDeleted: string;
+  cloudDeleteOutOfStep: string;
   cloudHaveCode: string;
   cloudOr: string;
 
@@ -203,6 +204,22 @@ export interface Translations {
   plusPoints: string;
   minusPointsDouble: string;
   lastYearNoPromotion: string;
+
+  // Two versions of the data, and going back to the replaced one
+  conflictTitle: string;
+  conflictDescription: string;
+  conflictThisDevice: string;
+  conflictCloud: string;
+  gradesLabel: string;
+  conflictLastChange: string;
+  conflictLastChangeUnknown: string;
+  conflictKeepThisDevice: string;
+  conflictKeepCloud: string;
+  conflictBackupNote: string;
+  conflictChoiceError: string;
+  restorePrevious: string;
+  restoreConfirm: string;
+  restoreError: string;
 }
 
 export const translations: Record<Language, Translations> = {
@@ -374,6 +391,7 @@ export const translations: Record<Language, Translations> = {
     cloudDeleteConfirm: 'Endgültig löschen',
     cloudDeleteError: 'Löschen fehlgeschlagen. Prüfe deine Verbindung und versuche es nochmals.',
     cloudDeleted: 'Deine Cloud-Daten wurden gelöscht. Die Noten auf diesem Gerät bleiben erhalten.',
+    cloudDeleteOutOfStep: 'Es wurde nichts gelöscht: In der Cloud sind Daten, die dieses Gerät noch nicht hat. Sie werden jetzt synchronisiert. Versuche es danach nochmals.',
     cloudHaveCode: 'Schon einen Zugangscode? Hier anmelden',
     cloudOr: 'oder',
 
@@ -405,6 +423,22 @@ export const translations: Record<Language, Translations> = {
     plusPoints: 'Pluspunkte',
     minusPointsDouble: '2 × Minuspunkte',
     lastYearNoPromotion: 'Im letzten Jahr gibt es keine Promotion: ein ungenügendes Ergebnis bleibt ohne Wirkung.',
+
+    // Two versions of the data, and going back to the replaced one
+    conflictTitle: 'Deine Noten sind nicht mehr gleich',
+    conflictDescription: 'Auf diesem Gerät und in der Cloud gibt es verschiedene Änderungen. Wähle, welche Version du behalten willst.',
+    conflictThisDevice: 'Dieses Gerät',
+    conflictCloud: 'Cloud',
+    gradesLabel: 'Noten',
+    conflictLastChange: 'Letzte Änderung',
+    conflictLastChangeUnknown: 'Unbekannt',
+    conflictKeepThisDevice: 'Dieses Gerät behalten',
+    conflictKeepCloud: 'Cloud behalten',
+    conflictBackupNote: 'Die andere Version geht nicht verloren: Du kannst sie im Menü unter «Daten» wiederherstellen. Es wird immer nur die letzte ersetzte Version aufbewahrt.',
+    conflictChoiceError: 'Das hat nicht geklappt. Deine Daten sind unverändert. Versuche es nochmals oder wähle die andere Version.',
+    restorePrevious: 'Vorherige Version wiederherstellen',
+    restoreConfirm: 'Vorherige Version wiederherstellen? Sie ersetzt deine aktuellen Daten, und diese lassen sich danach auf demselben Weg zurückholen.',
+    restoreError: 'Wiederherstellen fehlgeschlagen',
   },
   fr: {
     // General
@@ -574,6 +608,7 @@ export const translations: Record<Language, Translations> = {
     cloudDeleteConfirm: 'Supprimer définitivement',
     cloudDeleteError: 'La suppression a échoué. Vérifie ta connexion et réessaie.',
     cloudDeleted: 'Tes données cloud ont été supprimées. Les notes sur cet appareil sont conservées.',
+    cloudDeleteOutOfStep: 'Rien n\'a été supprimé : le cloud contient des données que cet appareil n\'a pas encore. Elles sont en cours de synchronisation. Réessaie ensuite.',
     cloudHaveCode: 'Tu as déjà un code d\'accès ? Connecte-toi ici',
     cloudOr: 'ou',
 
@@ -605,6 +640,22 @@ export const translations: Record<Language, Translations> = {
     plusPoints: 'Points positifs',
     minusPointsDouble: '2 × points négatifs',
     lastYearNoPromotion: 'Pas de promotion en dernière année : un résultat insuffisant reste sans effet.',
+
+    // Two versions of the data, and going back to the replaced one
+    conflictTitle: 'Tes notes ne sont plus identiques',
+    conflictDescription: 'Il y a des modifications différentes sur cet appareil et dans le cloud. Choisis la version que tu veux garder.',
+    conflictThisDevice: 'Cet appareil',
+    conflictCloud: 'Cloud',
+    gradesLabel: 'Notes',
+    conflictLastChange: 'Dernière modification',
+    conflictLastChangeUnknown: 'Inconnue',
+    conflictKeepThisDevice: 'Garder cet appareil',
+    conflictKeepCloud: 'Garder le cloud',
+    conflictBackupNote: 'L\'autre version n\'est pas perdue : tu peux la restaurer dans le menu, sous « Données ». Seule la dernière version remplacée est conservée.',
+    conflictChoiceError: 'Cela n\'a pas fonctionné. Tes données n\'ont pas changé. Réessaie ou choisis l\'autre version.',
+    restorePrevious: 'Restaurer la version précédente',
+    restoreConfirm: 'Restaurer la version précédente ? Elle remplace tes données actuelles, que tu pourras ensuite récupérer de la même manière.',
+    restoreError: 'La restauration a échoué',
   },
   en: {
     // General
@@ -774,6 +825,7 @@ export const translations: Record<Language, Translations> = {
     cloudDeleteConfirm: 'Delete permanently',
     cloudDeleteError: 'Deleting failed. Check your connection and try again.',
     cloudDeleted: 'Your cloud data has been deleted. The grades on this device stay.',
+    cloudDeleteOutOfStep: 'Nothing was deleted: the cloud holds data this device doesn\'t have yet. It\'s being synced now. Try again afterwards.',
     cloudHaveCode: 'Already have an access code? Log in here',
     cloudOr: 'or',
 
@@ -805,6 +857,22 @@ export const translations: Record<Language, Translations> = {
     plusPoints: 'Plus points',
     minusPointsDouble: '2 × minus points',
     lastYearNoPromotion: 'There is no promotion in the last year: an insufficient result has no effect.',
+
+    // Two versions of the data, and going back to the replaced one
+    conflictTitle: 'Your grades no longer match',
+    conflictDescription: 'This device and the cloud have different changes. Choose which version you want to keep.',
+    conflictThisDevice: 'This device',
+    conflictCloud: 'Cloud',
+    gradesLabel: 'Grades',
+    conflictLastChange: 'Last change',
+    conflictLastChangeUnknown: 'Unknown',
+    conflictKeepThisDevice: 'Keep this device',
+    conflictKeepCloud: 'Keep cloud',
+    conflictBackupNote: 'The other version isn\'t lost: you can restore it from the menu, under "Data". Only the most recently replaced version is kept.',
+    conflictChoiceError: 'That didn\'t work. Your data hasn\'t changed. Try again or choose the other version.',
+    restorePrevious: 'Restore previous version',
+    restoreConfirm: 'Restore the previous version? It replaces your current data, which you can then get back the same way.',
+    restoreError: 'Restoring failed',
   },
   it: {
     // General
@@ -974,6 +1042,7 @@ export const translations: Record<Language, Translations> = {
     cloudDeleteConfirm: 'Elimina definitivamente',
     cloudDeleteError: 'Eliminazione non riuscita. Controlla la connessione e riprova.',
     cloudDeleted: 'I tuoi dati cloud sono stati eliminati. I voti su questo dispositivo restano.',
+    cloudDeleteOutOfStep: 'Non è stato eliminato nulla: il cloud contiene dati che questo dispositivo non ha ancora. Sono in corso di sincronizzazione. Riprova tra poco.',
     cloudHaveCode: 'Hai già un codice di accesso? Accedi qui',
     cloudOr: 'oppure',
 
@@ -1005,6 +1074,22 @@ export const translations: Record<Language, Translations> = {
     plusPoints: 'Punti positivi',
     minusPointsDouble: '2 × punti negativi',
     lastYearNoPromotion: "Nell'ultimo anno non c'è promozione: un risultato insufficiente resta senza effetto.",
+
+    // Two versions of the data, and going back to the replaced one
+    conflictTitle: 'I tuoi voti non coincidono più',
+    conflictDescription: 'Su questo dispositivo e nel cloud ci sono modifiche diverse. Scegli quale versione vuoi tenere.',
+    conflictThisDevice: 'Questo dispositivo',
+    conflictCloud: 'Cloud',
+    gradesLabel: 'Voti',
+    conflictLastChange: 'Ultima modifica',
+    conflictLastChangeUnknown: 'Sconosciuta',
+    conflictKeepThisDevice: 'Tieni questo dispositivo',
+    conflictKeepCloud: 'Tieni il cloud',
+    conflictBackupNote: 'L\'altra versione non va persa: puoi ripristinarla dal menu, nella sezione «Dati». Viene conservata solo l\'ultima versione sostituita.',
+    conflictChoiceError: 'Non ha funzionato. I tuoi dati non sono cambiati. Riprova o scegli l\'altra versione.',
+    restorePrevious: 'Ripristina la versione precedente',
+    restoreConfirm: 'Ripristinare la versione precedente? Sostituisce i tuoi dati attuali, che potrai poi recuperare allo stesso modo.',
+    restoreError: 'Ripristino non riuscito',
   },
 };
 

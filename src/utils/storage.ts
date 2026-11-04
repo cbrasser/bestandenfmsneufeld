@@ -3,6 +3,10 @@ import type { StudentData, Year } from '../types';
 export const STORAGE_KEY = 'student-data';
 /** The year this device shows. It belongs to the device: other devices never see or move it. */
 export const SELECTED_YEAR_KEY = 'selected-year';
+/** The one version this device can go back to, see utils/backup.ts. */
+export const BACKUP_KEY = 'data-backup';
+
+export type KeyValueStorage = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;
 
 export const parseSelectedYear = (stored: string | null): Year | null => {
   const year = Number(stored);
@@ -48,6 +52,7 @@ export const storageService = {
     try {
       localStorage.removeItem(STORAGE_KEY);
       localStorage.removeItem(SELECTED_YEAR_KEY);
+      localStorage.removeItem(BACKUP_KEY);
     } catch (error) {
       console.error('Error clearing localStorage:', error);
       throw error;

@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createMemoryStorage } from '../sync/memoryStorage';
 import type { StudentData } from '../types';
 import { reconcileAllYears } from './initializeData';
-import { SELECTED_YEAR_KEY, STORAGE_KEY, storageService } from './storage';
+import { BACKUP_KEY, SELECTED_YEAR_KEY, STORAGE_KEY, storageService } from './storage';
 
 const student = (currentYear: StudentData['currentYear']): StudentData => ({
   studentInfo: { name: 'Test', division: 'Gymnasium' },
@@ -44,5 +44,14 @@ describe('selected year', () => {
 
     expect(localStorage.getItem(STORAGE_KEY)).toBeNull();
     expect(storageService.getSelectedYear()).toBeNull();
+  });
+});
+
+describe('resetting', () => {
+  it('removes the backup too, so that nothing of the old data stays on the device', () => {
+    vi.stubGlobal('localStorage', createMemoryStorage());
+    localStorage.setItem(BACKUP_KEY, 'kept');
+    storageService.clearData();
+    expect(localStorage.getItem(BACKUP_KEY)).toBeNull();
   });
 });

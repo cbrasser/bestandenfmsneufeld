@@ -78,7 +78,7 @@ const CloudSyncPanel = ({ engine, onConnected }: CloudSyncProps & { engine: Sync
     const result = await engine.deleteCloudData();
     setBusy(false);
     if (result !== 'deleted') {
-      setError(t('cloudDeleteError'));
+      setError(t(result === 'out_of_step' ? 'cloudDeleteOutOfStep' : 'cloudDeleteError'));
       return;
     }
     setShowDelete(false);

@@ -5,6 +5,7 @@ import { createClient } from '@supabase/supabase-js';
 import { describe, expect, it } from 'vitest';
 import table from '../../sync-scenarios/scenarios.json';
 import { isSubject, type StudentData } from '../types';
+import { createDataBackup } from '../utils/backup';
 import { reconcileAllYears } from '../utils/initializeData';
 import { SELECTED_YEAR_KEY, STORAGE_KEY } from '../utils/storage';
 import { generateCode } from './code';
@@ -52,7 +53,8 @@ function withName(data: StudentData, name: string | undefined): StudentData {
 /** One browser: its own storage and sync engine, with a switch to cut it off from the cloud. */
 function createDevice() {
   const storage = createMemoryStorage();
-  const store = createWebSyncStore(() => storage);
+  const backup = createDataBackup(() => storage);
+  const store = createWebSyncStore(() => storage, backup);
   const offlineGuard = <T>(call: () => Promise<T>) =>
     device.offline ? Promise.reject(new Error('offline')) : call();
   const remote: SyncRemote = {
@@ -72,6 +74,7 @@ function createDevice() {
   const device = {
     store,
     storage,
+    backup,
     offline: false,
     loseSaveAnswer: false,
     engine: null as SyncEngine | null,
@@ -163,8 +166,27 @@ async function runScenario(steps: Step[]) {
         expect(engineOf(step.device).noteLocalChange()).toBe(false);
         break;
       }
+      case 'connectedBeforeVersions':
+        deviceFor(step.device).store.writeState({ code, version: null, unsynced: false, changedAt: null });
+        break;
+      case 'keepThisDevice':
+        expect(await engineOf(step.device).keepThisDevice()).toBe(true);
+        break;
+      case 'keepCloud':
+        expect(await engineOf(step.device).keepCloud()).toBe(true);
+        break;
+      case 'restoreBackup': {
+        const device = deviceFor(step.device);
+        const restored = device.backup.swapWith(device.store.readData()!);
+        expect(restored).not.toBeNull();
+        device.setData(restored!);
+        expect(engineOf(step.device).noteLocalChange()).toBe(true);
+        break;
+      }
       case 'expectDevice': {
-        const { code: connectedCode, status, failure, version, unsynced } = engineOf(step.device).getSnapshot();
+        const snapshot = engineOf(step.device).getSnapshot();
+        const { code: connectedCode, status, failure, version, unsynced, conflict, conflictPrompt } = snapshot;
+        const kept = deviceFor(step.device).backup.read();
         const local = deviceFor(step.device).store.readData();
         const actual: Step = {
           connected: connectedCode !== null,
@@ -175,6 +197,13 @@ async function runScenario(steps: Step[]) {
           grades: gradesOf(local),
           selectedYear: local?.currentYear,
           name: local?.studentInfo?.name ?? null,
+          conflictPrompt,
+          conflict: conflict && {
+            localGrades: conflict.local.gradeCount,
+            cloudGrades: conflict.cloud.gradeCount,
+            localChangeKnown: conflict.local.changedAt !== null,
+          },
+          backupGrades: kept && gradesOf(kept.data),
         };
         for (const key of Object.keys(actual)) {
           if (key in step) expect(actual[key], key).toEqual(step[key]);

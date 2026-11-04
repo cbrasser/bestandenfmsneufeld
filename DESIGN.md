@@ -278,6 +278,8 @@ Outlined cards with a round swatch, a name in 800 and a line under it. The check
 ### Dialogs
 A leaf up to 460px wide with a large shadow on a scrim: title, quiet close button, fields in pairs that stack when narrow, then a quiet Cancel and one primary Save at the right. The date field is a button that reads like an input and opens a calendar in a small outlined popover; the selected day is ink, today is outlined.
 
+The conflict prompt is the one dialog with no way out but a choice: no close, no Cancel, and two equal buttons rather than a primary, because neither version is the right one to suggest.
+
 ### Menu
 A paper panel from the right edge (380px, at most 90% of the width) with a 2px ink line on its left, sliding in over 320ms. Groups are titled in 800 over an ink rule: theme (a three-part segmented control), language (a native select), cloud sync, data. The access code is set in Manrope 800 spaced 0.14em, not in a monospace face.
 
