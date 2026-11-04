@@ -1,29 +1,21 @@
-import { useEffect, useRef, useState } from 'react';
+import { useState, useSyncExternalStore } from 'react';
 import { CloudOff, Copy, Check, KeyRound, LogIn, Loader2, AlertTriangle, X } from 'lucide-react';
 import { useI18n } from '../i18n/context';
-import type { StudentData } from '../types';
-import {
-  cloudSync,
-  getStoredCode,
-  setStoredCode,
-  clearStoredCode,
-  normalizeCode,
-  formatCode,
-} from '../utils/cloudSync';
+import { formatCode, normalizeCode } from '../sync/code';
+import { syncEngine } from '../sync/cloud';
+import type { SyncEngine, SyncStatus } from '../sync/engine';
 
 interface CloudSyncProps {
-  /** Aktuelle Daten (werden bei Änderung in die Cloud gepusht). */
-  data: StudentData;
-  /** Wird aufgerufen, wenn per Code geladene Daten übernommen werden. */
-  onLoaded: (data: StudentData) => void;
+  /** Wird aufgerufen, nachdem per Code geladene Daten übernommen wurden. */
+  onConnected: () => void;
 }
 
-type SyncStatus = 'idle' | 'saving' | 'saved' | 'error';
+export const CloudSync = ({ onConnected }: CloudSyncProps) =>
+  syncEngine ? <CloudSyncPanel engine={syncEngine} onConnected={onConnected} /> : null;
 
-export const CloudSync = ({ data, onLoaded }: CloudSyncProps) => {
+const CloudSyncPanel = ({ engine, onConnected }: CloudSyncProps & { engine: SyncEngine }) => {
   const { t } = useI18n();
-  const [code, setCode] = useState<string | null>(() => getStoredCode());
-  const [status, setStatus] = useState<SyncStatus>('idle');
+  const { code, status } = useSyncExternalStore(engine.subscribe, engine.getSnapshot);
 
   // Modal-Zustände
   const [showCreated, setShowCreated] = useState(false);
@@ -35,41 +27,12 @@ export const CloudSync = ({ data, onLoaded }: CloudSyncProps) => {
 
   const connected = Boolean(code);
 
-  // Debounced push bei Datenänderung, solange verbunden.
-  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const firstRun = useRef(true);
-  useEffect(() => {
-    if (!connected || !code) return;
-    if (firstRun.current) {
-      firstRun.current = false;
-      return; // beim Mount nicht sofort überschreiben
-    }
-    if (saveTimer.current) clearTimeout(saveTimer.current);
-    setStatus('saving');
-    saveTimer.current = setTimeout(async () => {
-      try {
-        const ok = await cloudSync.save(code, data);
-        setStatus(ok ? 'saved' : 'error');
-      } catch {
-        setStatus('error');
-      }
-    }, 1500);
-    return () => {
-      if (saveTimer.current) clearTimeout(saveTimer.current);
-    };
-  }, [data, code, connected]);
-
-  if (!cloudSync.isConfigured) return null;
-
   const handleCreate = async () => {
     setBusy(true);
     setError(null);
     try {
-      const newCode = await cloudSync.createAccount(data);
-      setCode(newCode);
-      firstRun.current = true; // direkt nach Anlegen nicht erneut pushen
+      await engine.createAccount();
       setShowCreated(true);
-      setStatus('saved');
     } catch {
       setError(t('cloudCreateError'));
     } finally {
@@ -88,33 +51,22 @@ export const CloudSync = ({ data, onLoaded }: CloudSyncProps) => {
     }
     setBusy(true);
     setError(null);
-    try {
-      const remote = await cloudSync.load(canonical);
-      if (!remote) {
-        setError(t('cloudUnknownCode'));
-        return;
-      }
-      setStoredCode(canonical);
-      setCode(canonical);
-      firstRun.current = true;
-      onLoaded(remote);
-      setStatus('saved');
-      setShowEnter(false);
-      setEnteredCode('');
-    } catch {
-      setError(t('cloudLoadError'));
-    } finally {
-      setBusy(false);
+    const result = await engine.connect(canonical);
+    setBusy(false);
+    if (result !== 'connected') {
+      setError(t(result === 'unknown_code' ? 'cloudUnknownCode' : 'cloudLoadError'));
+      return;
     }
+    setShowEnter(false);
+    setEnteredCode('');
+    onConnected();
   };
 
   const handleDisconnect = () => {
     if (!window.confirm(t('cloudConfirmDisconnect'))) {
       return;
     }
-    clearStoredCode();
-    setCode(null);
-    setStatus('idle');
+    engine.disconnect();
   };
 
   const handleCopy = async () => {

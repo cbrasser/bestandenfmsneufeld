@@ -1,3 +1,4 @@
+-- Historisch: Neue Änderungen gehören nach supabase/migrations/, siehe README.
 -- =====================================================================
 --  Bestanden FMS – Cloud-Sync Schema (pseudonyme Code-Anmeldung)
 -- =====================================================================

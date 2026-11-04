@@ -108,15 +108,18 @@ How it works:
 - The code acts as both the identifier and the secret (capability/bearer-token pattern):
   whoever has the code can read the data, so students are told to keep it safe.
 - The `students` table is locked down with Row Level Security and **no policies** — all
-  access goes through three `SECURITY DEFINER` RPC functions (`create_account`,
-  `load_data`, `save_data`) that validate the hashed code. The table itself is never
-  directly readable with the public anon key.
+  access goes through `SECURITY DEFINER` RPC functions that validate the hashed code.
+  The table itself is never directly readable with the public anon key.
+- Every row has a `version`, raised by a database trigger on every write. The website
+  saves with `save_student`, which refuses a save based on an out-of-date version, and
+  pulls with `load_student` on open and on focus. `load_data` and `save_data` stay for
+  old cached copies of the site.
 - If the code is lost, the cloud data cannot be recovered (use Export as a backup).
 
 ### Setup
 
 1. Create a Supabase project — choose region **EU (Frankfurt)** for data residency.
-2. Open the SQL Editor and run [`supabase/schema.sql`](./supabase/schema.sql).
+2. Open the SQL Editor and run the files in [`supabase/migrations`](./supabase/migrations), in order.
 3. Copy `.env.example` to `.env` and fill in:
    - `VITE_SUPABASE_URL` — Project Settings → API → Project URL
    - `VITE_SUPABASE_ANON_KEY` — Project Settings → API → anon public key
@@ -125,6 +128,27 @@ How it works:
 
 > GDPR: even though no direct PII is stored, Supabase is a data processor — sign a DPA
 > and keep the EU region. Consider adding simple rate limiting if abuse is a concern.
+
+## Local Supabase
+
+The schema lives in [`supabase/migrations`](./supabase/migrations). Docker and the Supabase CLI are required. Copy nothing from a production `.env`: local work only needs local values, see [`.env.local.example`](./.env.local.example).
+
+```bash
+npm run supabase:start   # start the stack, reset it to this checkout's migrations, print its values
+npm run dev:local        # the same, then the website on http://localhost:5193 until you stop it
+npm run test:sync        # the same, then the sync scenarios in sync-scenarios/
+npm run supabase:stop    # stop the stack
+```
+
+All worktrees on a machine share one stack (project id `bestanden`, API on port 57421) and their migrations can differ. So each of these commands holds a machine-wide lock while it runs, at `~/.cache/bestanden-supabase.lock`, and resets the database first. To run anything else against the stack, wrap it the same way, and it gets `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` and `SUPABASE_DB_URL`:
+
+```bash
+node scripts/with-local-supabase.mjs <command...>
+```
+
+Don't rely on the database between commands, since another worktree may have reset it. A command that waits for the lock gives up after 15 minutes. If a process was killed outright and left the lock behind, the next command says so and how to remove it.
+
+Keep additive database changes in separate migrations from anything that disables old behaviour, so they can reach production at different times.
 
 ## License
 
