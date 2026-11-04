@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import App from './App';
 import { AdminPage } from './components/AdminPage';
 import { AppGuide } from './components/AppGuide';
+import { NewerDataBoundary } from './components/ReadOnlyNotice';
 import { parseGuideHash } from './utils/guideRoute';
 
 export default function Root() {
@@ -17,5 +18,9 @@ export default function Root() {
   // The shareable app guide lives at /#app
   const guide = parseGuideHash(hash);
   if (guide) return <AppGuide section={guide.section} />;
-  return <App />;
+  return (
+    <NewerDataBoundary>
+      <App />
+    </NewerDataBoundary>
+  );
 }

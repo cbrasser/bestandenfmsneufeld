@@ -1,4 +1,5 @@
 import type { StudentData, Year } from '../types';
+import { isNewerData } from './dataVersion';
 
 export const STORAGE_KEY = 'student-data';
 /** The year this device shows. It belongs to the device: other devices never see or move it. */
@@ -26,8 +27,11 @@ export const storageService = {
     }
   },
 
+  /** Never stores data in a newer format, and never replaces it: this version would lose what it doesn't know. */
   saveData: (data: StudentData): void => {
     try {
+      const stored = storageService.getData();
+      if (isNewerData(data) || (stored && isNewerData(stored))) return;
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     } catch (error) {
       console.error('Error saving to localStorage:', error);
@@ -61,13 +65,19 @@ export const storageService = {
     }
   },
 
+  /** What is stored, with this device's selected year. */
+  getDataWithSelectedYear: (): StudentData | null => {
+    const data = storageService.getData();
+    return data && { ...data, currentYear: storageService.getSelectedYear() ?? data.currentYear };
+  },
+
   /** The text of an export file. Files keep the selected year, in the field they always had it in. */
   exportText: (): string => {
-    const data = storageService.getData();
+    const data = storageService.getDataWithSelectedYear();
     if (!data) {
       throw new Error('No data to export');
     }
-    return JSON.stringify({ ...data, currentYear: storageService.getSelectedYear() ?? data.currentYear }, null, 2);
+    return JSON.stringify(data, null, 2);
   },
 
   exportData: (): void => {
@@ -90,6 +100,29 @@ export const storageService = {
     }
   },
 
+  /**
+   * The data in an import file's text. A file in a newer format is taken as it is, whatever shape it
+   * has, so that it can ask for an update instead of looking broken. Throws if it can't be used.
+   */
+  parseImport: (text: string): StudentData => {
+    let data: StudentData;
+    try {
+      data = JSON.parse(text) as StudentData;
+    } catch {
+      throw new Error('Failed to parse JSON file');
+    }
+    if (!data || typeof data !== 'object') {
+      throw new Error('Invalid data format');
+    }
+    if (isNewerData(data)) {
+      return data;
+    }
+    if (!data.years || typeof data.years !== 'object') {
+      throw new Error('Invalid data format: missing years');
+    }
+    return data;
+  },
+
   importData: (file: File): Promise<StudentData> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -106,24 +139,11 @@ export const storageService = {
             return;
           }
           
-          const data = JSON.parse(text) as StudentData;
-          
-          // Basic validation
-          if (!data || typeof data !== 'object') {
-            reject(new Error('Invalid data format'));
-            return;
-          }
-          
-          // Validate required fields
-          if (!data.years || typeof data.years !== 'object') {
-            reject(new Error('Invalid data format: missing years'));
-            return;
-          }
-          
+          const data = storageService.parseImport(text);
           resolve(data);
         } catch (error) {
           console.error('Error parsing imported data:', error);
-          reject(new Error('Failed to parse JSON file'));
+          reject(error);
         }
       };
       

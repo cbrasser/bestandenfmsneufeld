@@ -4,6 +4,7 @@ import { useI18n } from '../i18n/context';
 import { KeyRound, Loader2 } from 'lucide-react';
 import { normalizeCode } from '../sync/code';
 import { syncEngine } from '../sync/cloud';
+import { connectErrors } from '../sync/connectErrors';
 
 // Names of the Bildungsgänge, as Gymnasium Neufeld writes them
 const divisionDescriptions: Record<Division, string> = {
@@ -40,7 +41,7 @@ export const Onboarding = ({ onComplete }: OnboardingProps) => {
     const result = await syncEngine.connect(canonical);
     setCodeBusy(false);
     if (result !== 'connected') {
-      setCodeError(t(result === 'unknown_code' ? 'cloudUnknownCode' : 'cloudLoadError'));
+      setCodeError(t(connectErrors[result]));
     }
   };
 

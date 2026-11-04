@@ -24,12 +24,14 @@ interface SwipeableGradeItemProps {
   grade: Grade;
   onEdit: () => void;
   onDelete: () => void;
+  readOnly?: boolean;
 }
 
 export const SwipeableGradeItem = ({
   grade,
   onEdit,
   onDelete,
+  readOnly = false,
 }: SwipeableGradeItemProps) => {
   const { t } = useI18n();
   const isLargeScreen = useIsLargeScreen();
@@ -143,7 +145,7 @@ export const SwipeableGradeItem = ({
   return (
     <div className="grade">
       {/* Actions behind (only for mobile swipe) */}
-      {!isLargeScreen && (
+      {!isLargeScreen && !readOnly && (
         <div
           className="grade-actions"
           style={{ visibility: isSwipeOpen || currentX < 0 ? 'visible' : 'hidden' }}
@@ -176,8 +178,8 @@ export const SwipeableGradeItem = ({
       {/* Grade item */}
       <div
         ref={itemRef}
-        onTouchStart={!isLargeScreen ? handleTouchStart : undefined}
-        onMouseDown={!isLargeScreen ? handleMouseDown : undefined}
+        onTouchStart={!isLargeScreen && !readOnly ? handleTouchStart : undefined}
+        onMouseDown={!isLargeScreen && !readOnly ? handleMouseDown : undefined}
         className="grade-row"
         style={{
           transform: `translateX(${offsetX}px)`,
@@ -199,7 +201,7 @@ export const SwipeableGradeItem = ({
           )}
         </div>
         {/* Show buttons on large screens */}
-        {isLargeScreen && (
+        {isLargeScreen && !readOnly && (
           <div className="flex items-center">
             <button
               onClick={(e) => {

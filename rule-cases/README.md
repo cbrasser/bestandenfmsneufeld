@@ -45,7 +45,7 @@ For each suite, call the rule named by `operation` with each case's `input` and 
 
 - Numbers match exactly, as doubles. Accumulate in array order, because a different order can change the last bits.
 - Ties round towards positive infinity. In Kotlin, `roundToLong` does this; `kotlin.math.round` rounds ties to even and is wrong. `roundToLong` throws on NaN, so handle a Fach with no graded Teilfach before rounding.
-- A missing key means the value is absent, and key order means nothing. `null` appears only as a grade or a `result`: for a grade it means the Fach has no graded Teilfach (NaN on the website).
+- A missing key means the value is absent, and key order means nothing. `null` appears only as a grade, a `result` or a `dataVersion`: for a grade it means the Fach has no graded Teilfach (NaN on the website), and for a `dataVersion` it means the same as a missing value.
 - `uiTranslations` checks the interface text of whichever implementation runs it, over that implementation's own keys. Each side has text the other doesn't, so the file doesn't list keys. Its expected lists are empty on both sides.
 
 A runner fails on an operation it doesn't know, so that a new suite can't be skipped by accident.
@@ -60,5 +60,7 @@ A runner fails on an operation it doesn't know, so that a new suite can't be ski
 | `rule-cases.test.ts` | The website passes every case, and the file is up to date. |
 | `coverage.test.ts` | The cases reach both Bildungsgänge, all Berufsfelder and choices, renamed and split subjects, and all languages. |
 | `official-rules.test.ts` | The rules against values worked out by hand from the official documents, because generated cases only record what the code does. |
+
+`DATA_VERSION` in `src/utils/dataVersion.ts` is the data format this release supports, and the cases that use it follow it. Raising it needs an app release even if no other case changes, as the app must support the same version. A client that finds a higher value shows the data read-only and never writes it back.
 
 When adding a rule, add its operation and suite here. If it's an official rule, also add a hand-worked test.

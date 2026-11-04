@@ -14,4 +14,6 @@ Single-context: one `GLOSSARY.md` and `docs/adr/` at the repo root. See `docs/ag
 
 ## Rule changes
 
-Changing rounding, grade calculation, promotion criteria, subject tables, reconciliation or subject names needs `npm run rule-cases` and an app release. If it changes the subject lists or the data format, it also needs a `dataVersion` bump. See `rule-cases/README.md`.
+Changing rounding, grade calculation, promotion criteria, subject tables, reconciliation or subject names needs `npm run rule-cases` and an app release. See `rule-cases/README.md`.
+
+Changing the subject lists or the data format also needs a `dataVersion` bump: raise `DATA_VERSION` in `src/utils/dataVersion.ts`, run `npm run rule-cases`, and release the app. Without the bump, an older client reconciles the new data, drops what it doesn't know, and pushes the loss to the cloud.

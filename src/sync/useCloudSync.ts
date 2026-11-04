@@ -21,6 +21,14 @@ export function useConflictPromptState(): ConflictPromptState {
   );
 }
 
+/** Cloud data in a newer format, for this device to show read-only instead of its own. */
+export function useNewerCloudData(): StudentData | null {
+  return useSyncExternalStore(
+    syncEngine?.subscribe ?? noSubscription,
+    () => syncEngine?.getSnapshot().newerCloudData ?? null
+  );
+}
+
 /**
  * Connects the app to its sync: pulls on open and on return to the page, retries when the connection
  * returns, and saves after the delay when the data changes, or at once when the page is left. Tabs

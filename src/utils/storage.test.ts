@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createMemoryStorage } from '../sync/memoryStorage';
 import type { StudentData } from '../types';
+import { DATA_VERSION } from './dataVersion';
 import { reconcileAllYears } from './initializeData';
 import { BACKUP_KEY, SELECTED_YEAR_KEY, STORAGE_KEY, storageService } from './storage';
 
@@ -53,5 +54,40 @@ describe('resetting', () => {
     localStorage.setItem(BACKUP_KEY, 'kept');
     storageService.clearData();
     expect(localStorage.getItem(BACKUP_KEY)).toBeNull();
+  });
+});
+
+describe('data in a newer format', () => {
+  beforeEach(() => {
+    vi.stubGlobal('localStorage', createMemoryStorage());
+  });
+
+  const newer = { ...student(1), dataVersion: DATA_VERSION + 1 };
+
+  it('is never stored', () => {
+    storageService.saveData(student(1));
+    storageService.saveData(newer);
+    expect(storageService.getData()?.dataVersion).toBeUndefined();
+  });
+
+  it('is never overwritten', () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(newer));
+    storageService.saveData(student(2));
+    expect(storageService.getData()).toEqual(newer);
+  });
+});
+
+describe('reading an import file', () => {
+  it('reads a file of a newer format without asking for anything else, as it may have changed shape', () => {
+    expect(storageService.parseImport('{"dataVersion":999,"school":{}}')).toEqual({ dataVersion: 999, school: {} });
+  });
+
+  it('still wants a file this version can read to have years', () => {
+    expect(() => storageService.parseImport('{"dataVersion":1}')).toThrow('missing years');
+    expect(() => storageService.parseImport('{}')).toThrow('missing years');
+  });
+
+  it.each([['null'], ['3'], ['not json']])('refuses %s', (text) => {
+    expect(() => storageService.parseImport(text)).toThrow();
   });
 });

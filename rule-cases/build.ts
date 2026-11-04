@@ -41,7 +41,7 @@ export const buildRuleCases = (): RuleCasesFile => ({
     Subject: '{ id, name, grades: Grade[], kind?: "spf" | "ef", oralGrade? }. Told apart by its grades key.',
     CombinedSubject: 'A Fach of Teilfächer: { id, name, subjects: Subject[], unassignedGrades?: Grade[] }. Told apart by its subjects key.',
     GymProfile: '{ thirdLanguage?, arts?, spf?, ef? }: names for the first two, ids from subjectChoices for the others.',
-    StudentData: '{ studentInfo?: { name, division: "FMS" | "Gymnasium" }, currentYear: the selected year, 1 to 4, year3Direction?: a Berufsfeld id, gymProfile?: GymProfile, years: { "1" to "4": { subjects: (Subject | CombinedSubject)[] } } }',
+    StudentData: '{ dataVersion?: the data format, a missing value means 1, studentInfo?: { name, division: "FMS" | "Gymnasium" }, currentYear: the selected year, 1 to 4, year3Direction?: a Berufsfeld id, gymProfile?: GymProfile, years: { "1" to "4": { subjects: (Subject | CombinedSubject)[] } } }',
     PromotionStatus: '{ isPassing, hasGrades, criteria: { failures: { passed, count, max }, average?: { passed, value, min }, deficit?: { passed, value, max }, compensation?: { passed, surplus, deficit, factor } } }. FMS has average and deficit, the Gymnasium has compensation.',
     PromotionVerdict: '"noGrades" | "passing" | "notPassing". What the student sees. Decide from this, because isPassing can be true with no grades.',
   },

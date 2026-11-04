@@ -16,7 +16,7 @@
     "Subject": "{ id, name, grades: Grade[], kind?: \"spf\" | \"ef\", oralGrade? }. Told apart by its grades key.",
     "CombinedSubject": "A Fach of Teilfächer: { id, name, subjects: Subject[], unassignedGrades?: Grade[] }. Told apart by its subjects key.",
     "GymProfile": "{ thirdLanguage?, arts?, spf?, ef? }: names for the first two, ids from subjectChoices for the others.",
-    "StudentData": "{ studentInfo?: { name, division: \"FMS\" | \"Gymnasium\" }, currentYear: the selected year, 1 to 4, year3Direction?: a Berufsfeld id, gymProfile?: GymProfile, years: { \"1\" to \"4\": { subjects: (Subject | CombinedSubject)[] } } }",
+    "StudentData": "{ dataVersion?: the data format, a missing value means 1, studentInfo?: { name, division: \"FMS\" | \"Gymnasium\" }, currentYear: the selected year, 1 to 4, year3Direction?: a Berufsfeld id, gymProfile?: GymProfile, years: { \"1\" to \"4\": { subjects: (Subject | CombinedSubject)[] } } }",
     "PromotionStatus": "{ isPassing, hasGrades, criteria: { failures: { passed, count, max }, average?: { passed, value, min }, deficit?: { passed, value, max }, compensation?: { passed, surplus, deficit, factor } } }. FMS has average and deficit, the Gymnasium has compensation.",
     "PromotionVerdict": "\"noGrades\" | \"passing\" | \"notPassing\". What the student sees. Decide from this, because isPassing can be true with no grades."
   },
@@ -4082,6 +4082,7 @@
           "input": {},
           "expected": {
             "data": {
+              "dataVersion": 1,
               "currentYear": 1,
               "years": {
                 "1": {
@@ -4173,6 +4174,24 @@
             }
           }
         }
+      ]
+    },
+    {
+      "operation": "dataVersionIsNewer",
+      "description": "Whether data can only be shown read-only, and never written back, because this version may not know all of it. A missing value means 1. A value that is not a whole number from 1 up counts as newer. Checked before reconciling, which keeps only the subjects a version knows.",
+      "input": "{ dataVersion?: any JSON value }",
+      "expected": "{ result: boolean }",
+      "cases": [
+        {"name":"missing means 1","input":{},"expected":{"result":false}},
+        {"name":"null means 1","input":{"dataVersion":null},"expected":{"result":false}},
+        {"name":"1","input":{"dataVersion":1},"expected":{"result":false}},
+        {"name":"the version this release supports","input":{"dataVersion":1},"expected":{"result":false}},
+        {"name":"one above the version this release supports","input":{"dataVersion":2},"expected":{"result":true}},
+        {"name":"far above","input":{"dataVersion":999},"expected":{"result":true}},
+        {"name":"not a whole number","input":{"dataVersion":1.5},"expected":{"result":true}},
+        {"name":"a string","input":{"dataVersion":"1"},"expected":{"result":true}},
+        {"name":"zero","input":{"dataVersion":0},"expected":{"result":true}},
+        {"name":"negative","input":{"dataVersion":-1},"expected":{"result":true}}
       ]
     },
     {
@@ -5488,7 +5507,8 @@
                 },
                 "3": {"subjects":[]},
                 "4": {"subjects":[]}
-              }
+              },
+              "dataVersion": 1
             }
           }
         },
@@ -5594,7 +5614,8 @@
                 },
                 "3": {"subjects":[]},
                 "4": {"subjects":[]}
-              }
+              },
+              "dataVersion": 1
             }
           }
         },
@@ -5911,7 +5932,8 @@
                 },
                 "4": {"subjects":[]}
               },
-              "year3Direction": "gesundheit"
+              "year3Direction": "gesundheit",
+              "dataVersion": 1
             }
           }
         },
@@ -6236,7 +6258,8 @@
                 },
                 "4": {"subjects":[]}
               },
-              "year3Direction": "soziale-arbeit"
+              "year3Direction": "soziale-arbeit",
+              "dataVersion": 1
             }
           }
         },
@@ -6565,7 +6588,8 @@
                 },
                 "4": {"subjects":[]}
               },
-              "year3Direction": "paedagogik"
+              "year3Direction": "paedagogik",
+              "dataVersion": 1
             }
           }
         },
@@ -6673,7 +6697,8 @@
                 },
                 "3": {"subjects":[{"id":"placeholder","name":"placeholder","grades":[{"id":"g1","value":5,"weight":1}]}]},
                 "4": {"subjects":[]}
-              }
+              },
+              "dataVersion": 1
             }
           }
         },
@@ -6782,7 +6807,8 @@
                 },
                 "3": {"subjects":[{"id":"placeholder","name":"placeholder","grades":[{"id":"g1","value":5,"weight":1}]}]},
                 "4": {"subjects":[]}
-              }
+              },
+              "dataVersion": 1
             }
           }
         },
@@ -6885,7 +6911,8 @@
                 },
                 "3": {"subjects":[]},
                 "4": {"subjects":[]}
-              }
+              },
+              "dataVersion": 1
             }
           }
         },
@@ -6993,7 +7020,8 @@
                 },
                 "3": {"subjects":[]},
                 "4": {"subjects":[{"id":"stray","name":"stray","grades":[{"id":"g1","value":5,"weight":1}]}]}
-              }
+              },
+              "dataVersion": 1
             }
           }
         },
@@ -7096,7 +7124,217 @@
                 },
                 "3": {"subjects":[]},
                 "4": {"subjects":[]}
-              }
+              },
+              "dataVersion": 1
+            }
+          }
+        },
+        {
+          "name": "a missing dataVersion becomes the current one",
+          "input": {
+            "data": {
+              "studentInfo": {"name":"Test","division":"FMS"},
+              "currentYear": 1,
+              "years": {"1":{"subjects":[]},"2":{"subjects":[]},"3":{"subjects":[]},"4":{"subjects":[]}}
+            }
+          },
+          "expected": {
+            "data": {
+              "studentInfo": {"name":"Test","division":"FMS"},
+              "currentYear": 1,
+              "years": {
+                "1": {
+                  "subjects": [
+                    {"id":"deutsch","name":"Deutsch","grades":[]},
+                    {"id":"französisch","name":"Französisch","grades":[]},
+                    {"id":"englisch","name":"Englisch","grades":[]},
+                    {"id":"mathematik","name":"Mathematik","grades":[]},
+                    {"id":"psychologie","name":"Psychologie","grades":[]},
+                    {"id":"sport","name":"Sport","grades":[]},
+                    {
+                      "id": "naturwissenschaften",
+                      "name": "Naturwissenschaften",
+                      "subjects": [
+                        {"id":"chemie","name":"Chemie","grades":[]},
+                        {"id":"biologie","name":"Biologie","grades":[]},
+                        {"id":"physik","name":"Physik","grades":[]}
+                      ]
+                    },
+                    {
+                      "id": "geisteswissenschaften",
+                      "name": "Geisteswissenschaften",
+                      "subjects": [
+                        {"id":"geschichte-und-politik","name":"Geschichte und Politik","grades":[]},
+                        {"id":"geografie","name":"Geografie","grades":[]},
+                        {"id":"wirtschaft-und-recht","name":"Wirtschaft und Recht","grades":[]}
+                      ]
+                    },
+                    {
+                      "id": "musische-fächer",
+                      "name": "Musische Fächer",
+                      "subjects": [
+                        {"id":"musik","name":"Musik","grades":[]},
+                        {"id":"bildnerisches-gestalten","name":"Bildnerisches Gestalten","grades":[]}
+                      ]
+                    }
+                  ]
+                },
+                "2": {
+                  "subjects": [
+                    {"id":"deutsch","name":"Deutsch","grades":[]},
+                    {"id":"französisch","name":"Französisch","grades":[]},
+                    {"id":"englisch","name":"Englisch","grades":[]},
+                    {"id":"mathematik","name":"Mathematik","grades":[]},
+                    {"id":"sport","name":"Sport","grades":[]},
+                    {
+                      "id": "naturwissenschaften",
+                      "name": "Naturwissenschaften",
+                      "subjects": [
+                        {"id":"chemie","name":"Chemie","grades":[]},
+                        {"id":"biologie","name":"Biologie","grades":[]},
+                        {"id":"physik","name":"Physik","grades":[]}
+                      ]
+                    },
+                    {
+                      "id": "geistes--und-sozialwissenschaften",
+                      "name": "Geistes- und Sozialwissenschaften",
+                      "subjects": [
+                        {"id":"geschichte-und-politik","name":"Geschichte und Politik","grades":[]},
+                        {"id":"philosophie","name":"Philosophie","grades":[]}
+                      ]
+                    },
+                    {
+                      "id": "musische-fächer",
+                      "name": "Musische Fächer",
+                      "subjects": [
+                        {"id":"musik","name":"Musik","grades":[]},
+                        {"id":"bildnerisches-gestalten","name":"Bildnerisches Gestalten","grades":[]}
+                      ]
+                    },
+                    {
+                      "id": "berufsfeldeinblicke",
+                      "name": "Berufsfeldeinblicke",
+                      "subjects": [
+                        {"id":"humanbiologie","name":"Humanbiologie","grades":[]},
+                        {"id":"soziologie","name":"Soziologie","grades":[]},
+                        {
+                          "id": "pädagogik/entwicklungspsychologie",
+                          "name": "Pädagogik/Entwicklungspsychologie",
+                          "grades": []
+                        }
+                      ]
+                    }
+                  ]
+                },
+                "3": {"subjects":[]},
+                "4": {"subjects":[]}
+              },
+              "dataVersion": 1
+            }
+          }
+        },
+        {
+          "name": "data in a newer format says so, should it ever be reconciled",
+          "input": {
+            "data": {
+              "studentInfo": {"name":"Test","division":"FMS"},
+              "currentYear": 1,
+              "years": {"1":{"subjects":[]},"2":{"subjects":[]},"3":{"subjects":[]},"4":{"subjects":[]}},
+              "dataVersion": 999
+            }
+          },
+          "expected": {
+            "data": {
+              "studentInfo": {"name":"Test","division":"FMS"},
+              "currentYear": 1,
+              "years": {
+                "1": {
+                  "subjects": [
+                    {"id":"deutsch","name":"Deutsch","grades":[]},
+                    {"id":"französisch","name":"Französisch","grades":[]},
+                    {"id":"englisch","name":"Englisch","grades":[]},
+                    {"id":"mathematik","name":"Mathematik","grades":[]},
+                    {"id":"psychologie","name":"Psychologie","grades":[]},
+                    {"id":"sport","name":"Sport","grades":[]},
+                    {
+                      "id": "naturwissenschaften",
+                      "name": "Naturwissenschaften",
+                      "subjects": [
+                        {"id":"chemie","name":"Chemie","grades":[]},
+                        {"id":"biologie","name":"Biologie","grades":[]},
+                        {"id":"physik","name":"Physik","grades":[]}
+                      ]
+                    },
+                    {
+                      "id": "geisteswissenschaften",
+                      "name": "Geisteswissenschaften",
+                      "subjects": [
+                        {"id":"geschichte-und-politik","name":"Geschichte und Politik","grades":[]},
+                        {"id":"geografie","name":"Geografie","grades":[]},
+                        {"id":"wirtschaft-und-recht","name":"Wirtschaft und Recht","grades":[]}
+                      ]
+                    },
+                    {
+                      "id": "musische-fächer",
+                      "name": "Musische Fächer",
+                      "subjects": [
+                        {"id":"musik","name":"Musik","grades":[]},
+                        {"id":"bildnerisches-gestalten","name":"Bildnerisches Gestalten","grades":[]}
+                      ]
+                    }
+                  ]
+                },
+                "2": {
+                  "subjects": [
+                    {"id":"deutsch","name":"Deutsch","grades":[]},
+                    {"id":"französisch","name":"Französisch","grades":[]},
+                    {"id":"englisch","name":"Englisch","grades":[]},
+                    {"id":"mathematik","name":"Mathematik","grades":[]},
+                    {"id":"sport","name":"Sport","grades":[]},
+                    {
+                      "id": "naturwissenschaften",
+                      "name": "Naturwissenschaften",
+                      "subjects": [
+                        {"id":"chemie","name":"Chemie","grades":[]},
+                        {"id":"biologie","name":"Biologie","grades":[]},
+                        {"id":"physik","name":"Physik","grades":[]}
+                      ]
+                    },
+                    {
+                      "id": "geistes--und-sozialwissenschaften",
+                      "name": "Geistes- und Sozialwissenschaften",
+                      "subjects": [
+                        {"id":"geschichte-und-politik","name":"Geschichte und Politik","grades":[]},
+                        {"id":"philosophie","name":"Philosophie","grades":[]}
+                      ]
+                    },
+                    {
+                      "id": "musische-fächer",
+                      "name": "Musische Fächer",
+                      "subjects": [
+                        {"id":"musik","name":"Musik","grades":[]},
+                        {"id":"bildnerisches-gestalten","name":"Bildnerisches Gestalten","grades":[]}
+                      ]
+                    },
+                    {
+                      "id": "berufsfeldeinblicke",
+                      "name": "Berufsfeldeinblicke",
+                      "subjects": [
+                        {"id":"humanbiologie","name":"Humanbiologie","grades":[]},
+                        {"id":"soziologie","name":"Soziologie","grades":[]},
+                        {
+                          "id": "pädagogik/entwicklungspsychologie",
+                          "name": "Pädagogik/Entwicklungspsychologie",
+                          "grades": []
+                        }
+                      ]
+                    }
+                  ]
+                },
+                "3": {"subjects":[]},
+                "4": {"subjects":[]}
+              },
+              "dataVersion": 999
             }
           }
         },
@@ -7201,7 +7439,8 @@
                 "3": {"subjects":[]},
                 "4": {"subjects":[]}
               },
-              "futureField": {"kept":true}
+              "futureField": {"kept":true},
+              "dataVersion": 1
             }
           }
         },
@@ -7361,7 +7600,8 @@
                 },
                 "4": {"subjects":[]}
               },
-              "year3Direction": "gesundheit"
+              "year3Direction": "gesundheit",
+              "dataVersion": 1
             }
           }
         },
@@ -7478,7 +7718,8 @@
                 },
                 "3": {"subjects":[]},
                 "4": {"subjects":[]}
-              }
+              },
+              "dataVersion": 1
             }
           }
         },
@@ -7543,7 +7784,8 @@
                     {"id":"geschichte","name":"Geschichte","grades":[]}
                   ]
                 }
-              }
+              },
+              "dataVersion": 1
             }
           }
         },
@@ -7608,7 +7850,8 @@
                     {"id":"geschichte","name":"Geschichte","grades":[]}
                   ]
                 }
-              }
+              },
+              "dataVersion": 1
             }
           }
         },
@@ -7691,7 +7934,8 @@
                 }
               },
               "year3Direction": "gesundheit",
-              "gymProfile": {"thirdLanguage":"Englisch","arts":"Musik","spf":"biologie-chemie","ef":"informatik"}
+              "gymProfile": {"thirdLanguage":"Englisch","arts":"Musik","spf":"biologie-chemie","ef":"informatik"},
+              "dataVersion": 1
             }
           }
         },
@@ -7902,7 +8146,8 @@
                   ]
                 }
               },
-              "gymProfile": {"thirdLanguage":"Englisch","arts":"Musik","spf":"biologie-chemie","ef":"informatik"}
+              "gymProfile": {"thirdLanguage":"Englisch","arts":"Musik","spf":"biologie-chemie","ef":"informatik"},
+              "dataVersion": 1
             }
           }
         },
@@ -8093,7 +8338,8 @@
                   ]
                 }
               },
-              "gymProfile": {"thirdLanguage":"Englisch","arts":"Bildnerisches Gestalten","spf":"spanisch","ef":"informatik"}
+              "gymProfile": {"thirdLanguage":"Englisch","arts":"Bildnerisches Gestalten","spf":"spanisch","ef":"informatik"},
+              "dataVersion": 1
             }
           }
         },
@@ -8325,7 +8571,8 @@
                 }
               },
               "year3Direction": "gesundheit",
-              "gymProfile": {"thirdLanguage":"Englisch","arts":"Musik","spf":"biologie-chemie","ef":"informatik"}
+              "gymProfile": {"thirdLanguage":"Englisch","arts":"Musik","spf":"biologie-chemie","ef":"informatik"},
+              "dataVersion": 1
             }
           }
         }
@@ -9286,7 +9533,8 @@
                   ]
                 }
               },
-              "gymProfile": {"thirdLanguage":"Englisch","arts":"Musik","spf":"biologie-chemie","ef":"informatik"}
+              "gymProfile": {"thirdLanguage":"Englisch","arts":"Musik","spf":"biologie-chemie","ef":"informatik"},
+              "dataVersion": 1
             },
             "newProfile": {"thirdLanguage":"Englisch","arts":"Bildnerisches Gestalten","spf":"biologie-chemie","ef":"informatik"}
           },
@@ -9399,7 +9647,8 @@
                 },
                 "3": {"subjects":[]},
                 "4": {"subjects":[]}
-              }
+              },
+              "dataVersion": 1
             },
             "years": [
               {
@@ -9591,7 +9840,8 @@
                     {"id":"geschichte","name":"Geschichte","grades":[]}
                   ]
                 }
-              }
+              },
+              "dataVersion": 1
             },
             "years": [
               {
@@ -10001,7 +10251,8 @@
                 },
                 "4": {"subjects":[]}
               },
-              "year3Direction": "gesundheit"
+              "year3Direction": "gesundheit",
+              "dataVersion": 1
             },
             "years": [
               {
@@ -10485,7 +10736,8 @@
                 },
                 "4": {"subjects":[]}
               },
-              "year3Direction": "gesundheit"
+              "year3Direction": "gesundheit",
+              "dataVersion": 1
             },
             "years": [
               {
@@ -10961,7 +11213,8 @@
                 },
                 "4": {"subjects":[]}
               },
-              "year3Direction": "soziale-arbeit"
+              "year3Direction": "soziale-arbeit",
+              "dataVersion": 1
             },
             "years": [
               {
@@ -11456,7 +11709,8 @@
                 },
                 "4": {"subjects":[]}
               },
-              "year3Direction": "soziale-arbeit"
+              "year3Direction": "soziale-arbeit",
+              "dataVersion": 1
             },
             "years": [
               {
@@ -11939,7 +12193,8 @@
                 },
                 "4": {"subjects":[]}
               },
-              "year3Direction": "paedagogik"
+              "year3Direction": "paedagogik",
+              "dataVersion": 1
             },
             "years": [
               {
@@ -12449,7 +12704,8 @@
                 },
                 "4": {"subjects":[]}
               },
-              "year3Direction": "paedagogik"
+              "year3Direction": "paedagogik",
+              "dataVersion": 1
             },
             "years": [
               {
@@ -12747,7 +13003,8 @@
                 },
                 "3": {"subjects":[]},
                 "4": {"subjects":[]}
-              }
+              },
+              "dataVersion": 1
             },
             "years": [
               {
@@ -13085,7 +13342,8 @@
                   ]
                 }
               },
-              "gymProfile": {"thirdLanguage":"Englisch","arts":"Musik","spf":"biologie-chemie","ef":"informatik"}
+              "gymProfile": {"thirdLanguage":"Englisch","arts":"Musik","spf":"biologie-chemie","ef":"informatik"},
+              "dataVersion": 1
             },
             "years": [
               {
@@ -13403,7 +13661,8 @@
                   ]
                 }
               },
-              "gymProfile": {"thirdLanguage":"Englisch","arts":"Musik","spf":"biologie-chemie","ef":"informatik"}
+              "gymProfile": {"thirdLanguage":"Englisch","arts":"Musik","spf":"biologie-chemie","ef":"informatik"},
+              "dataVersion": 1
             },
             "years": [
               {
@@ -13721,7 +13980,8 @@
                   ]
                 }
               },
-              "gymProfile": {"thirdLanguage":"Englisch","arts":"Musik","spf":"biologie-chemie","ef":"informatik"}
+              "gymProfile": {"thirdLanguage":"Englisch","arts":"Musik","spf":"biologie-chemie","ef":"informatik"},
+              "dataVersion": 1
             },
             "years": [
               {
@@ -14039,7 +14299,8 @@
                   ]
                 }
               },
-              "gymProfile": {"thirdLanguage":"Italienisch","arts":"Musik","spf":"biologie-chemie","ef":"informatik"}
+              "gymProfile": {"thirdLanguage":"Italienisch","arts":"Musik","spf":"biologie-chemie","ef":"informatik"},
+              "dataVersion": 1
             },
             "years": [
               {
@@ -14357,7 +14618,8 @@
                   ]
                 }
               },
-              "gymProfile": {"thirdLanguage":"Latein","arts":"Musik","spf":"biologie-chemie","ef":"informatik"}
+              "gymProfile": {"thirdLanguage":"Latein","arts":"Musik","spf":"biologie-chemie","ef":"informatik"},
+              "dataVersion": 1
             },
             "years": [
               {
@@ -14707,7 +14969,8 @@
                   ]
                 }
               },
-              "gymProfile": {"thirdLanguage":"Englisch","arts":"Bildnerisches Gestalten","spf":"biologie-chemie","ef":"informatik"}
+              "gymProfile": {"thirdLanguage":"Englisch","arts":"Bildnerisches Gestalten","spf":"biologie-chemie","ef":"informatik"},
+              "dataVersion": 1
             },
             "years": [
               {
@@ -15025,7 +15288,8 @@
                   ]
                 }
               },
-              "gymProfile": {"thirdLanguage":"Englisch","arts":"Musik","spf":"biologie-chemie","ef":"informatik"}
+              "gymProfile": {"thirdLanguage":"Englisch","arts":"Musik","spf":"biologie-chemie","ef":"informatik"},
+              "dataVersion": 1
             },
             "years": [
               {
@@ -15315,7 +15579,8 @@
                   ]
                 }
               },
-              "gymProfile": {"thirdLanguage":"Englisch","arts":"Musik","spf":"latein","ef":"informatik"}
+              "gymProfile": {"thirdLanguage":"Englisch","arts":"Musik","spf":"latein","ef":"informatik"},
+              "dataVersion": 1
             },
             "years": [
               {
@@ -15629,7 +15894,8 @@
                   ]
                 }
               },
-              "gymProfile": {"thirdLanguage":"Englisch","arts":"Musik","spf":"spanisch","ef":"informatik"}
+              "gymProfile": {"thirdLanguage":"Englisch","arts":"Musik","spf":"spanisch","ef":"informatik"},
+              "dataVersion": 1
             },
             "years": [
               {
@@ -15937,7 +16203,8 @@
                   ]
                 }
               },
-              "gymProfile": {"thirdLanguage":"Englisch","arts":"Musik","spf":"wirtschaft-und-recht","ef":"informatik"}
+              "gymProfile": {"thirdLanguage":"Englisch","arts":"Musik","spf":"wirtschaft-und-recht","ef":"informatik"},
+              "dataVersion": 1
             },
             "years": [
               {
@@ -16234,7 +16501,8 @@
                   ]
                 }
               },
-              "gymProfile": {"thirdLanguage":"Englisch","arts":"Musik","spf":"biologie-chemie","ef":"sport"}
+              "gymProfile": {"thirdLanguage":"Englisch","arts":"Musik","spf":"biologie-chemie","ef":"sport"},
+              "dataVersion": 1
             },
             "years": [
               {
@@ -16464,7 +16732,8 @@
                   ]
                 }
               },
-              "gymProfile": {}
+              "gymProfile": {},
+              "dataVersion": 1
             },
             "years": [
               {

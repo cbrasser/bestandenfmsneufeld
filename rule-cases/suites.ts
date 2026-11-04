@@ -12,6 +12,7 @@ import {
 import { defaultSubjects, renamedSubjectIds, splitSubjectIds, year3Directions } from '../src/config/subjects';
 import type { CombinedSubject, Division, Grade, GymProfile, StudentData, Subject, Year } from '../src/types';
 import { isCombinedSubject } from '../src/types';
+import { DATA_VERSION } from '../src/utils/dataVersion';
 import { reconcileAllYears } from '../src/utils/initializeData';
 import { LANGUAGES, type AnySubject, type OperationName } from './operations';
 
@@ -381,6 +382,24 @@ export const suites = (): SuiteDefinition[] => [
     cases: [{ name: 'new student', input: {} }],
   },
   {
+    operation: 'dataVersionIsNewer',
+    description: 'Whether data can only be shown read-only, and never written back, because this version may not know all of it. A missing value means 1. A value that is not a whole number from 1 up counts as newer. Checked before reconciling, which keeps only the subjects a version knows.',
+    input: '{ dataVersion?: any JSON value }',
+    expected: '{ result: boolean }',
+    cases: [
+      { name: 'missing means 1', input: {} },
+      { name: 'null means 1', input: { dataVersion: null } },
+      { name: '1', input: { dataVersion: 1 } },
+      { name: 'the version this release supports', input: { dataVersion: DATA_VERSION } },
+      { name: 'one above the version this release supports', input: { dataVersion: DATA_VERSION + 1 } },
+      { name: 'far above', input: { dataVersion: 999 } },
+      { name: 'not a whole number', input: { dataVersion: 1.5 } },
+      { name: 'a string', input: { dataVersion: '1' } },
+      { name: 'zero', input: { dataVersion: 0 } },
+      { name: 'negative', input: { dataVersion: -1 } },
+    ],
+  },
+  {
     operation: 'reconcileSubjectList',
     description: `Builds a subject list from the current table, carrying over saved grades. Used on load and when the Berufsfeld changes. Follows renamed subjects, and keeps a split subject's grades as unassigned.`,
     input: '{ existing: (Subject | CombinedSubject)[], defaults: (Subject | CombinedSubject)[] }',
@@ -428,6 +447,8 @@ export const suites = (): SuiteDefinition[] => [
         name: 'FMS stored before year 4 existed',
         input: { data: { studentInfo: { name: 'Test', division: 'FMS' }, currentYear: 2, years: { 1: { subjects: [] }, 2: { subjects: [] }, 3: { subjects: [] } } } },
       },
+      { name: 'a missing dataVersion becomes the current one', input: { data: student('FMS', {}) } },
+      { name: 'data in a newer format says so, should it ever be reconciled', input: { data: { ...student('FMS', {}), dataVersion: 999 } } },
       { name: 'unknown top-level fields, name and selected year stay', input: { data: { ...student('FMS', {}, { currentYear: 2 }), futureField: { kept: true } } } },
       {
         name: 'FMS with renamed subjects in years 1 and 3',

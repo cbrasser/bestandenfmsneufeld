@@ -5,12 +5,14 @@ interface DirectionSelectorProps {
   directions: Direction[];
   selectedDirectionId?: string;
   onSelect: (directionId: string) => void;
+  readOnly?: boolean;
 }
 
 export const DirectionSelector = ({
   directions,
   selectedDirectionId,
   onSelect,
+  readOnly = false,
 }: DirectionSelectorProps) => {
   const { t, tSubject } = useI18n();
   if (directions.length === 0) return null;
@@ -26,8 +28,9 @@ export const DirectionSelector = ({
             <button
               key={direction.id}
               onClick={() => onSelect(direction.id)}
+              disabled={readOnly}
               aria-pressed={isChecked}
-              className={`picker-card ${isChecked ? 'is-checked' : ''}`}
+              className={`picker-card ${isChecked ? 'is-checked' : ''} ${readOnly ? 'is-disabled' : ''}`}
             >
               <span className="picker-swatch" aria-hidden="true" />
               <span className="picker-text">

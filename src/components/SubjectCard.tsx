@@ -10,6 +10,7 @@ interface SubjectCardProps {
   onEditGrade: (gradeId: string) => void;
   onDeleteGrade: (gradeId: string) => void;
   onOralGradeChange: (oralGrade: number | undefined) => void;
+  readOnly?: boolean;
 }
 
 export const SubjectCard = ({
@@ -18,6 +19,7 @@ export const SubjectCard = ({
   onEditGrade,
   onDeleteGrade,
   onOralGradeChange,
+  readOnly = false,
 }: SubjectCardProps) => {
   const { t, tSubject } = useI18n();
   const finalGrade = calculateFinalGrade(subject);
@@ -41,9 +43,11 @@ export const SubjectCard = ({
             </span>
           </div>
         )}
-        <button onClick={onAddGrade} className="btn btn-icon" aria-label={`${t('addGrade')}: ${name}`}>
-          <Plus size={18} strokeWidth={3} aria-hidden="true" />
-        </button>
+        {!readOnly && (
+          <button onClick={onAddGrade} className="btn btn-icon" aria-label={`${t('addGrade')}: ${name}`}>
+            <Plus size={18} strokeWidth={3} aria-hidden="true" />
+          </button>
+        )}
       </div>
 
       <SubjectGrades
@@ -51,6 +55,7 @@ export const SubjectCard = ({
         onEditGrade={onEditGrade}
         onDeleteGrade={onDeleteGrade}
         onOralGradeChange={onOralGradeChange}
+        readOnly={readOnly}
       />
     </article>
   );
@@ -64,6 +69,7 @@ export const SubjectGrades = ({
   onEditGrade,
   onDeleteGrade,
   onOralGradeChange,
+  readOnly = false,
 }: SubjectGradesProps) => {
   const { t } = useI18n();
   const oralId = `oral-${subject.id}`;
@@ -81,6 +87,7 @@ export const SubjectGrades = ({
             grade={grade}
             onEdit={() => onEditGrade(grade.id)}
             onDelete={() => onDeleteGrade(grade.id)}
+            readOnly={readOnly}
           />
         ))}
       </div>
@@ -102,6 +109,7 @@ export const SubjectGrades = ({
             onOralGradeChange(value === '' ? undefined : parseFloat(value));
           }}
           placeholder="±0.00"
+          disabled={readOnly}
           className="input"
         />
       </div>

@@ -37,6 +37,7 @@ It applies the official promotion rules exactly, per school year: for the FMS th
 - Statistics per year: grade per subject, development over time, profile, distribution, summary.
 - Data lives on the device (localStorage on the website, app-private storage in the app). Export and import as JSON, in the same format on both. Optional anonymous cloud sync by access code (Supabase), with no name or email stored; names stay on each device, and students can delete their cloud data.
 - Sync never overwrites newer data silently: when both sides really changed, the student chooses, and the discarded version can be restored once per device.
+- Importing asks first, and the replaced data can be restored. Data or a file from a newer version is only shown, with a request to update, and is never written back, because an outdated version would drop subjects it doesn't know.
 - A native Android app (Android 8 or newer, Kotlin and Compose) does what the website does, fully offline. It comes from the public release repo `cbrasser/bestanden-releases`, by hand or through Obtainium, and is not in the Play Store.
 - A shareable guide at `/#app`, also in the menu, covers the Android install, code setup, and adding the website to an iPhone home screen. Export and import is the one-time alternative.
 - Installable as a PWA, named Bestanden.

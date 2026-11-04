@@ -9,6 +9,17 @@
         "3": { "subjects": [] },
         "4": { "subjects": [] }
       }
+    },
+    "fms-student-newer": {
+      "dataVersion": 999,
+      "studentInfo": { "division": "FMS" },
+      "currentYear": 1,
+      "years": {
+        "1": { "subjects": [{ "id": "deutsch", "name": "Deutsch", "grades": [] }, { "id": "new-subject", "name": "New subject", "grades": [{ "id": "n1", "value": 6, "weight": 1 }] }] },
+        "2": { "subjects": [] },
+        "3": { "subjects": [] },
+        "4": { "subjects": [] }
+      }
     }
   },
   "scenarios": [
@@ -929,6 +940,199 @@
         {"action": "focus", "device": "B"},
         {"action": "expectDevice", "device": "B", "connected": true, "failure": "unknown_code", "conflict": null, "conflictPrompt": "none", "unsynced": true, "grades": [3, 4]},
         {"action": "expectCloud", "exists": false}
+      ]
+    },
+    {
+      "name": "an import while connected keeps the replaced data and syncs as a normal edit",
+      "steps": [
+        { "action": "open", "device": "A", "fixture": "fms-student" },
+        { "action": "createCode", "device": "A" },
+        { "action": "addGrade", "device": "A", "value": 5 },
+        { "action": "saveDelayElapsed", "device": "A" },
+        { "action": "connect", "device": "B" },
+
+        { "action": "importFile", "device": "A", "grades": [3, 4] },
+        { "action": "expectDevice", "device": "A", "status": "saving", "unsynced": true, "grades": [3, 4], "backupGrades": [5], "readOnly": null },
+        { "action": "expectCloud", "version": 2, "grades": [5] },
+        { "action": "saveDelayElapsed", "device": "A" },
+        { "action": "expectDevice", "device": "A", "status": "saved", "version": 3, "unsynced": false, "grades": [3, 4], "backupGrades": [5] },
+        { "action": "expectCloud", "version": 3, "grades": [3, 4] },
+        { "action": "focus", "device": "B" },
+        { "action": "expectDevice", "device": "B", "version": 3, "grades": [3, 4], "conflict": null, "backupGrades": null },
+
+        { "action": "restoreBackup", "device": "A" },
+        { "action": "saveDelayElapsed", "device": "A" },
+        { "action": "expectDevice", "device": "A", "grades": [5], "backupGrades": [3, 4] },
+        { "action": "expectCloud", "version": 4, "grades": [5] }
+      ]
+    },
+    {
+      "name": "an import while offline reaches the cloud when the connection returns",
+      "steps": [
+        { "action": "open", "device": "A", "fixture": "fms-student" },
+        { "action": "createCode", "device": "A" },
+        { "action": "setOffline", "device": "A", "offline": true },
+        { "action": "importFile", "device": "A", "grades": [2] },
+        { "action": "saveDelayElapsed", "device": "A" },
+        { "action": "expectDevice", "device": "A", "status": "error", "failure": "unreachable", "unsynced": true, "grades": [2], "backupGrades": [] },
+        { "action": "open", "device": "A" },
+        { "action": "reconnect", "device": "A" },
+        { "action": "expectDevice", "device": "A", "status": "saved", "unsynced": false, "version": 2 },
+        { "action": "expectCloud", "version": 2, "grades": [2] }
+      ]
+    },
+    {
+      "name": "an import that meets newer cloud data asks the student, like any edit",
+      "steps": [
+        { "action": "open", "device": "A", "fixture": "fms-student" },
+        { "action": "createCode", "device": "A" },
+        { "action": "connect", "device": "B" },
+        { "action": "addGrade", "device": "B", "value": 6 },
+        { "action": "saveDelayElapsed", "device": "B" },
+        { "action": "importFile", "device": "A", "grades": [3] },
+        { "action": "saveDelayElapsed", "device": "A" },
+        { "action": "expectDevice", "device": "A", "failure": "conflict", "grades": [3], "conflict": { "localGrades": 1, "cloudGrades": 1, "localChangeKnown": true } },
+        { "action": "expectCloud", "version": 2, "grades": [6] }
+      ]
+    },
+    {
+      "name": "an import on a device without a code still keeps the replaced data",
+      "steps": [
+        { "action": "open", "device": "A", "fixture": "fms-student" },
+        { "action": "addGrade", "device": "A", "value": 5, "counted": false },
+        { "action": "importFile", "device": "A", "grades": [3], "counted": false },
+        { "action": "expectDevice", "device": "A", "connected": false, "unsynced": false, "grades": [3], "backupGrades": [5] }
+      ]
+    },
+    {
+      "name": "newer cloud data is shown read-only and nothing is written, until the format is readable again",
+      "steps": [
+        { "action": "open", "device": "A", "fixture": "fms-student" },
+        { "action": "createCode", "device": "A" },
+        { "action": "addGrade", "device": "A", "value": 5 },
+        { "action": "saveDelayElapsed", "device": "A" },
+
+        { "action": "saveCall", "expectedVersion": 2, "grades": [5, 6], "dataVersion": 999, "result": { "status": "saved", "version": 3 } },
+        { "action": "focus", "device": "A" },
+        { "action": "expectDevice", "device": "A", "readOnly": "cloud", "shownGrades": [5, 6], "status": "error", "failure": "newer_data", "version": 2, "unsynced": false, "grades": [5], "backupGrades": null, "conflict": null, "conflictPrompt": "none" },
+        { "action": "expectCloud", "version": 3, "grades": [5, 6], "dataVersion": 999 },
+
+        { "action": "focus", "device": "A" },
+        { "action": "reconnect", "device": "A" },
+        { "action": "open", "device": "A" },
+        { "action": "expectDevice", "device": "A", "readOnly": "cloud", "version": 2, "unsynced": false, "grades": [5] },
+        { "action": "expectCloud", "version": 3, "dataVersion": 999 },
+
+        { "action": "deleteCloudData", "device": "A", "result": "newer_data" },
+        { "action": "disconnect", "device": "A" },
+        { "action": "expectDevice", "device": "A", "connected": true, "readOnly": "cloud", "version": 2, "grades": [5] },
+        { "action": "expectCloud", "version": 3, "grades": [5, 6], "dataVersion": 999 },
+
+        { "action": "saveCall", "expectedVersion": 3, "grades": [5, 6, 4], "result": { "status": "saved", "version": 4 } },
+        { "action": "focus", "device": "A" },
+        { "action": "expectDevice", "device": "A", "readOnly": null, "shownGrades": null, "status": "saved", "failure": null, "version": 4, "grades": [5, 6, 4] }
+      ]
+    },
+    {
+      "name": "unsynced edits that meet newer cloud data stay on the device and are never pushed",
+      "steps": [
+        { "action": "open", "device": "A", "fixture": "fms-student" },
+        { "action": "createCode", "device": "A" },
+        { "action": "saveCall", "expectedVersion": 1, "grades": [6], "dataVersion": 999, "result": { "status": "saved", "version": 2 } },
+        { "action": "addGrade", "device": "A", "value": 3 },
+        { "action": "saveDelayElapsed", "device": "A" },
+        { "action": "expectDevice", "device": "A", "readOnly": "cloud", "failure": "newer_data", "unsynced": true, "version": 1, "grades": [3], "conflict": null },
+        { "action": "focus", "device": "A" },
+        { "action": "expectCloud", "version": 2, "grades": [6], "dataVersion": 999 },
+
+        { "action": "saveCall", "expectedVersion": 2, "grades": [6, 6], "result": { "status": "saved", "version": 3 } },
+        { "action": "focus", "device": "A" },
+        { "action": "expectDevice", "device": "A", "readOnly": null, "failure": "conflict", "unsynced": true, "grades": [3], "conflict": { "localGrades": 1, "cloudGrades": 2, "localChangeKnown": true } }
+      ]
+    },
+    {
+      "name": "a conflict prompt gives way to newer cloud data, and its choices are refused",
+      "steps": [
+        { "action": "open", "device": "A", "fixture": "fms-student" },
+        { "action": "createCode", "device": "A" },
+        { "action": "saveCall", "expectedVersion": 1, "grades": [6], "result": { "status": "saved", "version": 2 } },
+        { "action": "addGrade", "device": "A", "value": 3 },
+        { "action": "saveDelayElapsed", "device": "A" },
+        { "action": "expectDevice", "device": "A", "failure": "conflict", "conflictPrompt": "showing" },
+
+        { "action": "saveCall", "expectedVersion": 2, "grades": [6, 6], "dataVersion": 999, "result": { "status": "saved", "version": 3 } },
+        { "action": "focus", "device": "A" },
+        { "action": "expectDevice", "device": "A", "readOnly": "cloud", "conflict": null, "conflictPrompt": "none", "unsynced": true, "grades": [3], "backupGrades": null },
+        { "action": "keepThisDevice", "device": "A", "result": false },
+        { "action": "keepCloud", "device": "A", "result": false },
+        { "action": "expectDevice", "device": "A", "readOnly": "cloud", "grades": [3], "backupGrades": null, "version": 1 },
+        { "action": "expectCloud", "version": 3, "dataVersion": 999 }
+      ]
+    },
+    {
+      "name": "connecting to newer cloud data is refused, and the device stays as it was",
+      "steps": [
+        { "action": "createCall", "fixture": "fms-student-newer" },
+        { "action": "open", "device": "A", "fixture": "fms-student" },
+        { "action": "addGrade", "device": "A", "value": 5, "counted": false },
+        { "action": "connect", "device": "A", "result": "newer_data" },
+        { "action": "expectDevice", "device": "A", "connected": false, "readOnly": null, "grades": [5], "backupGrades": null },
+        { "action": "expectCloud", "version": 1, "dataVersion": 999 }
+      ]
+    },
+    {
+      "name": "a newer file is only shown: nothing is stored, kept, pushed or pulled until it is closed",
+      "steps": [
+        { "action": "open", "device": "A", "fixture": "fms-student" },
+        { "action": "createCode", "device": "A" },
+        { "action": "addGrade", "device": "A", "value": 5 },
+        { "action": "saveDelayElapsed", "device": "A" },
+        { "action": "saveCall", "expectedVersion": 2, "grades": [5, 4], "result": { "status": "saved", "version": 3 } },
+
+        { "action": "importFile", "device": "A", "grades": [1], "dataVersion": 999, "result": "newer" },
+        { "action": "expectDevice", "device": "A", "readOnly": "file", "version": 2, "unsynced": false, "grades": [5], "backupGrades": null },
+        { "action": "focus", "device": "A" },
+        { "action": "reconnect", "device": "A" },
+        { "action": "deleteCloudData", "device": "A", "result": "newer_data" },
+        { "action": "disconnect", "device": "A" },
+        { "action": "expectDevice", "device": "A", "readOnly": "file", "connected": true, "version": 2, "grades": [5], "backupGrades": null },
+        { "action": "expectCloud", "version": 3, "grades": [5, 4] },
+
+        { "action": "closeNewerFile", "device": "A" },
+        { "action": "expectDevice", "device": "A", "readOnly": null, "version": 3, "grades": [5, 4], "backupGrades": null }
+      ]
+    },
+    {
+      "name": "a newer file on a device without a code changes nothing either",
+      "steps": [
+        { "action": "open", "device": "A", "fixture": "fms-student" },
+        { "action": "importFile", "device": "A", "grades": [1], "dataVersion": 999, "result": "newer" },
+        { "action": "expectDevice", "device": "A", "readOnly": "file", "connected": false, "grades": [], "backupGrades": null },
+        { "action": "closeNewerFile", "device": "A" },
+        { "action": "expectDevice", "device": "A", "readOnly": null, "grades": [] }
+      ]
+    },
+    {
+      "name": "newer data already on the device is never pushed, replaced or used to make a code",
+      "steps": [
+        { "action": "open", "device": "A", "fixture": "fms-student" },
+        { "action": "createCode", "device": "A" },
+        { "action": "addGrade", "device": "A", "value": 5 },
+        { "action": "open", "device": "A", "fixture": "fms-student-newer" },
+        { "action": "expectDevice", "device": "A", "readOnly": "local", "failure": "newer_data", "unsynced": true },
+        { "action": "focus", "device": "A" },
+        { "action": "expectCloud", "version": 1, "grades": [] },
+        { "action": "connect", "device": "A", "result": "newer_data" },
+        { "action": "expectDevice", "device": "A", "readOnly": "local", "unsynced": true, "backupGrades": null }
+      ]
+    },
+    {
+      "name": "newer data on a device without a code can't be used to make one",
+      "steps": [
+        { "action": "open", "device": "A", "fixture": "fms-student-newer" },
+        { "action": "expectDevice", "device": "A", "readOnly": "local", "connected": false },
+        { "action": "createCode", "device": "A", "refused": true },
+        { "action": "expectDevice", "device": "A", "readOnly": "local", "connected": false }
       ]
     }
   ]

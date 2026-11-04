@@ -1,7 +1,8 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { isSubject, type StudentData } from '../types';
 import { reconcileAllYears } from '../utils/initializeData';
 import { createDataBackup } from '../utils/backup';
+import { DATA_VERSION } from '../utils/dataVersion';
 import { SELECTED_YEAR_KEY } from '../utils/storage';
 import { createSyncEngine, type CloudSnapshot, type SaveResult, type SyncRemote } from './engine';
 import { createMemoryStorage } from './memoryStorage';
@@ -1176,5 +1177,162 @@ describe('two tabs of one browser', () => {
     second.engine.noteOtherTabChange();
 
     expect(second.engine.getSnapshot()).toMatchObject({ status: 'error', failure: 'unreachable' });
+  });
+});
+
+describe('data in a newer format', () => {
+  const newer = (label: string): StudentData => ({ ...student(label, null), dataVersion: DATA_VERSION + 1 });
+
+  // Everything a device can write, as seen from outside it
+  const countWrites = (items: ReturnType<typeof createMemoryStorage>) => {
+    const setItem = vi.spyOn(items, 'setItem');
+    const removeItem = vi.spyOn(items, 'removeItem');
+    return () => setItem.mock.calls.length + removeItem.mock.calls.length;
+  };
+
+  const inReadOnly = async () => {
+    const tab = setup({ unsynced: true });
+    const opening = tab.engine.sync();
+    await settle();
+    tab.saves[0].answer.resolve(refused(2));
+    await settle();
+    tab.loads[0].resolve(snapshot(newer('cloud'), 2));
+    await opening;
+    return tab;
+  };
+
+  it('writes nothing to storage while it syncs, tries and fails', async () => {
+    const { engine, items, loads, saves } = await inReadOnly();
+    const writes = countWrites(items);
+
+    const again = engine.sync();
+    await settle();
+    loads[1].resolve(snapshot(newer('cloud'), 3));
+    await again;
+    const failing = engine.sync();
+    await settle();
+    loads[2].reject(new Error('offline'));
+    await failing;
+
+    expect(writes()).toBe(0);
+    expect(saves).toHaveLength(1);
+    expect(engine.getSnapshot()).toMatchObject({ readOnly: 'cloud', version: 1, unsynced: true });
+  });
+
+  it('shows the newer data on the name this device keeps', async () => {
+    const { engine } = await inReadOnly();
+    const shown = engine.getSnapshot().newerCloudData;
+    expect(labelOf(shown)).toBe('cloud');
+    expect(shown?.studentInfo?.name).toBe('Local name');
+  });
+
+  it('refuses to make a code, connect, disconnect or delete, with nothing written', async () => {
+    const { engine, items, remote } = await inReadOnly();
+    const remove = vi.spyOn(remote, 'delete');
+    const create = vi.spyOn(remote, 'createAccount');
+    const writes = countWrites(items);
+
+    await expect(engine.createAccount()).rejects.toThrow();
+    expect(await engine.connect(CODE)).toBe('newer_data');
+    engine.disconnect();
+    expect(await engine.deleteCloudData()).toBe('newer_data');
+    expect(engine.noteLocalChange()).toBe(false);
+
+    expect(writes()).toBe(0);
+    expect(remove).not.toHaveBeenCalled();
+    expect(create).not.toHaveBeenCalled();
+    expect(engine.getSnapshot().code).toBe(CODE);
+  });
+
+  it('refuses to delete when only the delete finds the newer data, and turns read-only', async () => {
+    const { engine, loads, remote } = setup();
+    const remove = vi.spyOn(remote, 'delete');
+    const deleting = engine.deleteCloudData();
+    await settle();
+    loads[0].resolve(snapshot(newer('cloud'), 2));
+
+    expect(await deleting).toBe('newer_data');
+    expect(remove).not.toHaveBeenCalled();
+    expect(engine.getSnapshot()).toMatchObject({ readOnly: 'cloud', code: CODE });
+  });
+
+  it('takes no cloud data that arrives after a newer file was opened', async () => {
+    const { engine, loads, localLabel, items } = setup();
+    const pulling = engine.sync();
+    await settle();
+    engine.setViewingNewerFile(true);
+    const writes = countWrites(items);
+    loads[0].resolve(snapshot(student('cloud'), 2));
+    await pulling;
+
+    expect(localLabel()).toBe('local');
+    expect(writes()).toBe(0);
+    expect(engine.getSnapshot()).toMatchObject({ readOnly: 'file', version: 1 });
+  });
+
+  it('asks again about a conflict that was hidden by a newer file', async () => {
+    const { engine, edit, saves, loads } = setup();
+    edit('edited');
+    const pushing = engine.sync();
+    await settle();
+    saves[0].answer.resolve(refused(2));
+    await settle();
+    loads[0].resolve(snapshot(student('cloud'), 2));
+    await pushing;
+    expect(engine.getSnapshot().conflict).not.toBeNull();
+
+    engine.setViewingNewerFile(true);
+    expect(engine.getSnapshot()).toMatchObject({ conflict: null, conflictPrompt: 'none', readOnly: 'file' });
+    expect(await engine.keepThisDevice()).toBe(false);
+    expect(await engine.keepCloud()).toBe(false);
+
+    engine.setViewingNewerFile(false);
+    expect(engine.getSnapshot().conflict).not.toBeNull();
+  });
+
+  it('turns read-only when another tab stores newer data, and sends nothing', async () => {
+    const { engine, items, loads, saves, edit } = setup();
+    edit('edited');
+    items.setItem('student-data', JSON.stringify({ ...newer('other tab'), studentInfo: { division: 'FMS' } }));
+    engine.noteOtherTabChange();
+    expect(engine.getSnapshot().readOnly).toBe('local');
+
+    await engine.sync();
+    expect(loads).toHaveLength(0);
+    expect(saves).toHaveLength(0);
+    expect(engine.getSnapshot().failure).toBe('newer_data');
+  });
+
+  it('takes no cloud data over newer data another tab stored during the load', async () => {
+    const { engine, items, loads } = setup();
+    const pulling = engine.sync();
+    await settle();
+    const stored = JSON.stringify(newer('other tab'));
+    items.setItem('student-data', stored);
+    loads[0].resolve(snapshot(student('cloud'), 2));
+    await pulling;
+
+    expect(items.getItem('student-data')).toBe(stored);
+    expect(engine.getSnapshot()).toMatchObject({ readOnly: 'local', version: 1 });
+  });
+
+  it('counts cloud data that is empty as unreadable, not as a crash', async () => {
+    const { engine, loads, localLabel } = setup();
+    const pulling = engine.sync();
+    await settle();
+    loads[0].resolve({ data: null as unknown as StudentData, version: 2, updatedAt: '2026-11-04T12:00:00Z' });
+    await pulling;
+
+    expect(localLabel()).toBe('local');
+    expect(engine.getSnapshot()).toMatchObject({ failure: 'unreachable', version: 1, readOnly: null });
+  });
+
+  it('leaves the read-only state when the code is gone', async () => {
+    const { engine, loads } = await inReadOnly();
+    const again = engine.sync();
+    await settle();
+    loads[1].resolve(null);
+    await again;
+    expect(engine.getSnapshot()).toMatchObject({ readOnly: null, failure: 'unknown_code', newerCloudData: null });
   });
 });

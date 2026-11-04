@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import type { StudentData, Year, Grade, StudentInfo, Subject, GymProfile as GymProfileType } from './types';
 import { isSubject, isCombinedSubject } from './types';
 import { storageService } from './utils/storage';
+import { isNewerData } from './utils/dataVersion';
 import { dataBackup, useHasBackup } from './utils/backup';
 import { countGrades } from './utils/countGrades';
 import { formatDateTime } from './lib/utils';
@@ -23,7 +24,9 @@ import { GymProfile } from './components/GymProfile';
 import { CloudSync } from './components/CloudSync';
 import { ConflictPrompt } from './components/ConflictPrompt';
 import { AppPopup } from './components/AppPopup';
-import { useCloudSync } from './sync/useCloudSync';
+import { NewerDataPage, ReadOnlyNotice } from './components/ReadOnlyNotice';
+import { isReadOnlyNow, syncEngine } from './sync/cloud';
+import { useCloudSync, useNewerCloudData } from './sync/useCloudSync';
 import { useI18n } from './i18n/context';
 import { CombinedSubjectCard } from './components/CombinedSubjectCard';
 import { Footer } from './components/Footer';
@@ -45,13 +48,17 @@ function App() {
   const [isGradeModalOpen, setIsGradeModalOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [assigningSubjectId, setAssigningSubjectId] = useState<string | null>(null);
+  // A file in a newer format that the student opened: only ever shown, and gone on a reload
+  const [newerFile, setNewerFile] = useState<StudentData | null>(null);
+  const newerCloudData = useNewerCloudData();
 
   useEffect(() => {
     const savedData = storageService.getData();
     if (savedData) {
-      const reconciled = reconcileAllYears(savedData);
-      setData(reconciled);
-      setCurrentYear(selectableYear(reconciled, storageService.getSelectedYear() ?? reconciled.currentYear));
+      // Newer data is shown as it is: reconciling keeps only the subjects this version knows
+      const loaded = isNewerData(savedData) ? savedData : reconcileAllYears(savedData);
+      setData(loaded);
+      setCurrentYear(selectableYear(loaded, storageService.getSelectedYear() ?? loaded.currentYear));
     } else {
       const newData = initializeStudentData();
       setData(newData);
@@ -71,18 +78,26 @@ function App() {
   }, []);
   useCloudSync(data, handleDataFromElsewhere);
 
+  // Data in a newer format is only shown: every way of changing anything is left out while it is.
+  // `data` stays this device's own data, which nothing below changes meanwhile.
+  const readOnlyData = newerFile ?? (data && isNewerData(data) ? data : newerCloudData);
+  const readOnly = readOnlyData !== null;
+  const shown = readOnlyData ?? data;
+  // What was on show may have a year this device's own data doesn't, and the other way round
+  const shownYear = shown ? selectableYear(shown, currentYear) : currentYear;
+
   // The year's hue is the page: bind it on <html> so the body and portals follow
   const hasProfile = Boolean(data?.studentInfo);
   useEffect(() => {
     const root = document.documentElement;
     if (hasProfile) {
-      root.dataset.year = String(currentYear);
+      root.dataset.year = String(shownYear);
     } else {
       delete root.dataset.year;
     }
-  }, [hasProfile, currentYear]);
+  }, [hasProfile, shownYear]);
 
-  if (!data) {
+  if (!data || !shown) {
     return (
       <div className="auth">
         <p className="muted">{t('loading')}</p>
@@ -90,8 +105,11 @@ function App() {
     );
   }
 
+  const { studentInfo } = shown;
+
   // Show onboarding if student info is missing
-  if (!data.studentInfo) {
+  if (!studentInfo) {
+    if (readOnly) return <NewerDataPage />;
     return (
       <Onboarding
         onComplete={(info: StudentInfo) => {
@@ -105,20 +123,26 @@ function App() {
   }
 
   // Cloud data comes without the name, so a device that got its data with a code asks for it
-  if (!data.studentInfo.name) {
-    const studentInfo = data.studentInfo;
+  if (!readOnly && !studentInfo.name) {
     return <NamePrompt onComplete={(name) => setData({ ...data, studentInfo: { ...studentInfo, name } })} />;
   }
 
-  const isGym = data.studentInfo.division === 'Gymnasium';
+  const isGym = studentInfo.division === 'Gymnasium';
   const years: Year[] = isGym ? GYM_YEARS : [1, 2, 3];
-  const subjects = getSubjectsForYear(data, currentYear);
-  const criteria = getCriteria(data.studentInfo.division);
+  const subjects = getSubjectsForYear(shown, shownYear);
+  const criteria = getCriteria(studentInfo.division);
   const promotionStatus = checkPromotionCriteria(subjects, criteria);
 
   const handleYearChange = (year: Year) => {
     setCurrentYear(year);
-    storageService.saveSelectedYear(year);
+    if (!readOnly) storageService.saveSelectedYear(year);
+  };
+
+  // What the page last drew can be out of date after a dialog or a file being read
+  const refusedAsReadOnly = () => {
+    if (!isReadOnlyNow()) return false;
+    alert(t('newerDataRefused'));
+    return true;
   };
 
   const handleDirectionSelect = (directionId: string) => {
@@ -146,6 +170,7 @@ function App() {
     if (lost.length > 0 && !window.confirm(`${t('gymConfirmDrop')} ${[...new Set(lost.map(tSubject))].join(', ')}`)) {
       return;
     }
+    if (isReadOnlyNow()) return;
     setData(updatedData);
   };
 
@@ -165,7 +190,7 @@ function App() {
     if (!selectedSubjectId) return;
 
     const updatedData = { ...data };
-    const yearData = updatedData.years[currentYear];
+    const yearData = updatedData.years[shownYear];
     console.log(yearData)
     let subject: Subject | undefined = yearData.subjects.find((s) => isSubject(s) && s.id === selectedSubjectId) as Subject | undefined;
     if (!subject) {
@@ -209,7 +234,7 @@ function App() {
 
   const handleDeleteGrade = (subjectId: string, gradeId: string) => {
     const updatedData = { ...data };
-    const yearData = updatedData.years[currentYear];
+    const yearData = updatedData.years[shownYear];
 
     // First try to find as a direct Subject
     let subject = yearData.subjects.find((s) => isSubject(s) && s.id === subjectId) as Subject | undefined;
@@ -229,7 +254,7 @@ function App() {
 
   const handleOralGradeUpdate = (subjectId: string, oralGrade: number | undefined) => {
     const updatedData = { ...data };
-    const yearData = updatedData.years[currentYear];
+    const yearData = updatedData.years[shownYear];
 
     // First try to find as a direct Subject
     let subject = yearData.subjects.find((s) => isSubject(s) && s.id === subjectId) as Subject | undefined;
@@ -299,34 +324,68 @@ function App() {
       }
     };
 
+    // For replacing the data with a version that was just kept. All of it happens at once, with no alert:
+    // closing the tab during one would leave the kept version replaced and the new one not stored, and
+    // a pull already under way would take the unmarked data for no change and replace it.
+    const replaceData = (next: StudentData) => {
+      storageService.saveData(next);
+      storageService.saveSelectedYear(next.currentYear);
+      if (syncEngine?.noteLocalChange()) void syncEngine.sync();
+      setData(next);
+      setCurrentYear(next.currentYear);
+      setIsMenuOpen(false);
+    };
+
     const handleImport = async (file: File) => {
+      let imported: StudentData;
       try {
-        const importedData = reconcileAllYears(await storageService.importData(file));
-        setData(importedData);
-        setCurrentYear(importedData.currentYear);
-        storageService.saveSelectedYear(importedData.currentYear);
-        alert(t('importSuccess'));
-        setIsMenuOpen(false);
+        const fileData = await storageService.importData(file);
+        if (refusedAsReadOnly()) return;
+        if (isNewerData(fileData)) {
+          syncEngine?.setViewingNewerFile(true);
+          setNewerFile(fileData);
+          setIsMenuOpen(false);
+          return;
+        }
+        imported = reconcileAllYears(fileData);
       } catch (error) {
         alert(t('importError') + ': ' + (error instanceof Error ? error.message : t('importInvalidFile')));
         console.error('Import error:', error);
+        return;
       }
+
+      if (!window.confirm(`${t('importConfirm')}\n\n${t('gradesLabel')}: ${countGrades(imported)}`)) return;
+      if (refusedAsReadOnly()) return;
+
+      try {
+        // What is stored now: a sync may have changed it while the file was read or the dialog was up
+        dataBackup.keep(storageService.getDataWithSelectedYear() ?? { ...data, currentYear: shownYear });
+      } catch (error) {
+        alert(t('importError'));
+        console.error('Import error:', error);
+        return;
+      }
+      replaceData(imported);
+    };
+
+    const closeNewerFile = () => {
+      setNewerFile(null);
+      syncEngine?.setViewingNewerFile(false);
     };
 
     const handleRestore = () => {
       const kept = dataBackup.read();
       if (!kept) return;
+      if (isNewerData(kept.data)) {
+        alert(t('newerDataRefused'));
+        return;
+      }
       const details = `${t('gradesLabel')}: ${countGrades(kept.data)}\n${formatDateTime(kept.keptAt, language)}`;
       if (!window.confirm(`${t('restoreConfirm')}\n\n${details}`)) return;
+      if (refusedAsReadOnly()) return;
       try {
-        const restored = dataBackup.swapWith({ ...data, currentYear });
-        if (!restored) return;
-        // Saved and synced like any other edit. No alert before that: closing the tab during one
-        // would leave the kept version replaced and the restored one not stored.
-        setData(restored);
-        setCurrentYear(restored.currentYear);
-        storageService.saveSelectedYear(restored.currentYear);
-        setIsMenuOpen(false);
+        const restored = dataBackup.swapWith({ ...data, currentYear: shownYear });
+        if (restored) replaceData(restored);
       } catch (error) {
         alert(t('restoreError'));
         console.error('Restore error:', error);
@@ -335,6 +394,7 @@ function App() {
 
     const handleReset = () => {
       if (window.confirm(t('resetConfirm'))) {
+        if (refusedAsReadOnly()) return;
         try {
           storageService.clearData();
           const newData = initializeStudentData();
@@ -350,12 +410,12 @@ function App() {
     };
 
   // FMS year 3 depends on the Berufsfeld
-  const hasDirections = !isGym && currentYear === 3;
+  const hasDirections = !isGym && shownYear === 3;
   const direction = hasDirections
-    ? year3Directions.find((d) => d.id === data.year3Direction)
+    ? year3Directions.find((d) => d.id === shown.year3Direction)
     : undefined;
   const needsDirection = hasDirections && !direction;
-  const isLastGymYear = endsWithoutPromotion(data.studentInfo.division, currentYear);
+  const isLastGymYear = endsWithoutPromotion(studentInfo.division, shownYear);
 
   // The verdict is the page title
   const verdict = {
@@ -383,9 +443,9 @@ function App() {
           isOpen={isMenuOpen}
           onToggle={() => setIsMenuOpen(!isMenuOpen)}
           onExport={handleExport}
-          onImport={handleImport}
-          onReset={handleReset}
-          onRestore={canRestore ? handleRestore : undefined}
+          onImport={readOnly ? undefined : handleImport}
+          onReset={readOnly ? undefined : handleReset}
+          onRestore={canRestore && !readOnly ? handleRestore : undefined}
           cloudSlot={
             <CloudSync onConnected={() => setIsMenuOpen(false)} />
           }
@@ -397,18 +457,20 @@ function App() {
           <div className="page-head-text">
             <h1 className="display">{needsDirection ? yearLabels[3] : verdict}</h1>
             <p className="meta">
-              {!needsDirection && <span>{yearLabels[currentYear]}</span>}
+              {!needsDirection && <span>{yearLabels[shownYear]}</span>}
               {direction && <span>{tSubject(direction.name)}</span>}
-              <span>{data.studentInfo.name}</span>
-              <span>{data.studentInfo.division}</span>
+              <span>{studentInfo.name}</span>
+              <span>{studentInfo.division}</span>
             </p>
           </div>
           <nav className="segmented view-switch">{viewButtons}</nav>
         </div>
 
+        {readOnly && <ReadOnlyNotice onCloseFile={newerFile ? closeNewerFile : undefined} />}
+
         <div className="workspace">
           <div className="workspace-side">
-            <YearTabs years={years} currentYear={currentYear} onYearChange={handleYearChange} />
+            <YearTabs years={years} currentYear={shownYear} onYearChange={handleYearChange} />
             <div className="side-stack">
               {subjects.length > 0 && (
                 <PromotionStatus
@@ -417,13 +479,14 @@ function App() {
                 />
               )}
               {isGym && (
-                <GymProfile year={currentYear} profile={data.gymProfile ?? {}} onChange={handleGymProfileChange} />
+                <GymProfile year={shownYear} profile={shown.gymProfile ?? {}} onChange={handleGymProfileChange} readOnly={readOnly} />
               )}
               {hasDirections && (
                 <DirectionSelector
                   directions={year3Directions}
-                  selectedDirectionId={data.year3Direction}
+                  selectedDirectionId={shown.year3Direction}
                   onSelect={handleDirectionSelect}
+                  readOnly={readOnly}
                 />
               )}
             </div>
@@ -440,9 +503,11 @@ function App() {
                       <p>
                         <strong>{tSubject(subject.name)}</strong> {t('assignGradesNotice')}
                       </p>
-                      <button onClick={() => setAssigningSubjectId(subject.id)} className="btn btn-primary">
-                        {t('assignGrades')}
-                      </button>
+                      {!readOnly && (
+                        <button onClick={() => setAssigningSubjectId(subject.id)} className="btn btn-primary">
+                          {t('assignGrades')}
+                        </button>
+                      )}
                     </div>
                   ))}
 
@@ -458,6 +523,7 @@ function App() {
                           onEditGrade={(gradeId) => handleEditGrade(subject.id, gradeId)}
                           onDeleteGrade={(gradeId) => handleDeleteGrade(subject.id, gradeId)}
                           onOralGradeChange={(oralGrade) => handleOralGradeUpdate(subject.id, oralGrade)}
+                          readOnly={readOnly}
                         />
                       ))}
                       {subjects.filter(isCombinedSubject).map((subject) => (
@@ -468,6 +534,7 @@ function App() {
                           onEditGrade={handleEditGrade}
                           onDeleteGrade={handleDeleteGrade}
                           onOralGradeChange={handleOralGradeUpdate}
+                          readOnly={readOnly}
                         />
                       ))}
                     </div>
@@ -481,14 +548,14 @@ function App() {
             ) : (
               <>
                 <h2 className="section-title">{t('stats')}</h2>
-                <StatsPage data={data} currentYear={currentYear} />
+                <StatsPage data={shown} currentYear={shownYear} />
               </>
             )}
           </div>
         </div>
 
         <GradeModal
-          isOpen={isGradeModalOpen}
+          isOpen={isGradeModalOpen && !readOnly}
           onClose={() => {
             setIsGradeModalOpen(false);
             setSelectedSubjectId(null);
@@ -499,7 +566,7 @@ function App() {
         />
 
         <AssignGradesModal
-          subject={assigningSubject}
+          subject={readOnly ? undefined : assigningSubject}
           onClose={() => setAssigningSubjectId(null)}
           onSave={handleAssignGrades}
         />

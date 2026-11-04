@@ -3,6 +3,7 @@ import { createMemoryStorage } from '../sync/memoryStorage';
 import type { StudentData } from '../types';
 import { createDataBackup } from './backup';
 import { countGrades } from './countGrades';
+import { DATA_VERSION } from './dataVersion';
 
 function student(label: string, { name = 'Name' as string | undefined, division = 'FMS' as 'FMS' | 'Gymnasium', year = 1 as StudentData['currentYear'] } = {}): StudentData {
   return {
@@ -136,5 +137,13 @@ describe('counting grades', () => {
 
   it('counts data with parts missing as far as it can', () => {
     expect(countGrades({ currentYear: 1 } as StudentData)).toBe(0);
+  });
+
+  it('gives back no version in a newer format, changing nothing, as reconciling it would lose subjects', () => {
+    const { backup } = setup();
+    const newer = { ...student('newer'), dataVersion: DATA_VERSION + 1 };
+    backup.keep(newer);
+    expect(backup.swapWith(student('current'))).toBeNull();
+    expect(labelOf(backup.read()?.data)).toBe('newer');
   });
 });

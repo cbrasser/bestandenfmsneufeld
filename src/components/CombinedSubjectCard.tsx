@@ -10,6 +10,7 @@ interface CombinedSubjectCardProps {
   onEditGrade: (subjectId: string, gradeId: string) => void;
   onDeleteGrade: (subjectId: string, gradeId: string) => void;
   onOralGradeChange: (subjectId: string, oralGrade: number | undefined) => void;
+  readOnly?: boolean;
 }
 
 // A Fach made of Teilfächer: one leaf, each Teilfach a titled group inside it
@@ -19,6 +20,7 @@ export const CombinedSubjectCard = ({
   onEditGrade,
   onDeleteGrade,
   onOralGradeChange,
+  readOnly = false,
 }: CombinedSubjectCardProps) => {
   const { t, tSubject } = useI18n();
   const finalGrade = calculateFinalGrade(subject);
@@ -49,19 +51,22 @@ export const CombinedSubjectCard = ({
                   {grade === 0 ? '–' : grade.toFixed(1)}
                 </span>
               )}
-              <button
-                onClick={() => onAddGrade(sub.id)}
-                className="btn btn-icon"
-                aria-label={`${t('addGrade')}: ${name}`}
-              >
-                <Plus size={18} strokeWidth={3} aria-hidden="true" />
-              </button>
+              {!readOnly && (
+                <button
+                  onClick={() => onAddGrade(sub.id)}
+                  className="btn btn-icon"
+                  aria-label={`${t('addGrade')}: ${name}`}
+                >
+                  <Plus size={18} strokeWidth={3} aria-hidden="true" />
+                </button>
+              )}
             </div>
             <SubjectGrades
               subject={sub}
               onEditGrade={(gradeId) => onEditGrade(sub.id, gradeId)}
               onDeleteGrade={(gradeId) => onDeleteGrade(sub.id, gradeId)}
               onOralGradeChange={(oralGrade) => onOralGradeChange(sub.id, oralGrade)}
+              readOnly={readOnly}
             />
           </section>
         );

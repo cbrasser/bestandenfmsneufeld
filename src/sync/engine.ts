@@ -1,4 +1,5 @@
 import type { StudentData } from '../types';
+import { isNewerData } from '../utils/dataVersion';
 import { generateCode, normalizeCode } from './code';
 
 /** What the cloud holds for a code. */
@@ -62,8 +63,17 @@ export type SyncStatus = 'idle' | 'saving' | 'saved' | 'error';
  * - `conflict`: the cloud has a newer version than the unsynced changes are based on
  * - `unknown_code`: the cloud has no data for the code
  * - `unreachable`: a call to the cloud failed, or what it returned can't be read
+ * - `newer_data`: the data is in a newer format than this version supports, see `ReadOnlySource`
  */
-export type SyncFailure = 'conflict' | 'unknown_code' | 'unreachable';
+export type SyncFailure = 'conflict' | 'unknown_code' | 'unreachable' | 'newer_data';
+
+/**
+ * What put the device in its read-only state: data in a newer format, in the cloud, in this device's
+ * own storage, or in a file the student opened. Reconciling keeps only the subjects a version knows,
+ * so this version may show that data but never write it. Until the state ends, nothing is written to
+ * storage or the cloud: no edits or saves, no choice in a conflict, and no disconnecting or deleting.
+ */
+export type ReadOnlySource = 'cloud' | 'local' | 'file';
 
 /** What the student sees of one version when choosing between two. */
 export interface ConflictSide {
@@ -92,21 +102,28 @@ export interface SyncSnapshot extends PersistedSyncState {
   failure: SyncFailure | null;
   conflict: SyncConflict | null;
   conflictPrompt: ConflictPromptState;
+  readOnly: ReadOnlySource | null;
+  /** The newer cloud data to show, on this device's name; this device's own data stays as it is. */
+  newerCloudData: StudentData | null;
 }
 
-export type ConnectResult = 'connected' | 'unknown_code' | 'unreachable';
+/** `newer_data`: the device is read-only or the cloud's data is in a newer format, so nothing changed. */
+export type ConnectResult = 'connected' | 'unknown_code' | 'unreachable' | 'newer_data';
 
-/** `out_of_step`: the cloud holds data this device never received, so nothing was deleted. */
-export type DeleteResult = 'deleted' | 'unreachable' | 'out_of_step';
+/**
+ * `out_of_step`: the cloud holds data this device never received, so nothing was deleted.
+ * `newer_data`: the device is read-only or the cloud's data is in a newer format, so nothing was deleted.
+ */
+export type DeleteResult = 'deleted' | 'unreachable' | 'out_of_step' | 'newer_data';
 
 export interface SyncEngine {
   getSnapshot(): SyncSnapshot;
   subscribe(listener: () => void): () => void;
-  /** Creates a new code holding the current local data and connects this device to it. */
+  /** Creates a new code holding the current local data and connects this device to it. Throws if read-only. */
   createAccount(): Promise<string>;
   /** Connects to an existing code, replacing the local data with the cloud's. */
   connect(code: string): Promise<ConnectResult>;
-  /** Disconnects this device. Local and cloud data both stay. */
+  /** Disconnects this device. Local and cloud data both stay. Does nothing if read-only. */
   disconnect(): void;
   /**
    * Removes this code and its cloud data, then disconnects. Local data stays. Refuses if the cloud
@@ -138,6 +155,11 @@ export interface SyncEngine {
    * conflict, no backup could be kept, or the cloud's data can't be read.
    */
   keepCloud(): Promise<boolean>;
+  /**
+   * The student opened, or left, a file in a newer format. While it is shown the device is read-only
+   * and doesn't sync at all. Leaving it syncs.
+   */
+  setViewingNewerFile(viewing: boolean): void;
 }
 
 // Rows start at this version; the database's trigger raises it on every write
@@ -163,6 +185,8 @@ function withName(data: StudentData, name?: string): StudentData {
  *
  * A device connected before versions has no version to go on, so it compares: the same data means it
  * adopts the cloud's version, and different data means the student chooses.
+ *
+ * All of that assumes data this version can read. See `ReadOnlySource` for what happens otherwise.
  */
 export function createSyncEngine({ store, remote }: { store: SyncStore; remote: SyncRemote }): SyncEngine {
   // The version is kept per engine, and only re-read together with the data it describes: a tab
@@ -172,6 +196,9 @@ export function createSyncEngine({ store, remote }: { store: SyncStore; remote: 
   let failure: SyncFailure | null = null;
   // The cloud version the student is being asked about
   let conflictingCloud: CloudSnapshot | null = null;
+  // The cloud data in a newer format that makes this device read-only, checked again on every sync
+  let newerCloud: CloudSnapshot | null = null;
+  let viewingNewerFile = false;
   let snapshot: SyncSnapshot;
   // The content of the local data as last seen, to tell real edits from data that came from elsewhere
   let baseline: string | null = null;
@@ -189,15 +216,32 @@ export function createSyncEngine({ store, remote }: { store: SyncStore; remote: 
     );
   };
 
-  const promptState = (conflict: SyncConflict | null): ConflictPromptState => {
+  const readOnlySource = (): ReadOnlySource | null => {
+    if (viewingNewerFile) return 'file';
+    const local = store.readData();
+    if (local && isNewerData(local)) return 'local';
+    return newerCloud ? 'cloud' : null;
+  };
+
+  const promptState = (conflict: SyncConflict | null, readOnly: ReadOnlySource | null): ConflictPromptState => {
     if (conflict) return 'showing';
-    if (!persisted.code || failure === 'unknown_code') return 'none';
+    if (readOnly || !persisted.code || failure === 'unknown_code') return 'none';
     return status === 'idle' || persisted.unsynced || persisted.version === null ? 'pending' : 'none';
   };
 
   const takeSnapshot = () => {
-    const conflict = describeConflict();
-    snapshot = { ...persisted, status, failure, conflict, conflictPrompt: promptState(conflict) };
+    const readOnly = readOnlySource();
+    // A read-only device can't act on a choice, so the prompt waits, if it still applies by then
+    const conflict = readOnly ? null : describeConflict();
+    snapshot = {
+      ...persisted,
+      status,
+      failure,
+      conflict,
+      conflictPrompt: promptState(conflict, readOnly),
+      readOnly,
+      newerCloudData: newerCloud?.data ?? null,
+    };
   };
   takeSnapshot();
 
@@ -213,7 +257,9 @@ export function createSyncEngine({ store, remote }: { store: SyncStore; remote: 
 
   const setOutcome = (nextStatus: SyncStatus, nextFailure: SyncFailure | null = null) => {
     // Being unable to reach the cloud, or trying again, doesn't settle what the student is asked
-    if (nextStatus === 'saved' || nextStatus === 'idle' || nextFailure === 'unknown_code') conflictingCloud = null;
+    if (nextStatus === 'saved' || nextStatus === 'idle' || nextFailure === 'unknown_code' || nextFailure === 'newer_data') {
+      conflictingCloud = null;
+    }
     status = nextStatus;
     failure = nextFailure;
     publish();
@@ -229,6 +275,11 @@ export function createSyncEngine({ store, remote }: { store: SyncStore; remote: 
     return fail('conflict');
   };
 
+  const showNewerCloud = (cloud: CloudSnapshot) => {
+    newerCloud = { ...cloud, data: withName(cloud.data, store.readData()?.studentInfo?.name) };
+    fail('newer_data');
+  };
+
   const storedContent = () => {
     const data = store.readData();
     return data?.studentInfo ? store.contentOf(data) : null;
@@ -241,6 +292,8 @@ export function createSyncEngine({ store, remote }: { store: SyncStore; remote: 
 
   // Returns false, with nothing changed, if the cloud data can't be read
   const takeCloudData = (code: string, cloud: CloudSnapshot, options: { keepSelectedYear: boolean }): boolean => {
+    // Another tab may have stored newer data during the load
+    if (readOnlySource()) return false;
     try {
       store.applyCloudData(withName(cloud.data, store.readData()?.studentInfo?.name), options);
     } catch {
@@ -260,7 +313,13 @@ export function createSyncEngine({ store, remote }: { store: SyncStore; remote: 
       if (persisted.code === code) fail('unreachable');
       return null;
     }
-    if (persisted.code !== code) return null;
+    // Whatever a file on show is hiding, it is dealt with once the file is closed
+    if (persisted.code !== code || viewingNewerFile) return null;
+    if (cloud && isNewerData(cloud.data)) {
+      showNewerCloud(cloud);
+      return null;
+    }
+    newerCloud = null;
     if (!cloud) fail('unknown_code');
     return cloud;
   };
@@ -355,7 +414,7 @@ export function createSyncEngine({ store, remote }: { store: SyncStore; remote: 
     const code = persisted.code;
     const cloud = conflictingCloud;
     const local = store.readData();
-    if (!code || !cloud || !local) return false;
+    if (!code || !cloud || !local || readOnlySource()) return false;
     try {
       apply(code, cloud, local);
     } catch {
@@ -368,6 +427,7 @@ export function createSyncEngine({ store, remote }: { store: SyncStore; remote: 
   };
 
   const forgetCode = () => {
+    newerCloud = null;
     persist({ code: null, version: null, unsynced: false, changedAt: null });
     setOutcome('idle');
   };
@@ -378,8 +438,15 @@ export function createSyncEngine({ store, remote }: { store: SyncStore; remote: 
       const data = store.readData();
       // A device without a profile is in onboarding, for example after a reset: its empty data
       // must never reach the cloud, and cloud data must not interrupt the student.
-      if (!code || !data?.studentInfo) return;
-      const more = persisted.unsynced ? await push(code, data) : await pull(code);
+      if (viewingNewerFile || !code || !data?.studentInfo) return;
+      if (isNewerData(data)) {
+        fail('newer_data');
+        return;
+      }
+      let more: boolean;
+      // Read-only: only asks whether the cloud's data has become readable, then carries on as usual
+      if (newerCloud) more = (await load(code)) !== null;
+      else more = persisted.unsynced ? await push(code, data) : await pull(code);
       if (!more) return;
     }
   };
@@ -395,6 +462,7 @@ export function createSyncEngine({ store, remote }: { store: SyncStore; remote: 
     async createAccount() {
       const data = store.readData();
       if (!data) throw new Error('No local data to create an account from');
+      if (readOnlySource()) throw new Error('This device is read-only');
       const code = generateCode();
       await remote.createAccount(code, withName(data));
       baseline = store.contentOf(data);
@@ -404,6 +472,7 @@ export function createSyncEngine({ store, remote }: { store: SyncStore; remote: 
     },
 
     async connect(input) {
+      if (readOnlySource()) return 'newer_data';
       const code = normalizeCode(input);
       let cloud: CloudSnapshot | null;
       try {
@@ -412,19 +481,28 @@ export function createSyncEngine({ store, remote }: { store: SyncStore; remote: 
         return 'unreachable';
       }
       if (!cloud) return 'unknown_code';
+      if (isNewerData(cloud.data) || readOnlySource()) return 'newer_data';
       // A device joining starts where the student last was; from then on it keeps its own year
       if (!takeCloudData(code, cloud, { keepSelectedYear: false })) return 'unreachable';
       setOutcome('saved');
       return 'connected';
     },
 
-    disconnect: forgetCode,
+    disconnect() {
+      if (!readOnlySource()) forgetCode();
+    },
 
     async deleteCloudData() {
       const code = persisted.code;
       if (!code) return 'deleted';
+      if (readOnlySource()) return 'newer_data';
       try {
         const cloud = await remote.load(code);
+        if (readOnlySource()) return 'newer_data';
+        if (cloud && isNewerData(cloud.data)) {
+          if (persisted.code === code) showNewerCloud(cloud);
+          return 'newer_data';
+        }
         const unseen =
           cloud &&
           persisted.code === code &&
@@ -444,6 +522,7 @@ export function createSyncEngine({ store, remote }: { store: SyncStore; remote: 
     },
 
     noteLocalChange() {
+      if (readOnlySource()) return false;
       const data = store.readData();
       if (!data?.studentInfo) {
         // A reset removed whatever was unsynced, and the new profile isn't an edit
@@ -469,6 +548,7 @@ export function createSyncEngine({ store, remote }: { store: SyncStore; remote: 
       const versionMoved = persisted.version !== before.version;
       // The other tab chose, or got past the conflict some other way
       if (versionMoved) conflictingCloud = null;
+      if (persisted.code !== before.code) newerCloud = null;
       if (!persisted.code || (conflictingCloud && baseline === null)) setOutcome('idle');
       else if (persisted.code !== before.code || persisted.unsynced !== before.unsynced || versionMoved) {
         setOutcome(persisted.unsynced ? 'saving' : 'saved');
@@ -492,5 +572,11 @@ export function createSyncEngine({ store, remote }: { store: SyncStore; remote: 
         store.keepBackup(local);
         if (!takeCloudData(code, cloud, { keepSelectedYear: true })) throw new Error('Unreadable cloud data');
       }),
+
+    setViewingNewerFile(viewing) {
+      viewingNewerFile = viewing;
+      publish();
+      if (!viewing) void sync();
+    },
   };
 }
