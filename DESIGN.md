@@ -280,6 +280,8 @@ A leaf up to 460px wide with a large shadow on a scrim: title, quiet close butto
 
 The conflict prompt is the one dialog with no way out but a choice: no close, no Cancel, and two equal buttons rather than a primary, because neither version is the right one to suggest.
 
+The app pop-up tells a student once that the app exists. A phone gets one primary button to its own guide and a quiet close; a computer gets the two guides as equal buttons. It waits behind the conflict prompt and any other dialog, and never asks anything.
+
 ### Menu
 A paper panel from the right edge (380px, at most 90% of the width) with a 2px ink line on its left, sliding in over 320ms. Groups are titled in 800 over an ink rule: theme (a three-part segmented control), language (a native select), cloud sync, data. The access code is set in Manrope 800 spaced 0.14em, not in a monospace face.
 

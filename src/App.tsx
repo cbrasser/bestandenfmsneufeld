@@ -22,6 +22,7 @@ import { YearTabs } from './components/YearTabs';
 import { GymProfile } from './components/GymProfile';
 import { CloudSync } from './components/CloudSync';
 import { ConflictPrompt } from './components/ConflictPrompt';
+import { AppPopup } from './components/AppPopup';
 import { useCloudSync } from './sync/useCloudSync';
 import { useI18n } from './i18n/context';
 import { CombinedSubjectCard } from './components/CombinedSubjectCard';
@@ -511,6 +512,8 @@ function App() {
       <nav className="dock">{viewButtons}</nav>
 
       <ConflictPrompt />
+      {/* Down here, it waits behind onboarding and the name prompt, which return above */}
+      <AppPopup otherDialogOpen={isGradeModalOpen || isMenuOpen || Boolean(assigningSubject)} />
     </div>
   );
 }
