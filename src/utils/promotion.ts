@@ -46,7 +46,7 @@ export const calculateFinalGradeCombined = (subject: CombinedSubject): number =>
   let numGrades = 0;
   subject.subjects.forEach((sub) => {
     if (sub.grades.length > 0) {
-      let grade = calculateFinalGrade(sub);
+      const grade = calculateFinalGrade(sub);
       sum += grade;
       numGrades += 1;
     }
@@ -153,3 +153,9 @@ export const checkPromotionCriteria = (
   };
 };
 
+export type PromotionVerdict = 'noGrades' | 'passing' | 'notPassing';
+
+export const promotionVerdict = (status: PromotionStatus): PromotionVerdict => {
+  if (!status.hasGrades) return 'noGrades';
+  return status.isPassing ? 'passing' : 'notPassing';
+};
