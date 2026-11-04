@@ -161,6 +161,142 @@
         { "action": "expectDevice", "device": "A", "status": "saved", "version": 3, "unsynced": false },
         { "action": "expectCloud", "version": 3, "grades": [5, 4] }
       ]
+    },
+    {
+      "name": "a tab closed during the save delay saves on the next open",
+      "steps": [
+        {"action": "open", "device": "A", "fixture": "fms-student"},
+        {"action": "createCode", "device": "A"},
+        {"action": "addGrade", "device": "A", "value": 5},
+        {"action": "expectDevice", "device": "A", "status": "saving", "unsynced": true, "version": 1},
+        {"action": "expectCloud", "version": 1, "grades": []},
+        {"action": "open", "device": "A"},
+        {"action": "expectDevice", "device": "A", "status": "saved", "unsynced": false, "version": 2, "grades": [5]},
+        {"action": "expectCloud", "version": 2, "grades": [5]}
+      ]
+    },
+    {
+      "name": "a failed save survives a restart and goes through on reconnect",
+      "steps": [
+        {"action": "open", "device": "A", "fixture": "fms-student"},
+        {"action": "createCode", "device": "A"},
+        {"action": "setOffline", "device": "A", "offline": true},
+        {"action": "addGrade", "device": "A", "value": 5},
+        {"action": "saveDelayElapsed", "device": "A"},
+        {"action": "expectDevice", "device": "A", "status": "error", "failure": "unreachable", "unsynced": true},
+        {"action": "open", "device": "A"},
+        {"action": "expectDevice", "device": "A", "status": "error", "failure": "unreachable", "unsynced": true, "version": 1, "grades": [5]},
+        {"action": "expectCloud", "version": 1, "grades": []},
+        {"action": "reconnect", "device": "A"},
+        {"action": "expectDevice", "device": "A", "status": "saved", "failure": null, "unsynced": false, "version": 2, "grades": [5]},
+        {"action": "expectCloud", "version": 2, "grades": [5]}
+      ]
+    },
+    {
+      "name": "a save whose answer got lost is not a conflict with itself",
+      "steps": [
+        {"action": "open", "device": "A", "fixture": "fms-student"},
+        {"action": "createCode", "device": "A"},
+        {"action": "loseNextSaveAnswer", "device": "A"},
+        {"action": "addGrade", "device": "A", "value": 5},
+        {"action": "saveDelayElapsed", "device": "A"},
+        {"action": "expectDevice", "device": "A", "status": "error", "failure": "unreachable", "unsynced": true, "version": 1},
+        {"action": "expectCloud", "version": 2, "grades": [5]},
+        {"action": "focus", "device": "A"},
+        {"action": "expectDevice", "device": "A", "status": "saved", "failure": null, "unsynced": false, "version": 2, "grades": [5]},
+        {"action": "expectCloud", "version": 2, "grades": [5]}
+      ]
+    },
+    {
+      "name": "a refused save stays a conflict after the cloud moved on with other data",
+      "steps": [
+        {"action": "open", "device": "A", "fixture": "fms-student"},
+        {"action": "createCode", "device": "A"},
+        {"action": "connect", "device": "B"},
+        {"action": "addGrade", "device": "A", "value": 5},
+        {"action": "saveDelayElapsed", "device": "A"},
+        {"action": "addGrade", "device": "B", "value": 5},
+        {"action": "addGrade", "device": "B", "value": 3},
+        {"action": "saveDelayElapsed", "device": "B"},
+        {"action": "expectDevice", "device": "B", "status": "error", "failure": "conflict", "unsynced": true, "version": 1, "grades": [5, 3]},
+        {"action": "expectCloud", "version": 2, "grades": [5]}
+      ]
+    },
+    {
+      "name": "switching year on one device causes no sync and doesn't move the other device",
+      "steps": [
+        {"action": "open", "device": "A", "fixture": "fms-student"},
+        {"action": "createCode", "device": "A"},
+        {"action": "connect", "device": "B"},
+        {"action": "selectYear", "device": "A", "year": 2},
+        {"action": "expectDevice", "device": "A", "status": "saved", "unsynced": false, "version": 1, "selectedYear": 2},
+        {"action": "saveDelayElapsed", "device": "A"},
+        {"action": "focus", "device": "A"},
+        {"action": "expectDevice", "device": "A", "version": 1, "unsynced": false, "selectedYear": 2},
+        {"action": "expectCloud", "version": 1, "grades": []},
+        {"action": "focus", "device": "B"},
+        {"action": "expectDevice", "device": "B", "status": "saved", "version": 1, "unsynced": false, "selectedYear": 1}
+      ]
+    },
+    {
+      "name": "each device keeps its own year through the other's edits",
+      "steps": [
+        {"action": "open", "device": "A", "fixture": "fms-student"},
+        {"action": "createCode", "device": "A"},
+        {"action": "connect", "device": "B"},
+        {"action": "selectYear", "device": "A", "year": 2},
+        {"action": "selectYear", "device": "B", "year": 3},
+        {"action": "addGrade", "device": "A", "value": 5},
+        {"action": "saveDelayElapsed", "device": "A"},
+        {"action": "focus", "device": "B"},
+        {"action": "expectDevice", "device": "B", "version": 2, "grades": [5], "selectedYear": 3, "unsynced": false},
+        {"action": "addGrade", "device": "B", "value": 3},
+        {"action": "saveDelayElapsed", "device": "B"},
+        {"action": "focus", "device": "A"},
+        {"action": "expectDevice", "device": "A", "version": 3, "grades": [5, 3], "selectedYear": 2, "unsynced": false},
+        {"action": "open", "device": "A"},
+        {"action": "open", "device": "B"},
+        {"action": "expectDevice", "device": "A", "selectedYear": 2, "version": 3},
+        {"action": "expectDevice", "device": "B", "selectedYear": 3, "version": 3}
+      ]
+    },
+    {
+      "name": "a device connecting starts on the year last saved, then keeps its own",
+      "steps": [
+        {"action": "open", "device": "A", "fixture": "fms-student"},
+        {"action": "createCode", "device": "A"},
+        {"action": "selectYear", "device": "A", "year": 2},
+        {"action": "addGrade", "device": "A", "value": 5},
+        {"action": "saveDelayElapsed", "device": "A"},
+        {"action": "connect", "device": "B"},
+        {"action": "expectDevice", "device": "B", "selectedYear": 2, "grades": [5]},
+        {"action": "selectYear", "device": "B", "year": 1},
+        {"action": "selectYear", "device": "A", "year": 3},
+        {"action": "addGrade", "device": "A", "value": 4},
+        {"action": "saveDelayElapsed", "device": "A"},
+        {"action": "focus", "device": "B"},
+        {"action": "expectDevice", "device": "B", "selectedYear": 1, "grades": [5, 4]}
+      ]
+    },
+    {
+      "name": "a reconciliation-only difference causes no sync and no conflict",
+      "steps": [
+        {"action": "open", "device": "A", "fixture": "fms-student"},
+        {"action": "createCode", "device": "A"},
+        {"action": "connect", "device": "B"},
+        {"action": "reconcile", "device": "A"},
+        {"action": "expectDevice", "device": "A", "status": "saved", "unsynced": false, "version": 1},
+        {"action": "saveDelayElapsed", "device": "A"},
+        {"action": "open", "device": "A"},
+        {"action": "expectDevice", "device": "A", "status": "saved", "failure": null, "unsynced": false, "version": 1},
+        {"action": "expectCloud", "version": 1, "grades": []},
+        {"action": "open", "device": "B"},
+        {"action": "expectDevice", "device": "B", "status": "saved", "failure": null, "unsynced": false, "version": 1},
+        {"action": "addGrade", "device": "B", "value": 3},
+        {"action": "saveDelayElapsed", "device": "B"},
+        {"action": "focus", "device": "A"},
+        {"action": "expectDevice", "device": "A", "status": "saved", "unsynced": false, "version": 2, "grades": [3]}
+      ]
     }
   ]
 }

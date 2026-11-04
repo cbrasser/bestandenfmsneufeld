@@ -16,7 +16,7 @@ try {
 
   const saved = JSON.parse(localStorage.getItem('student-data') ?? 'null');
   if (saved?.studentInfo) {
-    document.documentElement.dataset.year = String(saved.currentYear);
+    document.documentElement.dataset.year = String(localStorage.getItem('selected-year') ?? saved.currentYear);
   }
 } catch {
   // unreadable storage: the page starts on the neutral ground
