@@ -21,6 +21,14 @@ export function useConflictPromptState(): ConflictPromptState {
   );
 }
 
+/** Whether this device is connected to a code, so that its grades are in the cloud too. */
+export function useConnectedToCloud(): boolean {
+  return useSyncExternalStore(
+    syncEngine?.subscribe ?? noSubscription,
+    () => Boolean(syncEngine?.getSnapshot().code)
+  );
+}
+
 /** Cloud data in a newer format, for this device to show read-only instead of its own. */
 export function useNewerCloudData(): StudentData | null {
   return useSyncExternalStore(

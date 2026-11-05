@@ -103,9 +103,9 @@ const homeScreenLabel = {
 
 const oneTimeCopy = {
   de: 'einmalige Kopie',
-  fr: 'copie unique',
+  fr: 'copie ponctuelle',
   en: 'one-time copy',
-  it: 'copia unica',
+  it: 'copia una tantum',
 } as const;
 
 const canRemove = {

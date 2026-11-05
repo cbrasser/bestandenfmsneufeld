@@ -1,5 +1,6 @@
 import { useI18n } from '../i18n/context';
 import { Mail, Download } from 'lucide-react';
+import { useConnectedToCloud } from '../sync/useCloudSync';
 
 interface FooterProps {
   onExport: () => void;
@@ -7,13 +8,15 @@ interface FooterProps {
 
 export const Footer = ({ onExport }: FooterProps) => {
   const { t } = useI18n();
+  const connected = useConnectedToCloud();
 
   return (
     <footer className="site-footer">
       <div className="page">
         {/* Data Storage Notice */}
         <div className="note footer-note">
-          <p>{t('dataStorageNotice')}</p>
+          {/* Not true of a connected device, whose grades are in the cloud too */}
+          {!connected && <p>{t('dataStorageNotice')}</p>}
           <button onClick={onExport} className="btn btn-sm">
             <Download size={16} strokeWidth={2.5} aria-hidden="true" />
             {t('exportData')}

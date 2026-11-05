@@ -329,7 +329,7 @@ export const guideText: Record<Language, GuideText> = {
           {
             id: 'file',
             title: 'Sans code : exporter et importer',
-            intro: "C'est une copie unique. Ensuite, le site et l'app ne restent pas synchronisés : une nouvelle note n'apparaît que là où tu l'as saisie.",
+            intro: "C'est une copie ponctuelle. Ensuite, le site et l'app ne restent pas synchronisés : une nouvelle note n'apparaît que là où tu l'as saisie.",
             groups: [
               {
                 steps: [
@@ -392,7 +392,7 @@ export const guideText: Record<Language, GuideText> = {
           {
             id: 'file',
             title: 'Sans code : exporter et importer',
-            intro: "C'est une copie unique. Ensuite, Safari et l'écran d'accueil ne restent pas synchronisés : une nouvelle note n'apparaît que là où tu l'as saisie.",
+            intro: "C'est une copie ponctuelle. Ensuite, Safari et l'écran d'accueil ne restent pas synchronisés : une nouvelle note n'apparaît que là où tu l'as saisie.",
             groups: [
               {
                 steps: [
@@ -510,7 +510,7 @@ export const guideText: Record<Language, GuideText> = {
           {
             id: 'file',
             title: 'Without a code: export and import',
-            intro: "This is a one-time copy. Afterwards the website and the app don't stay in step: a new grade only appears where you entered it.",
+            intro: "This is a one-time copy. Afterwards the website and the app don't stay in sync: a new grade only appears where you entered it.",
             groups: [
               {
                 steps: [
@@ -573,7 +573,7 @@ export const guideText: Record<Language, GuideText> = {
           {
             id: 'file',
             title: 'Without a code: export and import',
-            intro: "This is a one-time copy. Afterwards Safari and the home screen don't stay in step: a new grade only appears where you entered it.",
+            intro: "This is a one-time copy. Afterwards Safari and the home screen don't stay in sync: a new grade only appears where you entered it.",
             groups: [
               {
                 steps: [
@@ -691,7 +691,7 @@ export const guideText: Record<Language, GuideText> = {
           {
             id: 'file',
             title: 'Senza codice: esportare e importare',
-            intro: "È una copia unica. In seguito il sito e l'app non restano allineati: un nuovo voto appare solo dove l'hai inserito.",
+            intro: "È una copia una tantum. In seguito il sito e l'app non restano allineati: un nuovo voto appare solo dove l'hai inserito.",
             groups: [
               {
                 steps: [
@@ -754,7 +754,7 @@ export const guideText: Record<Language, GuideText> = {
           {
             id: 'file',
             title: 'Senza codice: esportare e importare',
-            intro: 'È una copia unica. In seguito Safari e la schermata Home non restano allineati: un nuovo voto appare solo dove l\'hai inserito.',
+            intro: 'È una copia una tantum. In seguito Safari e la schermata Home non restano allineati: un nuovo voto appare solo dove l\'hai inserito.',
             groups: [
               {
                 steps: [
