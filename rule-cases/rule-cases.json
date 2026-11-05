@@ -9543,6 +9543,653 @@
       ]
     },
     {
+      "operation": "subjectsLostByDirection",
+      "description": "The subjects and Teilfächer whose grades a change of FMS Berufsfeld would drop, for the warning before saving. A Teilfach belongs to its Fach: the same name under another Fach starts empty.",
+      "input": "{ data: StudentData, newDirection: string }, with newDirection the id of a Berufsfeld",
+      "expected": "{ names: string[] }",
+      "cases": [
+        {
+          "name": "same Berufsfeld",
+          "input": {
+            "data": {
+              "studentInfo": {"name":"Test","division":"FMS"},
+              "currentYear": 1,
+              "years": {
+                "1": {
+                  "subjects": [
+                    {"id":"deutsch","name":"Deutsch","grades":[{"id":"deutsch-g","value":4.5,"weight":1}]},
+                    {"id":"französisch","name":"Französisch","grades":[{"id":"französisch-g","value":5,"weight":1}]},
+                    {"id":"englisch","name":"Englisch","grades":[{"id":"englisch-g","value":4,"weight":1}]},
+                    {"id":"mathematik","name":"Mathematik","grades":[{"id":"mathematik-g","value":5.5,"weight":1}]},
+                    {"id":"psychologie","name":"Psychologie","grades":[{"id":"psychologie-g","value":4.5,"weight":1}]},
+                    {"id":"sport","name":"Sport","grades":[{"id":"sport-g","value":5,"weight":1}]},
+                    {
+                      "id": "naturwissenschaften",
+                      "name": "Naturwissenschaften",
+                      "subjects": [
+                        {"id":"chemie","name":"Chemie","grades":[{"id":"chemie-g","value":4,"weight":1}]},
+                        {"id":"biologie","name":"Biologie","grades":[{"id":"biologie-g","value":5.5,"weight":1}]},
+                        {"id":"physik","name":"Physik","grades":[{"id":"physik-g","value":4.5,"weight":1}]}
+                      ]
+                    },
+                    {
+                      "id": "geisteswissenschaften",
+                      "name": "Geisteswissenschaften",
+                      "subjects": [
+                        {
+                          "id": "geschichte-und-politik",
+                          "name": "Geschichte und Politik",
+                          "grades": [{"id":"geschichte-und-politik-g","value":5,"weight":1}]
+                        },
+                        {"id":"geografie","name":"Geografie","grades":[{"id":"geografie-g","value":4,"weight":1}]},
+                        {
+                          "id": "wirtschaft-und-recht",
+                          "name": "Wirtschaft und Recht",
+                          "grades": [{"id":"wirtschaft-und-recht-g","value":5.5,"weight":1}]
+                        }
+                      ]
+                    },
+                    {
+                      "id": "musische-fächer",
+                      "name": "Musische Fächer",
+                      "subjects": [
+                        {"id":"musik","name":"Musik","grades":[{"id":"musik-g","value":4.5,"weight":1}]},
+                        {
+                          "id": "bildnerisches-gestalten",
+                          "name": "Bildnerisches Gestalten",
+                          "grades": [{"id":"bildnerisches-gestalten-g","value":5,"weight":1}]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                "2": {
+                  "subjects": [
+                    {"id":"deutsch","name":"Deutsch","grades":[{"id":"deutsch-g","value":4.5,"weight":1}]},
+                    {"id":"französisch","name":"Französisch","grades":[{"id":"französisch-g","value":5,"weight":1}]},
+                    {"id":"englisch","name":"Englisch","grades":[{"id":"englisch-g","value":4,"weight":1}]},
+                    {"id":"mathematik","name":"Mathematik","grades":[{"id":"mathematik-g","value":5.5,"weight":1}]},
+                    {"id":"sport","name":"Sport","grades":[{"id":"sport-g","value":4.5,"weight":1}]},
+                    {
+                      "id": "naturwissenschaften",
+                      "name": "Naturwissenschaften",
+                      "subjects": [
+                        {"id":"chemie","name":"Chemie","grades":[{"id":"chemie-g","value":5,"weight":1}]},
+                        {"id":"biologie","name":"Biologie","grades":[{"id":"biologie-g","value":4,"weight":1}]},
+                        {"id":"physik","name":"Physik","grades":[{"id":"physik-g","value":5.5,"weight":1}]}
+                      ]
+                    },
+                    {
+                      "id": "geistes--und-sozialwissenschaften",
+                      "name": "Geistes- und Sozialwissenschaften",
+                      "subjects": [
+                        {
+                          "id": "geschichte-und-politik",
+                          "name": "Geschichte und Politik",
+                          "grades": [{"id":"geschichte-und-politik-g","value":4.5,"weight":1}]
+                        },
+                        {"id":"philosophie","name":"Philosophie","grades":[{"id":"philosophie-g","value":5,"weight":1}]}
+                      ]
+                    },
+                    {
+                      "id": "musische-fächer",
+                      "name": "Musische Fächer",
+                      "subjects": [
+                        {"id":"musik","name":"Musik","grades":[{"id":"musik-g","value":4,"weight":1}]},
+                        {
+                          "id": "bildnerisches-gestalten",
+                          "name": "Bildnerisches Gestalten",
+                          "grades": [{"id":"bildnerisches-gestalten-g","value":5.5,"weight":1}]
+                        }
+                      ]
+                    },
+                    {
+                      "id": "berufsfeldeinblicke",
+                      "name": "Berufsfeldeinblicke",
+                      "subjects": [
+                        {
+                          "id": "humanbiologie",
+                          "name": "Humanbiologie",
+                          "grades": [{"id":"humanbiologie-g","value":4.5,"weight":1}]
+                        },
+                        {"id":"soziologie","name":"Soziologie","grades":[{"id":"soziologie-g","value":5,"weight":1}]},
+                        {
+                          "id": "pädagogik/entwicklungspsychologie",
+                          "name": "Pädagogik/Entwicklungspsychologie",
+                          "grades": [{"id":"pädagogik/entwicklungspsychologie-g","value":4,"weight":1}]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                "3": {
+                  "subjects": [
+                    {"id":"deutsch","name":"Deutsch","grades":[{"id":"deutsch-g","value":4.5,"weight":1}]},
+                    {"id":"französisch","name":"Französisch","grades":[{"id":"französisch-g","value":5,"weight":1}]},
+                    {"id":"englisch","name":"Englisch","grades":[{"id":"englisch-g","value":4,"weight":1}]},
+                    {"id":"mathematik","name":"Mathematik","grades":[{"id":"mathematik-g","value":5.5,"weight":1}]},
+                    {"id":"biologie","name":"Biologie","grades":[{"id":"biologie-g","value":4.5,"weight":1}]},
+                    {"id":"sport","name":"Sport","grades":[{"id":"sport-g","value":5,"weight":1}]},
+                    {
+                      "id": "humanbiologie",
+                      "name": "Humanbiologie",
+                      "grades": [{"id":"humanbiologie-g","value":4,"weight":1}]
+                    },
+                    {
+                      "id": "chemie-und-physik",
+                      "name": "Chemie und Physik",
+                      "subjects": [
+                        {"id":"chemie","name":"Chemie","grades":[{"id":"chemie-g","value":5.5,"weight":1}]},
+                        {"id":"physik","name":"Physik","grades":[{"id":"physik-g","value":4.5,"weight":1}]}
+                      ]
+                    },
+                    {
+                      "id": "mensch-und-gesellschaft",
+                      "name": "Mensch und Gesellschaft",
+                      "subjects": [
+                        {"id":"psychologie","name":"Psychologie","grades":[{"id":"psychologie-g","value":5,"weight":1}]},
+                        {
+                          "id": "philosophie/ethik",
+                          "name": "Philosophie/Ethik",
+                          "grades": [{"id":"philosophie/ethik-g","value":4,"weight":1}]
+                        },
+                        {
+                          "id": "wirtschaft-und-recht",
+                          "name": "Wirtschaft und Recht",
+                          "grades": [{"id":"wirtschaft-und-recht-g","value":5.5,"weight":1}]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                "4": {"subjects":[]}
+              },
+              "year3Direction": "gesundheit"
+            },
+            "newDirection": "gesundheit"
+          },
+          "expected": {"names":[]}
+        },
+        {
+          "name": "from gesundheit to soziale-arbeit",
+          "input": {
+            "data": {
+              "studentInfo": {"name":"Test","division":"FMS"},
+              "currentYear": 1,
+              "years": {
+                "1": {
+                  "subjects": [
+                    {"id":"deutsch","name":"Deutsch","grades":[{"id":"deutsch-g","value":4.5,"weight":1}]},
+                    {"id":"französisch","name":"Französisch","grades":[{"id":"französisch-g","value":5,"weight":1}]},
+                    {"id":"englisch","name":"Englisch","grades":[{"id":"englisch-g","value":4,"weight":1}]},
+                    {"id":"mathematik","name":"Mathematik","grades":[{"id":"mathematik-g","value":5.5,"weight":1}]},
+                    {"id":"psychologie","name":"Psychologie","grades":[{"id":"psychologie-g","value":4.5,"weight":1}]},
+                    {"id":"sport","name":"Sport","grades":[{"id":"sport-g","value":5,"weight":1}]},
+                    {
+                      "id": "naturwissenschaften",
+                      "name": "Naturwissenschaften",
+                      "subjects": [
+                        {"id":"chemie","name":"Chemie","grades":[{"id":"chemie-g","value":4,"weight":1}]},
+                        {"id":"biologie","name":"Biologie","grades":[{"id":"biologie-g","value":5.5,"weight":1}]},
+                        {"id":"physik","name":"Physik","grades":[{"id":"physik-g","value":4.5,"weight":1}]}
+                      ]
+                    },
+                    {
+                      "id": "geisteswissenschaften",
+                      "name": "Geisteswissenschaften",
+                      "subjects": [
+                        {
+                          "id": "geschichte-und-politik",
+                          "name": "Geschichte und Politik",
+                          "grades": [{"id":"geschichte-und-politik-g","value":5,"weight":1}]
+                        },
+                        {"id":"geografie","name":"Geografie","grades":[{"id":"geografie-g","value":4,"weight":1}]},
+                        {
+                          "id": "wirtschaft-und-recht",
+                          "name": "Wirtschaft und Recht",
+                          "grades": [{"id":"wirtschaft-und-recht-g","value":5.5,"weight":1}]
+                        }
+                      ]
+                    },
+                    {
+                      "id": "musische-fächer",
+                      "name": "Musische Fächer",
+                      "subjects": [
+                        {"id":"musik","name":"Musik","grades":[{"id":"musik-g","value":4.5,"weight":1}]},
+                        {
+                          "id": "bildnerisches-gestalten",
+                          "name": "Bildnerisches Gestalten",
+                          "grades": [{"id":"bildnerisches-gestalten-g","value":5,"weight":1}]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                "2": {
+                  "subjects": [
+                    {"id":"deutsch","name":"Deutsch","grades":[{"id":"deutsch-g","value":4.5,"weight":1}]},
+                    {"id":"französisch","name":"Französisch","grades":[{"id":"französisch-g","value":5,"weight":1}]},
+                    {"id":"englisch","name":"Englisch","grades":[{"id":"englisch-g","value":4,"weight":1}]},
+                    {"id":"mathematik","name":"Mathematik","grades":[{"id":"mathematik-g","value":5.5,"weight":1}]},
+                    {"id":"sport","name":"Sport","grades":[{"id":"sport-g","value":4.5,"weight":1}]},
+                    {
+                      "id": "naturwissenschaften",
+                      "name": "Naturwissenschaften",
+                      "subjects": [
+                        {"id":"chemie","name":"Chemie","grades":[{"id":"chemie-g","value":5,"weight":1}]},
+                        {"id":"biologie","name":"Biologie","grades":[{"id":"biologie-g","value":4,"weight":1}]},
+                        {"id":"physik","name":"Physik","grades":[{"id":"physik-g","value":5.5,"weight":1}]}
+                      ]
+                    },
+                    {
+                      "id": "geistes--und-sozialwissenschaften",
+                      "name": "Geistes- und Sozialwissenschaften",
+                      "subjects": [
+                        {
+                          "id": "geschichte-und-politik",
+                          "name": "Geschichte und Politik",
+                          "grades": [{"id":"geschichte-und-politik-g","value":4.5,"weight":1}]
+                        },
+                        {"id":"philosophie","name":"Philosophie","grades":[{"id":"philosophie-g","value":5,"weight":1}]}
+                      ]
+                    },
+                    {
+                      "id": "musische-fächer",
+                      "name": "Musische Fächer",
+                      "subjects": [
+                        {"id":"musik","name":"Musik","grades":[{"id":"musik-g","value":4,"weight":1}]},
+                        {
+                          "id": "bildnerisches-gestalten",
+                          "name": "Bildnerisches Gestalten",
+                          "grades": [{"id":"bildnerisches-gestalten-g","value":5.5,"weight":1}]
+                        }
+                      ]
+                    },
+                    {
+                      "id": "berufsfeldeinblicke",
+                      "name": "Berufsfeldeinblicke",
+                      "subjects": [
+                        {
+                          "id": "humanbiologie",
+                          "name": "Humanbiologie",
+                          "grades": [{"id":"humanbiologie-g","value":4.5,"weight":1}]
+                        },
+                        {"id":"soziologie","name":"Soziologie","grades":[{"id":"soziologie-g","value":5,"weight":1}]},
+                        {
+                          "id": "pädagogik/entwicklungspsychologie",
+                          "name": "Pädagogik/Entwicklungspsychologie",
+                          "grades": [{"id":"pädagogik/entwicklungspsychologie-g","value":4,"weight":1}]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                "3": {
+                  "subjects": [
+                    {"id":"deutsch","name":"Deutsch","grades":[{"id":"deutsch-g","value":4.5,"weight":1}]},
+                    {"id":"französisch","name":"Französisch","grades":[{"id":"französisch-g","value":5,"weight":1}]},
+                    {"id":"englisch","name":"Englisch","grades":[{"id":"englisch-g","value":4,"weight":1}]},
+                    {"id":"mathematik","name":"Mathematik","grades":[{"id":"mathematik-g","value":5.5,"weight":1}]},
+                    {"id":"biologie","name":"Biologie","grades":[{"id":"biologie-g","value":4.5,"weight":1}]},
+                    {"id":"sport","name":"Sport","grades":[{"id":"sport-g","value":5,"weight":1}]},
+                    {
+                      "id": "humanbiologie",
+                      "name": "Humanbiologie",
+                      "grades": [{"id":"humanbiologie-g","value":4,"weight":1}]
+                    },
+                    {
+                      "id": "chemie-und-physik",
+                      "name": "Chemie und Physik",
+                      "subjects": [
+                        {"id":"chemie","name":"Chemie","grades":[{"id":"chemie-g","value":5.5,"weight":1}]},
+                        {"id":"physik","name":"Physik","grades":[{"id":"physik-g","value":4.5,"weight":1}]}
+                      ]
+                    },
+                    {
+                      "id": "mensch-und-gesellschaft",
+                      "name": "Mensch und Gesellschaft",
+                      "subjects": [
+                        {"id":"psychologie","name":"Psychologie","grades":[{"id":"psychologie-g","value":5,"weight":1}]},
+                        {
+                          "id": "philosophie/ethik",
+                          "name": "Philosophie/Ethik",
+                          "grades": [{"id":"philosophie/ethik-g","value":4,"weight":1}]
+                        },
+                        {
+                          "id": "wirtschaft-und-recht",
+                          "name": "Wirtschaft und Recht",
+                          "grades": [{"id":"wirtschaft-und-recht-g","value":5.5,"weight":1}]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                "4": {"subjects":[]}
+              },
+              "year3Direction": "gesundheit"
+            },
+            "newDirection": "soziale-arbeit"
+          },
+          "expected": {"names":["Humanbiologie","Chemie","Physik","Wirtschaft und Recht"]}
+        },
+        {
+          "name": "from gesundheit to paedagogik",
+          "input": {
+            "data": {
+              "studentInfo": {"name":"Test","division":"FMS"},
+              "currentYear": 1,
+              "years": {
+                "1": {
+                  "subjects": [
+                    {"id":"deutsch","name":"Deutsch","grades":[{"id":"deutsch-g","value":4.5,"weight":1}]},
+                    {"id":"französisch","name":"Französisch","grades":[{"id":"französisch-g","value":5,"weight":1}]},
+                    {"id":"englisch","name":"Englisch","grades":[{"id":"englisch-g","value":4,"weight":1}]},
+                    {"id":"mathematik","name":"Mathematik","grades":[{"id":"mathematik-g","value":5.5,"weight":1}]},
+                    {"id":"psychologie","name":"Psychologie","grades":[{"id":"psychologie-g","value":4.5,"weight":1}]},
+                    {"id":"sport","name":"Sport","grades":[{"id":"sport-g","value":5,"weight":1}]},
+                    {
+                      "id": "naturwissenschaften",
+                      "name": "Naturwissenschaften",
+                      "subjects": [
+                        {"id":"chemie","name":"Chemie","grades":[{"id":"chemie-g","value":4,"weight":1}]},
+                        {"id":"biologie","name":"Biologie","grades":[{"id":"biologie-g","value":5.5,"weight":1}]},
+                        {"id":"physik","name":"Physik","grades":[{"id":"physik-g","value":4.5,"weight":1}]}
+                      ]
+                    },
+                    {
+                      "id": "geisteswissenschaften",
+                      "name": "Geisteswissenschaften",
+                      "subjects": [
+                        {
+                          "id": "geschichte-und-politik",
+                          "name": "Geschichte und Politik",
+                          "grades": [{"id":"geschichte-und-politik-g","value":5,"weight":1}]
+                        },
+                        {"id":"geografie","name":"Geografie","grades":[{"id":"geografie-g","value":4,"weight":1}]},
+                        {
+                          "id": "wirtschaft-und-recht",
+                          "name": "Wirtschaft und Recht",
+                          "grades": [{"id":"wirtschaft-und-recht-g","value":5.5,"weight":1}]
+                        }
+                      ]
+                    },
+                    {
+                      "id": "musische-fächer",
+                      "name": "Musische Fächer",
+                      "subjects": [
+                        {"id":"musik","name":"Musik","grades":[{"id":"musik-g","value":4.5,"weight":1}]},
+                        {
+                          "id": "bildnerisches-gestalten",
+                          "name": "Bildnerisches Gestalten",
+                          "grades": [{"id":"bildnerisches-gestalten-g","value":5,"weight":1}]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                "2": {
+                  "subjects": [
+                    {"id":"deutsch","name":"Deutsch","grades":[{"id":"deutsch-g","value":4.5,"weight":1}]},
+                    {"id":"französisch","name":"Französisch","grades":[{"id":"französisch-g","value":5,"weight":1}]},
+                    {"id":"englisch","name":"Englisch","grades":[{"id":"englisch-g","value":4,"weight":1}]},
+                    {"id":"mathematik","name":"Mathematik","grades":[{"id":"mathematik-g","value":5.5,"weight":1}]},
+                    {"id":"sport","name":"Sport","grades":[{"id":"sport-g","value":4.5,"weight":1}]},
+                    {
+                      "id": "naturwissenschaften",
+                      "name": "Naturwissenschaften",
+                      "subjects": [
+                        {"id":"chemie","name":"Chemie","grades":[{"id":"chemie-g","value":5,"weight":1}]},
+                        {"id":"biologie","name":"Biologie","grades":[{"id":"biologie-g","value":4,"weight":1}]},
+                        {"id":"physik","name":"Physik","grades":[{"id":"physik-g","value":5.5,"weight":1}]}
+                      ]
+                    },
+                    {
+                      "id": "geistes--und-sozialwissenschaften",
+                      "name": "Geistes- und Sozialwissenschaften",
+                      "subjects": [
+                        {
+                          "id": "geschichte-und-politik",
+                          "name": "Geschichte und Politik",
+                          "grades": [{"id":"geschichte-und-politik-g","value":4.5,"weight":1}]
+                        },
+                        {"id":"philosophie","name":"Philosophie","grades":[{"id":"philosophie-g","value":5,"weight":1}]}
+                      ]
+                    },
+                    {
+                      "id": "musische-fächer",
+                      "name": "Musische Fächer",
+                      "subjects": [
+                        {"id":"musik","name":"Musik","grades":[{"id":"musik-g","value":4,"weight":1}]},
+                        {
+                          "id": "bildnerisches-gestalten",
+                          "name": "Bildnerisches Gestalten",
+                          "grades": [{"id":"bildnerisches-gestalten-g","value":5.5,"weight":1}]
+                        }
+                      ]
+                    },
+                    {
+                      "id": "berufsfeldeinblicke",
+                      "name": "Berufsfeldeinblicke",
+                      "subjects": [
+                        {
+                          "id": "humanbiologie",
+                          "name": "Humanbiologie",
+                          "grades": [{"id":"humanbiologie-g","value":4.5,"weight":1}]
+                        },
+                        {"id":"soziologie","name":"Soziologie","grades":[{"id":"soziologie-g","value":5,"weight":1}]},
+                        {
+                          "id": "pädagogik/entwicklungspsychologie",
+                          "name": "Pädagogik/Entwicklungspsychologie",
+                          "grades": [{"id":"pädagogik/entwicklungspsychologie-g","value":4,"weight":1}]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                "3": {
+                  "subjects": [
+                    {"id":"deutsch","name":"Deutsch","grades":[{"id":"deutsch-g","value":4.5,"weight":1}]},
+                    {"id":"französisch","name":"Französisch","grades":[{"id":"französisch-g","value":5,"weight":1}]},
+                    {"id":"englisch","name":"Englisch","grades":[{"id":"englisch-g","value":4,"weight":1}]},
+                    {"id":"mathematik","name":"Mathematik","grades":[{"id":"mathematik-g","value":5.5,"weight":1}]},
+                    {"id":"biologie","name":"Biologie","grades":[{"id":"biologie-g","value":4.5,"weight":1}]},
+                    {"id":"sport","name":"Sport","grades":[{"id":"sport-g","value":5,"weight":1}]},
+                    {
+                      "id": "humanbiologie",
+                      "name": "Humanbiologie",
+                      "grades": [{"id":"humanbiologie-g","value":4,"weight":1}]
+                    },
+                    {
+                      "id": "chemie-und-physik",
+                      "name": "Chemie und Physik",
+                      "subjects": [
+                        {"id":"chemie","name":"Chemie","grades":[{"id":"chemie-g","value":5.5,"weight":1}]},
+                        {"id":"physik","name":"Physik","grades":[{"id":"physik-g","value":4.5,"weight":1}]}
+                      ]
+                    },
+                    {
+                      "id": "mensch-und-gesellschaft",
+                      "name": "Mensch und Gesellschaft",
+                      "subjects": [
+                        {"id":"psychologie","name":"Psychologie","grades":[{"id":"psychologie-g","value":5,"weight":1}]},
+                        {
+                          "id": "philosophie/ethik",
+                          "name": "Philosophie/Ethik",
+                          "grades": [{"id":"philosophie/ethik-g","value":4,"weight":1}]
+                        },
+                        {
+                          "id": "wirtschaft-und-recht",
+                          "name": "Wirtschaft und Recht",
+                          "grades": [{"id":"wirtschaft-und-recht-g","value":5.5,"weight":1}]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                "4": {"subjects":[]}
+              },
+              "year3Direction": "gesundheit"
+            },
+            "newDirection": "paedagogik"
+          },
+          "expected": {"names":["Humanbiologie","Chemie","Physik","Psychologie","Philosophie/Ethik","Wirtschaft und Recht"]}
+        },
+        {
+          "name": "first choice, nothing stored",
+          "input": {
+            "data": {
+              "studentInfo": {"name":"Test","division":"FMS"},
+              "currentYear": 1,
+              "years": {"1":{"subjects":[]},"2":{"subjects":[]},"3":{"subjects":[]},"4":{"subjects":[]}}
+            },
+            "newDirection": "gesundheit"
+          },
+          "expected": {"names":[]}
+        },
+        {
+          "name": "first choice, a subject with grades stored for year 3",
+          "input": {
+            "data": {
+              "studentInfo": {"name":"Test","division":"FMS"},
+              "currentYear": 1,
+              "years": {
+                "1": {"subjects":[]},
+                "2": {"subjects":[]},
+                "3": {"subjects":[{"id":"a","name":"a","grades":[{"id":"g1","value":5,"weight":1}]}]},
+                "4": {"subjects":[]}
+              }
+            },
+            "newDirection": "gesundheit"
+          },
+          "expected": {"names":["a"]}
+        },
+        {
+          "name": "subjects without grades are not listed",
+          "input": {
+            "data": {
+              "studentInfo": {"name":"Test","division":"FMS"},
+              "currentYear": 1,
+              "years": {
+                "1": {
+                  "subjects": [
+                    {"id":"deutsch","name":"Deutsch","grades":[]},
+                    {"id":"französisch","name":"Französisch","grades":[]},
+                    {"id":"englisch","name":"Englisch","grades":[]},
+                    {"id":"mathematik","name":"Mathematik","grades":[]},
+                    {"id":"psychologie","name":"Psychologie","grades":[]},
+                    {"id":"sport","name":"Sport","grades":[]},
+                    {
+                      "id": "naturwissenschaften",
+                      "name": "Naturwissenschaften",
+                      "subjects": [
+                        {"id":"chemie","name":"Chemie","grades":[]},
+                        {"id":"biologie","name":"Biologie","grades":[]},
+                        {"id":"physik","name":"Physik","grades":[]}
+                      ]
+                    },
+                    {
+                      "id": "geisteswissenschaften",
+                      "name": "Geisteswissenschaften",
+                      "subjects": [
+                        {"id":"geschichte-und-politik","name":"Geschichte und Politik","grades":[]},
+                        {"id":"geografie","name":"Geografie","grades":[]},
+                        {"id":"wirtschaft-und-recht","name":"Wirtschaft und Recht","grades":[]}
+                      ]
+                    },
+                    {
+                      "id": "musische-fächer",
+                      "name": "Musische Fächer",
+                      "subjects": [
+                        {"id":"musik","name":"Musik","grades":[]},
+                        {"id":"bildnerisches-gestalten","name":"Bildnerisches Gestalten","grades":[]}
+                      ]
+                    }
+                  ]
+                },
+                "2": {
+                  "subjects": [
+                    {"id":"deutsch","name":"Deutsch","grades":[]},
+                    {"id":"französisch","name":"Französisch","grades":[]},
+                    {"id":"englisch","name":"Englisch","grades":[]},
+                    {"id":"mathematik","name":"Mathematik","grades":[]},
+                    {"id":"sport","name":"Sport","grades":[]},
+                    {
+                      "id": "naturwissenschaften",
+                      "name": "Naturwissenschaften",
+                      "subjects": [
+                        {"id":"chemie","name":"Chemie","grades":[]},
+                        {"id":"biologie","name":"Biologie","grades":[]},
+                        {"id":"physik","name":"Physik","grades":[]}
+                      ]
+                    },
+                    {
+                      "id": "geistes--und-sozialwissenschaften",
+                      "name": "Geistes- und Sozialwissenschaften",
+                      "subjects": [
+                        {"id":"geschichte-und-politik","name":"Geschichte und Politik","grades":[]},
+                        {"id":"philosophie","name":"Philosophie","grades":[]}
+                      ]
+                    },
+                    {
+                      "id": "musische-fächer",
+                      "name": "Musische Fächer",
+                      "subjects": [
+                        {"id":"musik","name":"Musik","grades":[]},
+                        {"id":"bildnerisches-gestalten","name":"Bildnerisches Gestalten","grades":[]}
+                      ]
+                    },
+                    {
+                      "id": "berufsfeldeinblicke",
+                      "name": "Berufsfeldeinblicke",
+                      "subjects": [
+                        {"id":"humanbiologie","name":"Humanbiologie","grades":[]},
+                        {"id":"soziologie","name":"Soziologie","grades":[]},
+                        {
+                          "id": "pädagogik/entwicklungspsychologie",
+                          "name": "Pädagogik/Entwicklungspsychologie",
+                          "grades": []
+                        }
+                      ]
+                    }
+                  ]
+                },
+                "3": {
+                  "subjects": [
+                    {"id":"deutsch","name":"Deutsch","grades":[]},
+                    {"id":"französisch","name":"Französisch","grades":[]},
+                    {"id":"englisch","name":"Englisch","grades":[]},
+                    {"id":"mathematik","name":"Mathematik","grades":[]},
+                    {"id":"biologie","name":"Biologie","grades":[]},
+                    {"id":"sport","name":"Sport","grades":[]},
+                    {"id":"humanbiologie","name":"Humanbiologie","grades":[]},
+                    {
+                      "id": "chemie-und-physik",
+                      "name": "Chemie und Physik",
+                      "subjects": [{"id":"chemie","name":"Chemie","grades":[]},{"id":"physik","name":"Physik","grades":[]}]
+                    },
+                    {
+                      "id": "mensch-und-gesellschaft",
+                      "name": "Mensch und Gesellschaft",
+                      "subjects": [
+                        {"id":"psychologie","name":"Psychologie","grades":[]},
+                        {"id":"philosophie/ethik","name":"Philosophie/Ethik","grades":[]},
+                        {"id":"wirtschaft-und-recht","name":"Wirtschaft und Recht","grades":[]}
+                      ]
+                    }
+                  ]
+                },
+                "4": {"subjects":[]}
+              },
+              "year3Direction": "gesundheit",
+              "dataVersion": 1
+            },
+            "newDirection": "soziale-arbeit"
+          },
+          "expected": {"names":[]}
+        }
+      ]
+    },
+    {
       "operation": "studentResult",
       "description": "The whole rules seam: stored data in; the reconciled data, every grade and the verdict of every year out. Years are 1 to 3 for FMS and 1 to 4 for the Gymnasium. An FMS year 3 with no Berufsfeld has no subjects. endsWithoutPromotion marks the year whose result leads to no promotion, which the website notes under the conditions.",
       "input": "{ data: StudentData }, with studentInfo.division saying the Bildungsgang",

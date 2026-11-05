@@ -127,6 +127,11 @@ export const operations = {
     names: subjectsLosingGrades(data, reconcileAllYears({ ...data, gymProfile: newProfile })),
   }),
 
+  // What changing the FMS Berufsfeld would cost, as the website asks before saving
+  subjectsLostByDirection: ({ data, newDirection }: { data: StudentData; newDirection: string }) => ({
+    names: subjectsLosingGrades(data, reconcileAllYears({ ...data, year3Direction: newDirection })),
+  }),
+
   // The whole seam: stored data in, the reconciled data, every grade and every verdict out
   studentResult: ({ data }: { data: StudentData }) => {
     const reconciled = reconcileAllYears(data);

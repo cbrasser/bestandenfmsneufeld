@@ -214,6 +214,20 @@ describe('sync engine', () => {
     expect(edit('real edit')).toBe(true);
   });
 
+  it('leaves the cloud alone once a reset has disconnected the device, whatever the new profile does', async () => {
+    const { engine, items, edit, saves, loads } = setup();
+    items.setItem('student-data', JSON.stringify({ ...student('x'), studentInfo: undefined }));
+    engine.disconnect();
+
+    edit('new profile');
+    edit('real edit');
+    await engine.sync();
+
+    expect(engine.getSnapshot().code).toBeNull();
+    expect(saves).toHaveLength(0);
+    expect(loads).toHaveLength(0);
+  });
+
   describe('a device connected before versions existed', () => {
     it('adopts the cloud version silently when the data matches, changing and sending nothing', async () => {
       const { engine, saves, loads, localLabel } = setup({ version: null, data: student('same') });

@@ -6,7 +6,7 @@ import { isNewerData } from './utils/dataVersion';
 import { dataBackup, useHasBackup } from './utils/backup';
 import { countGrades } from './utils/countGrades';
 import { formatDateTime } from './lib/utils';
-import { initializeStudentData, getSubjectsForYear, reconcileAllYears, reconcileSubjectList, selectableYear, subjectsLosingGrades } from './utils/initializeData';
+import { initializeStudentData, getSubjectsForYear, reconcileAllYears, selectableYear, subjectsLosingGrades } from './utils/initializeData';
 import { checkPromotionCriteria, promotionVerdict } from './utils/promotion';
 import { endsWithoutPromotion, getCriteria } from './config/criteria';
 import { GYM_YEARS } from './config/gymnasium';
@@ -26,6 +26,7 @@ import { ConflictPrompt } from './components/ConflictPrompt';
 import { AppPopup } from './components/AppPopup';
 import { NewerDataPage, ReadOnlyNotice } from './components/ReadOnlyNotice';
 import { isReadOnlyNow, syncEngine } from './sync/cloud';
+import { formatCode } from './sync/code';
 import { useCloudSync, useNewerCloudData } from './sync/useCloudSync';
 import { useI18n } from './i18n/context';
 import { CombinedSubjectCard } from './components/CombinedSubjectCard';
@@ -146,22 +147,15 @@ function App() {
   };
 
   const handleDirectionSelect = (directionId: string) => {
-    const direction = year3Directions.find((d) => d.id === directionId);
-    if (!direction) return;
+    if (!year3Directions.some((d) => d.id === directionId)) return;
 
-    const updatedData: StudentData = {
-      ...data,
-      year3Direction: directionId,
-      years: {
-        ...data.years,
-        3: {
-          subjects: reconcileSubjectList(data.years[3].subjects, direction.subjects),
-        },
-      },
-    };
-
+    const updatedData = reconcileAllYears({ ...data, year3Direction: directionId });
+    const lost = subjectsLosingGrades(data, updatedData);
+    if (lost.length > 0 && !window.confirm(`${t('gymConfirmDrop')} ${[...new Set(lost.map(tSubject))].join(', ')}`)) {
+      return;
+    }
+    if (isReadOnlyNow()) return;
     setData(updatedData);
-    storageService.saveData(updatedData);
   };
 
   const handleGymProfileChange = (profile: GymProfileType) => {
@@ -393,10 +387,13 @@ function App() {
     };
 
     const handleReset = () => {
-      if (window.confirm(t('resetConfirm'))) {
+      const code = syncEngine?.getSnapshot().code;
+      if (window.confirm(code ? `${t('resetConfirmConnected')} ${formatCode(code)}` : t('resetConfirm'))) {
         if (refusedAsReadOnly()) return;
         try {
           storageService.clearData();
+          // Or the first edit on the new profile would replace the grades in the cloud
+          syncEngine?.disconnect();
           const newData = initializeStudentData();
           setData(newData);
           setCurrentYear(1);

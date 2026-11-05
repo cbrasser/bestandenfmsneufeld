@@ -503,6 +503,22 @@ export const suites = (): SuiteDefinition[] => [
     ],
   },
   {
+    operation: 'subjectsLostByDirection',
+    description: 'The subjects and Teilfächer whose grades a change of FMS Berufsfeld would drop, for the warning before saving. A Teilfach belongs to its Fach: the same name under another Fach starts empty.',
+    input: '{ data: StudentData, newDirection: string }, with newDirection the id of a Berufsfeld',
+    expected: '{ names: string[] }',
+    cases: [
+      { name: 'same Berufsfeld', input: { data: fmsStudent('gesundheit', PASSING), newDirection: 'gesundheit' } },
+      ...year3Directions.slice(1).map((d) => ({
+        name: `from gesundheit to ${d.id}`,
+        input: { data: fmsStudent('gesundheit', PASSING), newDirection: d.id },
+      })),
+      { name: 'first choice, nothing stored', input: { data: student('FMS', {}), newDirection: 'gesundheit' } },
+      { name: 'first choice, a subject with grades stored for year 3', input: { data: student('FMS', { 3: [flat('a', 5)] }), newDirection: 'gesundheit' } },
+      { name: 'subjects without grades are not listed', input: { data: reconcileAllYears(student('FMS', {}, { year3Direction: 'gesundheit' })), newDirection: 'soziale-arbeit' } },
+    ],
+  },
+  {
     operation: 'studentResult',
     description: 'The whole rules seam: stored data in; the reconciled data, every grade and the verdict of every year out. Years are 1 to 3 for FMS and 1 to 4 for the Gymnasium. An FMS year 3 with no Berufsfeld has no subjects. endsWithoutPromotion marks the year whose result leads to no promotion, which the website notes under the conditions.',
     input: '{ data: StudentData }, with studentInfo.division saying the Bildungsgang',

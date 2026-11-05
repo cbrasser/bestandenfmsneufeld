@@ -94,6 +94,7 @@ export interface Translations {
   importError: string;
   importInvalidFile: string;
   resetConfirm: string;
+  resetConfirmConnected: string;
   resetSuccess: string;
   resetError: string;
   noDataToExport: string;
@@ -325,6 +326,7 @@ export const translations: Record<Language, Translations> = {
     importError: 'Fehler beim Importieren der Daten',
     importInvalidFile: 'Ungültige Datei. Bitte wählen Sie eine gültige JSON-Datei.',
     resetConfirm: 'Möchten Sie wirklich alle Daten zurücksetzen? Diese Aktion kann nicht rückgängig gemacht werden.',
+    resetConfirmConnected: 'Die Daten auf diesem Gerät werden zurückgesetzt, und es wird von deinem Code getrennt. Deine Daten in der Cloud bleiben erhalten. Notiere dir den Code, um sie wieder zu laden:',
     resetSuccess: 'Daten erfolgreich zurückgesetzt',
     resetError: 'Fehler beim Zurücksetzen der Daten',
     noDataToExport: 'Keine Daten zum Exportieren vorhanden',
@@ -549,6 +551,7 @@ export const translations: Record<Language, Translations> = {
     importError: 'Erreur lors de l\'importation des données',
     importInvalidFile: 'Fichier invalide. Veuillez sélectionner un fichier JSON valide.',
     resetConfirm: 'Êtes-vous sûr de vouloir réinitialiser toutes les données? Cette action ne peut pas être annulée.',
+    resetConfirmConnected: 'Les données de cet appareil seront réinitialisées et il sera déconnecté de ton code. Tes données dans le cloud sont conservées. Note ton code pour pouvoir les recharger :',
     resetSuccess: 'Données réinitialisées avec succès',
     resetError: 'Erreur lors de la réinitialisation des données',
     noDataToExport: 'Aucune donnée à exporter',
@@ -773,6 +776,7 @@ export const translations: Record<Language, Translations> = {
     importError: 'Error importing data',
     importInvalidFile: 'Invalid file. Please select a valid JSON file.',
     resetConfirm: 'Are you sure you want to reset all data? This action cannot be undone.',
+    resetConfirmConnected: "This device's data will be reset and it will be disconnected from your code. Your data in the cloud stays. Note your code so you can load it again:",
     resetSuccess: 'Data reset successfully',
     resetError: 'Error resetting data',
     noDataToExport: 'No data to export',
@@ -997,6 +1001,7 @@ export const translations: Record<Language, Translations> = {
     importError: 'Errore durante l\'importazione dei dati',
     importInvalidFile: 'File non valido. Seleziona un file JSON valido.',
     resetConfirm: 'Sei sicuro di voler reimpostare tutti i dati? Questa azione non può essere annullata.',
+    resetConfirmConnected: 'I dati di questo dispositivo saranno reimpostati e verrà scollegato dal tuo codice. I tuoi dati nel cloud restano. Annota il tuo codice per poterli ricaricare:',
     resetSuccess: 'Dati reimpostati con successo',
     resetError: 'Errore durante la reimpostazione dei dati',
     noDataToExport: 'Nessun dato da esportare',

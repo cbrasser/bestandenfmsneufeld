@@ -103,13 +103,25 @@ export const reconcileAllYears = (data: StudentData): StudentData => {
   };
 };
 
-// Subjects whose saved grades a profile change would drop
+// Where a year's grades are kept. A Teilfach belongs to its Fach: the same name under another Fach
+// starts empty, so it's another place.
+const gradePlaces = (subjects: (Subject | CombinedSubject)[]) =>
+  subjects.flatMap((s) =>
+    isCombinedSubject(s)
+      ? [
+          ...s.subjects.map((t) => ({ key: `${s.id}/${t.id}`, name: t.name, grades: t.grades })),
+          { key: s.id, name: s.name, grades: s.unassignedGrades ?? [] },
+        ]
+      : [{ key: s.id, name: s.name, grades: s.grades }]
+  );
+
+// Subjects whose saved grades a change of Gymnasium choices or Berufsfeld would drop
 export const subjectsLosingGrades = (before: StudentData, after: StudentData): string[] =>
   GYM_YEARS.flatMap((year) => {
-    const kept = new Set(after.years[year].subjects.map((s) => s.id));
-    return (before.years[year]?.subjects ?? [])
-      .filter((s) => !kept.has(s.id) && isSubject(s) && s.grades.length > 0)
-      .map((s) => s.name);
+    const kept = new Set(gradePlaces(after.years[year].subjects).map((place) => place.key));
+    return gradePlaces(before.years[year]?.subjects ?? [])
+      .filter((place) => !kept.has(place.key) && place.grades.length > 0)
+      .map((place) => place.name);
   });
 
 export const getSubjectsForYear = (
