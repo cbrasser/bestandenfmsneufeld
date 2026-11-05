@@ -132,7 +132,7 @@ How it works:
 - Every row has a `version`, raised by a database trigger on every write. The website
   saves with `save_student`, which refuses a save based on an out-of-date version, and
   pulls with `load_student` on open and on focus. `load_data` stays for old cached copies
-  of the site, and `save_data` too until the launch migration disables it.
+  of the site. `save_data` raises an error, so an old copy shows "sync failed" and writes nothing.
 - The student chooses when both sides really did change.
 - Students can delete their cloud data themselves. Their local data stays.
 - If the code is lost, the cloud data cannot be recovered (use Export as a backup).

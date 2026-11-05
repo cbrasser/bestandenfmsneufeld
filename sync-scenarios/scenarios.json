@@ -127,24 +127,19 @@
       ]
     },
     {
-      "name": "old website copies still load and save, and their saves raise the version",
+      "name": "old website copies still load, but their saves are refused and change nothing",
       "steps": [
         { "action": "open", "device": "A", "fixture": "fms-student" },
         { "action": "createCode", "device": "A" },
         { "action": "connect", "device": "B" },
-        { "action": "legacySave", "grades": [5], "result": true },
-        { "action": "legacyLoad", "grades": [5] },
-        { "action": "expectCloud", "version": 2, "grades": [5] },
-
+        { "action": "legacySave", "grades": [5] },
+        { "action": "legacyLoad", "grades": [] },
+        { "action": "expectCloud", "version": 1, "grades": [] },
         { "action": "addGrade", "device": "B", "value": 3 },
         { "action": "saveDelayElapsed", "device": "B" },
-        { "action": "expectDevice", "device": "B", "status": "error", "failure": "conflict", "unsynced": true },
-        { "action": "expectCloud", "version": 2, "grades": [5] },
-
-        { "action": "focus", "device": "A" },
-        { "action": "expectDevice", "device": "A", "status": "saved", "version": 2, "grades": [5] },
-
-        { "action": "legacySave", "code": "UNKNOWNCODE23456", "grades": [5], "result": false },
+        { "action": "expectDevice", "device": "B", "status": "saved", "version": 2, "unsynced": false },
+        { "action": "legacyLoad", "grades": [3] },
+        { "action": "legacySave", "code": "UNKNOWNCODE23456", "grades": [5] },
         { "action": "legacyLoad", "code": "UNKNOWNCODE23456", "exists": false }
       ]
     },
@@ -375,21 +370,14 @@
       ]
     },
     {
-      "name": "a name an old website copy uploads stays out of every device, and the next save removes it",
+      "name": "a name an old website copy tries to upload never reaches the cloud",
       "steps": [
         { "action": "open", "device": "A", "fixture": "fms-student" },
         { "action": "createCode", "device": "A" },
-        { "action": "legacySave", "grades": [5], "name": "Uploaded", "result": true },
-        { "action": "expectCloud", "version": 2, "name": "Uploaded" },
-
-        { "action": "focus", "device": "A" },
-        { "action": "expectDevice", "device": "A", "version": 2, "grades": [5], "name": "Test" },
+        { "action": "legacySave", "grades": [5], "name": "Uploaded" },
+        { "action": "expectCloud", "version": 1, "grades": [], "name": null },
         { "action": "connect", "device": "B" },
-        { "action": "expectDevice", "device": "B", "grades": [5], "name": null },
-
-        { "action": "addGrade", "device": "A", "value": 4 },
-        { "action": "saveDelayElapsed", "device": "A" },
-        { "action": "expectCloud", "version": 3, "grades": [5, 4], "name": null }
+        { "action": "expectDevice", "device": "B", "grades": [], "name": null }
       ]
     },
     {
@@ -404,7 +392,7 @@
         { "action": "expectCloud", "exists": false },
         { "action": "legacyLoad", "exists": false },
         { "action": "saveCall", "expectedVersion": 2, "grades": [5], "result": { "status": "unknown_code" } },
-        { "action": "legacySave", "grades": [5], "result": false },
+        { "action": "legacySave", "grades": [5] },
         { "action": "connect", "device": "B", "result": "unknown_code" },
         { "action": "expectDevice", "device": "B", "connected": false },
 

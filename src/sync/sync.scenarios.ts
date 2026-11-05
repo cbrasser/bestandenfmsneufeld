@@ -274,9 +274,8 @@ async function runScenario(steps: Step[]) {
       }
       case 'legacySave': {
         const data = withName(withGrades(await baseData(), step.grades), step.name);
-        const { data: ok, error } = await client.rpc('save_data', { p_code: step.code ?? code, p_data: data });
-        expect(error).toBeNull();
-        expect(ok).toBe(step.result);
+        const { error } = await client.rpc('save_data', { p_code: step.code ?? code, p_data: data });
+        expect(error?.message).toContain('save_data is disabled');
         break;
       }
       case 'legacyLoad': {

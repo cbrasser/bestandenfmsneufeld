@@ -41,7 +41,7 @@ of step needs a case in every runner, so reuse the existing ones where you can.
 | `saveCall` | `code`?, `expectedVersion`, `grades`, `name`?, `dataVersion`?, `result` | Calls the version-checked save directly, sending `name` and `dataVersion` if given, and checks the fields named in `result`. This is how a scenario plays a newer client: without `dataVersion` the saved data has none, which means 1 |
 | `deleteCall` | `code`?, `result` | Calls the delete directly. `result` is true if a row was removed, otherwise false |
 | `parallelSaveCalls` | `expectedVersion`, `grades` (one list per call), `statuses` | Makes several saves at once, and checks their sorted statuses |
-| `legacySave` | `code`?, `grades`, `name`?, `result` | Calls `save_data`, as an old cached website copy does |
+| `legacySave` | `code`?, `grades`, `name`? | Calls `save_data`, as an old cached website copy does. Since the launch migration it must always raise an error and write nothing |
 | `legacyLoad` | `code`?, `grades` or `exists: false` | Calls `load_data`, as an old cached website copy does |
 
 A `name` of `null` in `expectDevice` or `expectCloud` means there is none.

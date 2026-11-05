@@ -1,5 +1,7 @@
 # Launch steps
 
+The launch happened on 2026-11-05. This stays as the record of how, and for the rollback while that's still an option.
+
 How the database changes reach production, in the order the launch needs them. Nothing in this folder runs by itself: `supabase db reset` and `npm run test:sync` only apply `supabase/migrations/`.
 
 | File | What it does |
@@ -107,7 +109,7 @@ Then open `/#admin`. The users and grades totals should match what you saw befor
 
 Keep every backup somewhere safe and private: they hold each student's grades and name. Delete them all once you're sure you won't roll back, since they're then the only copies of those names you control. Supabase's own scheduled backups also hold names, until they age out.
 
-**Afterwards:** add `launch.sql` to `supabase/migrations/` as a normal reviewed change, so that local databases match production, and update the sync scenarios that still expect `save_data` to write.
+**Afterwards:** `migrations/20261105120000_launch.sql` holds the same change for local databases. Production never runs that folder. If you roll back and launch again, use `launch.sql` here as before.
 
 ## Rollback
 
