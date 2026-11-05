@@ -3,6 +3,7 @@ import type { Grade, Semester } from '../types';
 import { X } from 'lucide-react';
 import { useI18n } from '../i18n/context';
 import { DatePicker } from '@/components/ui/date-picker';
+import { dateFromStorage, dateToStorage } from '../utils/gradeDate';
 
 interface GradeModalProps {
   isOpen: boolean;
@@ -31,7 +32,7 @@ export const GradeModal = ({
       setWeight(existingGrade.weight.toString());
       setLabel(existingGrade.label || '');
       setSemester(existingGrade.semester);
-      setDate(existingGrade.date ? new Date(existingGrade.date) : undefined);
+      setDate(dateFromStorage(existingGrade.date));
     } else {
       setValue('');
       setWeight('1');
@@ -64,7 +65,7 @@ export const GradeModal = ({
       weight: roundedWeight,
       label: label.trim() || undefined,
       semester: semester,
-      date: date ? date.toISOString().split('T')[0] : undefined,
+      date: date ? dateToStorage(date) : undefined,
     });
 
     onClose();
